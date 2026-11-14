@@ -4,6 +4,7 @@
 #include "Editor/Gizmo/Gizmo.h"
 
 #include "GameFramework/Actor/ParticleActor.h"
+#include "GameFramework/Actor/Emitter.h"
 #include "GameFramework/Actor/StaticMeshActor.h"
 #include "GameFramework/Actor/DirectionalLightActor.h"
 #include "GameFramework/Actor/PointLightActor.h"
@@ -38,7 +39,7 @@ public:
 
 	int32 SelectedIndex = 0;
 
-	const char* Items[5] = {"StaticMesh", "Particle", "Text", "HeightFog", "Character" };
+	const char* Items[7] = {"StaticMesh", "Particle", "Text", "HeightFog", "Character", "LevelSequence", "Emitter" };
 
 	FGizmo* Gizmo = nullptr;
 	int32 GizmoSelectedIndex = 0;
@@ -55,6 +56,7 @@ public:
 		AExponentialHeightFogActor::StaticClass(),
 		ACharacter::StaticClass(),
 		ALevelSequenceActor::StaticClass(),
+		AEmitter::StaticClass(),
 	};
 
 private:
