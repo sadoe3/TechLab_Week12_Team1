@@ -7,6 +7,8 @@
 
 struct FTransform;
 class FImGuiRenderer;
+class UParticleSystemComponent;
+class UParticleSystem;
 using FShadowPreviewQuery = std::function<bool(const ULightComponent*, FTexture2DArray*&, TArray<FLightShadowRenderData>&)>;
 
 using DetailsSelectionCallback = std::function<void(UActorComponent*)>;
@@ -46,6 +48,12 @@ public:
 
 private:
 	void DrawShadowPreview();
+	void DrawParticleSystemTree(UParticleSystemComponent* Component);
+
+	// 트리에서 고른 모듈. Template이 바뀌면 다른 에셋의 모듈이 남지 않도록 함께 기억한다
+	UParticleSystem* SelectedParticleSystem = nullptr;
+	UObject* SelectedParticleModule = nullptr;
+
 	FShadowPreviewQuery QueryShadowPreview;
 	FImGuiRenderer* ImGuiRenderer = nullptr;
 	float ShadowPreviewContrast = 32.0f;

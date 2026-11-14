@@ -13,6 +13,13 @@
 #include "Components/SkinnedMeshComponent.h"
 #include "Components/TextRenderComponent.h"
 #include "Components/ParticleSubUVComponent.h"
+#include "Components/ParticleSystemComponent.h"
+#include "Particles/ParticleSystem.h"
+#include "Particles/ParticleEmitter.h"
+#include "Particles/ParticleLODLevel.h"
+#include "Particles/ParticleModuleRequired.h"
+#include "Particles/ParticleModuleSpawn.h"
+#include "Particles/ParticleModuleTypeDataBase.h"
 #include "Components/SpotLightComponent.h"
 #include "Editor/EditorUI/ImGuiRenderer.h"
 #include "Components/DirectionalLightComponent.h"
@@ -1431,6 +1438,76 @@ void FDetailsPanel::DrawShadowPreview()
 }
 
 
+void FDetailsPanel::DrawParticleSystemTree(UParticleSystemComponent* Component)
+{
+	if (!ImGui::CollapsingHeader("Particle System", ImGuiTreeNodeFlags_DefaultOpen)) return;
+
+	UParticleSystem* System = Component->GetTemplate();
+	if (!System)
+	{
+		ImGui::TextDisabled("No Template");
+		return;
+	}
+
+	if (SelectedParticleSystem != System)
+	{
+		SelectedParticleSystem = System;
+		SelectedParticleModule = nullptr;
+	}
+
+	// 모듈은 펼칠 자식이 없으므로 잎 노드로 그리고, 클릭하면 아래에 프로퍼티를 띄운다
+	auto DrawModuleLeaf = [this](UObject* Module, const char* Label)
+	{
+		if (!Module) return;
+		ImGuiTreeNodeFlags Flags = ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen | ImGuiTreeNodeFlags_SpanAvailWidth;
+		if (Module == SelectedParticleModule) Flags |= ImGuiTreeNodeFlags_Selected;
+		ImGui::TreeNodeEx(Module, Flags, "%s", Label);
+		if (ImGui::IsItemClicked()) SelectedParticleModule = Module;
+	};
+
+	const ImGuiTreeNodeFlags BranchFlags = ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_SpanAvailWidth;
+	if (ImGui::TreeNodeEx(System, BranchFlags, "%s", System->GetName().c_str()))
+	{
+		for (UParticleEmitter* Emitter : System->Emitters)
+		{
+			if (!Emitter) continue;
+			if (!ImGui::TreeNodeEx(Emitter, BranchFlags, "%s", Emitter->EmitterName.ToString().c_str())) continue;
+
+			for (UParticleLODLevel* LODLevel : Emitter->LODLevels)
+			{
+				if (!LODLevel) continue;
+				if (!ImGui::TreeNodeEx(LODLevel, BranchFlags, "LOD %d", LODLevel->Level)) continue;
+
+				DrawModuleLeaf(LODLevel->RequiredModule, "Required");
+				DrawModuleLeaf(LODLevel->SpawnModule, "Spawn");
+				if (LODLevel->TypeDataModule)
+				{
+					DrawModuleLeaf(LODLevel->TypeDataModule, LODLevel->TypeDataModule->GetClass()->Name.c_str());
+				}
+				else
+				{
+					ImGui::TextDisabled("TypeData: Sprite");
+				}
+				for (UParticleModule* Module : LODLevel->Modules)
+				{
+					if (Module) DrawModuleLeaf(Module, Module->GetClass()->Name.c_str());
+				}
+				ImGui::TreePop();
+			}
+			ImGui::TreePop();
+		}
+		ImGui::TreePop();
+	}
+
+	if (SelectedParticleModule)
+	{
+		ImGui::PushID(SelectedParticleModule);
+		ImGui::SeparatorText("Module Properties");
+		DrawProperties(SelectedParticleModule, CustomFont);
+		ImGui::PopID();
+	}
+}
+
 void FDetailsPanel::OnRender()
 {
 	ImGui::SetNextWindowSize(ImVec2(400, 200), ImGuiCond_FirstUseEver);
@@ -1482,6 +1559,10 @@ void FDetailsPanel::OnRender()
                 {
                     ImGui::TextWrapped("Choose None in Animation Blueprint to use a single animation.");
                 }
+			}
+			if (auto* Component = Cast<UParticleSystemComponent>(TargetComponent))
+			{
+				DrawParticleSystemTree(Component);
 			}
 			DrawShadowPreview();
 
