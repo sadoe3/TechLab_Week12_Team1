@@ -22,6 +22,10 @@ namespace
 	}
 }
 
+UMaterial::UMaterial() : SortID(NextSortID++) {}
+
+UMaterial::~UMaterial() = default;
+
 UMaterial* UMaterial::CreateInstance(const UMaterial* Source)
 {
 	if (Source == nullptr)

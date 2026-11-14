@@ -29,8 +29,8 @@ class UMaterial : public UMaterialInterface
 	GENERATED_BODY()
 
 public:
-	UMaterial() :SortID(NextSortID++) {};
-	virtual ~UMaterial() override = default;
+	UMaterial();
+	virtual ~UMaterial() override;
 
 	EMaterialParamLayout ParamLayout = EMaterialParamLayout::None;
 	FShaderProgram* Shader = nullptr;

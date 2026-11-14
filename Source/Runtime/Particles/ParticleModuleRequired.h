@@ -1,9 +1,8 @@
 #pragma once
 
 #include "Particles/ParticleModule.h"
+#include "Render/Material.h"
 #include "ParticleModuleRequired.generated.h"
-
-class UMaterial;
 
 UENUM()
 enum class EParticleScreenAlignment : uint8
