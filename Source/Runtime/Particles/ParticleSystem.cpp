@@ -30,8 +30,8 @@ UParticleSystem* UParticleSystem::GetDefault()
 	UParticleModuleLifetime* LifetimeModule = NewObject<UParticleModuleLifetime>(LODLevel);
 	LODLevel->Modules.Add(LifetimeModule);
 
-	// 빠뜨리면 SpawnModules가 비어 Lifetime이 호출되지 않는다
-	LODLevel->UpdateModuleLists();
+	// 빠뜨리면 SpawnModules가 비고 ParticleSize도 0으로 남는다
+	NewEmitter->UpdateModuleLists();
 
 	DefaultSystem = NewSystem;
 	return DefaultSystem;
