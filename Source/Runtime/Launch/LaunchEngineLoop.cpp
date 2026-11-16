@@ -13,6 +13,7 @@
 #include "Core/Window.h"
 #include "Core/Windows/WindowsPlatformTime.h"
 #include "Core/Windows/WindowsCrashReporting.h"
+#include "Core/Windows/CrashTest.h"
 #include "Input/InputSystem.h"
 #include "UObject/Casts.h"
 #include "UObject/Class.h"
@@ -259,6 +260,7 @@ void FEngineLoop::Tick()
 	}
 
 	HandleResize();
+	CrashTest::Update();
 
 	// 최소화 중에는 그릴 대상이 없다.
 	if (MainWindow->GetWidth() == 0 || MainWindow->GetHeight() == 0)
