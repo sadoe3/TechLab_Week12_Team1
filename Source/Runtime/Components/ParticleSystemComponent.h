@@ -7,6 +7,7 @@ class UParticleSystem;
 class UWorld;
 class FLineBatcher;
 struct FParticleEmitterInstance;
+struct FDynamicEmitterDataBase;
 
 // 스프라이트 렌더링 전까지 파티클 위치를 선으로 확인한다 (DrawCollisionShapes와 같은 방식)
 void DrawParticleSystems(UWorld* World, FLineBatcher* LineBatcher);
@@ -30,11 +31,17 @@ public:
 
 	void DrawDebug(FLineBatcher* LineBatcher) const;
 
+	const TArray<FDynamicEmitterDataBase*>& GetEmitterRenderData() const { return EmitterRenderData; }
+
 private:
 	void ReleaseEmitterInstances();
+	void ReleaseEmitterRenderData();
 
 	UParticleSystem* Template = nullptr;
 
-	// Phase 2: Template->Emitters와 인덱스가 1:1로 대응하는 실행 상태
+	// Template->Emitters와 인덱스가 1:1로 대응하는 실행 상태
 	TArray<FParticleEmitterInstance*> EmitterInstances;
+
+	// 매 프레임 Tick이 끝난 뒤 새로 만드는 렌더용 스냅샷. 렌더러는 읽기만 한다
+	TArray<FDynamicEmitterDataBase*> EmitterRenderData;
 };

@@ -5,6 +5,8 @@
 #include "Particles/ParticleLODLevel.h"
 #include "Particles/ParticleModuleSpawn.h"
 #include "Particles/ParticleModuleLifetime.h"
+#include "Particles/ParticleModuleRequired.h"
+#include "Particles/ParticleDynamicData.h"
 #include "Components/ParticleSystemComponent.h"
 
 FParticleEmitterInstance::FParticleEmitterInstance(UParticleEmitter* InTemplate, UParticleSystemComponent* InComponent)
@@ -135,4 +137,20 @@ void FParticleEmitterInstance::KillParticles()
 			ActiveParticles--;
 		}
 	END_UPDATE_LOOP
+}
+
+FDynamicEmitterDataBase* FParticleEmitterInstance::GetDynamicData()
+{
+	// FDynamicSpriteEmitterData를 new 하고 Source(ReplayData)를 채워 돌려준다
+	FDynamicSpriteEmitterData* Data = new FDynamicSpriteEmitterData();
+	Data->Source.eEmitterType = EDynamicEmitterType::Sprite;
+	Data->Source.ActiveParticleCount = ActiveParticles;
+	Data->Source.ParticleStride = ParticleStride;
+	Data->Source.DataContainer.Alloc(MaxActiveParticles * ParticleStride, MaxActiveParticles);
+	memcpy(Data->Source.DataContainer.ParticleData, ParticleData, MaxActiveParticles * ParticleStride);
+	memcpy(Data->Source.DataContainer.ParticleIndices, ParticleIndices, MaxActiveParticles * sizeof(uint16));
+	Data->Source.Scale = Component->GetWorldScale3D();
+	Data->Source.SortMode = 0;
+	Data->Source.Material = CurrentLODLevel->RequiredModule ? CurrentLODLevel->RequiredModule->Material : nullptr;
+	return Data;
 }

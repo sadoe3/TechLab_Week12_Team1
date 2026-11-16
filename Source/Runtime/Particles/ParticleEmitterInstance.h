@@ -7,12 +7,14 @@ struct FBaseParticle;
 class UParticleEmitter;
 class UParticleLODLevel;
 class UParticleSystemComponent;
+struct FDynamicEmitterDataBase;
 
 // PSC마다 따로 갖는 실행 상태. 규칙은 SpriteTemplate(에셋)에서 읽고, 결과는 여기 메모리에 쓴다
 struct FParticleEmitterInstance
 {
 	FParticleEmitterInstance(UParticleEmitter* InTemplate, UParticleSystemComponent* InComponent);
-	~FParticleEmitterInstance();
+	// Mesh 인스턴스 같은 파생형을 PSC가 기본 포인터로 지우므로 virtual
+	virtual ~FParticleEmitterInstance();
 
 	// 메모리 블록을 직접 들고 있으므로 복사되면 두 번 해제된다
 	FParticleEmitterInstance(const FParticleEmitterInstance&) = delete;
@@ -32,6 +34,9 @@ struct FParticleEmitterInstance
 
 	// 지난 프레임에 수명이 다한 파티클을 한 곳에서 한 번에 지워, 모듈 루프들이 같은 집합을 보게 한다
 	void KillParticles();
+
+	// 렌더용 스냅샷을 new 해서 돌려준다. 소유권은 호출한 PSC로 넘어간다
+	virtual FDynamicEmitterDataBase* GetDynamicData();
 
 	UParticleEmitter* SpriteTemplate = nullptr;
 	UParticleSystemComponent* Component = nullptr;

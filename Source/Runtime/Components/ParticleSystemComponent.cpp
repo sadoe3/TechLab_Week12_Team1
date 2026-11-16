@@ -3,6 +3,7 @@
 #include "Particles/ParticleSystem.h"
 #include "Particles/ParticleEmitterInstance.h"
 #include "Particles/ParticleHelper.h"
+#include "Particles/ParticleDynamicData.h"
 #include "Render/LineBatcher.h"
 #include "UObject/UObjectIterator.h"
 
@@ -36,6 +37,16 @@ void UParticleSystemComponent::TickComponent(float DeltaTime)
 	for (FParticleEmitterInstance* Instance : EmitterInstances)
 	{
 		Instance->Tick(DeltaTime);
+	}
+
+	// 이전 프레임 RenderData를 치우고, 인스턴스마다 GetDynamicData()로 다시 채운다
+	ReleaseEmitterRenderData();
+	
+	for (int32 i = 0; i < EmitterInstances.Num(); ++i)
+	{
+		auto Data = EmitterInstances[i]->GetDynamicData();
+		EmitterRenderData.Add(Data);
+		Data->EmitterIndex = i;
 	}
 }
 
@@ -73,8 +84,20 @@ void UParticleSystemComponent::DrawDebug(FLineBatcher* LineBatcher) const
 	}
 }
 
+void UParticleSystemComponent::ReleaseEmitterRenderData()
+{
+	for (FDynamicEmitterDataBase* Data : EmitterRenderData)
+	{
+		delete Data;
+	}
+	EmitterRenderData.Empty();
+}
+
 void UParticleSystemComponent::ReleaseEmitterInstances()
 {
+	// 스냅샷의 Stride가 옛 인스턴스 기준이라 인스턴스와 함께 버린다
+	ReleaseEmitterRenderData();
+
 	for (FParticleEmitterInstance* Instance : EmitterInstances)
 	{
 		delete Instance;
