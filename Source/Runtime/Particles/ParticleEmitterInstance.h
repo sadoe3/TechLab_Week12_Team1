@@ -30,6 +30,9 @@ struct FParticleEmitterInstance
 	// 프레임 안에서 먼저 태어난 만큼(SpawnTime) 위치를 앞당긴다
 	void PostSpawn(FBaseParticle* Particle, float Interp, float SpawnTime);
 
+	// 지난 프레임에 수명이 다한 파티클을 한 곳에서 한 번에 지워, 모듈 루프들이 같은 집합을 보게 한다
+	void KillParticles();
+
 	UParticleEmitter* SpriteTemplate = nullptr;
 	UParticleSystemComponent* Component = nullptr;
 

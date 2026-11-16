@@ -51,17 +51,36 @@ void FParticleEmitterInstance::Init()
 
 void FParticleEmitterInstance::Tick(float DeltaTime)
 {
-	// Spawn 개수 계산 후 SpawnParticles 호출
+	// Kill
+	KillParticles();
+
+	// 나이 증가, 위치 갱신
+	const auto& Owner = this;
+
+	BEGIN_UPDATE_LOOP
+		Particle.RelativeTime += DeltaTime * Particle.OneOverMaxLifetime;
+	END_UPDATE_LOOP
+
+	for (const auto& Module : CurrentLODLevel->UpdateModules)
+	{
+		Module->Update(Owner, SpriteTemplate->ModuleOffsetMap[Module], DeltaTime);
+	}
+
+	BEGIN_UPDATE_LOOP
+		Particle.Location += Particle.Velocity * DeltaTime;
+	END_UPDATE_LOOP
+
+	// Spawn 개수 계산 
 	float FloatCount = SpawnFraction + CurrentLODLevel->SpawnModule->Rate * DeltaTime;
 	int32 SpawnCount = static_cast<int32>(FloatCount);
 	SpawnFraction = FloatCount - static_cast<float>(SpawnCount);
 	SpawnCount = FMath::Clamp(static_cast<int32>(FloatCount), 0, MaxActiveParticles - ActiveParticles);
 
+	// SpawnParticles 호출
 	if (SpawnCount > 0)
 	{
 		SpawnParticles(SpawnCount, 0.f, DeltaTime / static_cast<float>(SpawnCount), Component->GetWorldLocation(), FVector(1.f, 1.f, 1.f));
 	}
-	// Step 4 Update/Kill
 }
 
 void FParticleEmitterInstance::SpawnParticles(int32 Count, float StartTime, float Increment, const FVector& InitialLocation, const FVector& InitialVelocity)
@@ -101,4 +120,19 @@ void FParticleEmitterInstance::PostSpawn(FBaseParticle* Particle, float Interp, 
 {
 	// SpawnTime만큼 Velocity로 위치를 앞당김
 	Particle->Location += Particle->Velocity * SpawnTime;
+}
+
+void FParticleEmitterInstance::KillParticles()
+{
+	const auto& Owner = this;
+
+	BEGIN_UPDATE_LOOP
+		if (Particle.RelativeTime >= 1.f)
+		{
+			auto TempIndex = ParticleIndices[i];
+			ParticleIndices[i] = ParticleIndices[ActiveParticles - 1];
+			ParticleIndices[ActiveParticles - 1] = TempIndex;
+			ActiveParticles--;
+		}
+	END_UPDATE_LOOP
 }

@@ -22,10 +22,16 @@ struct FBaseParticle
 
 	FLinearColor Color;
 };
-
 static_assert(sizeof(FBaseParticle) % 16 == 0, "FBaseParticle은 16바이트 배수여야 Payload 시작이 정렬된다");
 
 #define DECLARE_PARTICLE_PTR(Name, Address) FBaseParticle* Name = (FBaseParticle*)(Address);
+
+#define BEGIN_UPDATE_LOOP \
+  for (int32 i = Owner->ActiveParticles - 1; i >= 0; i--) { \
+    const int32 CurrentIndex = Owner->ParticleIndices[i]; \
+    FBaseParticle& Particle = *((FBaseParticle*)(Owner->ParticleData + CurrentIndex * Owner->ParticleStride));
+#define END_UPDATE_LOOP }
+
 
 inline float RandRange(float Min, float Max)
 {
