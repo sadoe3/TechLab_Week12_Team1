@@ -220,6 +220,11 @@ project "HitoriEngine"
 		enablepch "Off"
 	filter {}
 
+	-- Collector에서도 단독 compile할 수 있도록 engine PCH에서 분리한다.
+	filter "files:Source/Runtime/Core/Windows/WindowsCrashDump.cpp"
+		enablepch "Off"
+	filter {}
+
 	filter "files:Source/Runtime/Audio/MiniaudioImpl.cpp"
 		enablepch "Off"
 	filter {}
@@ -291,6 +296,7 @@ project "HitoriEditor"
 		"dxgi.lib",
 		"dxguid.lib",
 		"d3dcompiler.lib",
+		"Dbghelp.lib",
 	}
 
 	filter "configurations:ObjViewer"
@@ -345,6 +351,7 @@ project "HitoriGame"
 		"dxgi.lib",
 		"dxguid.lib",
 		"d3dcompiler.lib",
+		"Dbghelp.lib",
 	}
 
 
