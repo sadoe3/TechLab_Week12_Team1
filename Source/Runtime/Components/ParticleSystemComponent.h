@@ -4,7 +4,12 @@
 #include "ParticleSystemComponent.generated.h"
 
 class UParticleSystem;
+class UWorld;
+class FLineBatcher;
 struct FParticleEmitterInstance;
+
+// 스프라이트 렌더링 전까지 파티클 위치를 선으로 확인한다 (DrawCollisionShapes와 같은 방식)
+void DrawParticleSystems(UWorld* World, FLineBatcher* LineBatcher);
 
 UCLASS()
 class UParticleSystemComponent : public UPrimitiveComponent
@@ -22,6 +27,8 @@ public:
 
 	void SetTemplate(UParticleSystem* InTemplate);
 	UParticleSystem* GetTemplate() const { return Template; }
+
+	void DrawDebug(FLineBatcher* LineBatcher) const;
 
 private:
 	void ReleaseEmitterInstances();
