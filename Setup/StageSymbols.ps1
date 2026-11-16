@@ -10,6 +10,7 @@
 [CmdletBinding()]
 param(
     [ValidateSet('Debug', 'Release', 'Shipping')][string]$Configuration = 'Debug',
+    [ValidateSet('HitoriEditor', 'HitoriGame')][string]$Target = 'HitoriEditor',
     [string]$DebugTools = (Join-Path ${env:ProgramFiles(x86)} 'Windows Kits\10\Debuggers\x64')
 )
 
@@ -53,7 +54,7 @@ try {
         $trackedFiles[$entry] = $entry
     }
     $outputDirectory = Join-Path $repository "Build/Bin/$Configuration-windows-x86_64"
-    $moduleNames = @('HitoriEditor', 'CrashDumpWriter')
+    $moduleNames = @($Target, 'CrashDumpWriter')
     foreach ($module in $moduleNames) {
         foreach ($extension in @('exe', 'pdb')) {
             if (!(Test-Path -LiteralPath "$outputDirectory/$module.$extension")) { throw "Build $Configuration first: missing $module.$extension" }

@@ -17,6 +17,27 @@ workspace "Hitori"
 
 outputdir = "%{cfg.buildcfg}-%{cfg.system}-%{cfg.architecture}"
 
+-- Configuration별 로컬 User Macro를 Property Manager에 연결한다.
+-- 최초에만 기본값을 복사하므로 VS에서 바꾼 ON/OFF는 Premake 재생성 후에도 유지된다.
+if _ACTION and _ACTION:match("^vs") then
+	require("vstudio")
+	premake.override(premake.vstudio.vc2010, "propertySheets", function(base, cfg)
+		base(cfg)
+		if (cfg.project.name == "HitoriEditor" or cfg.project.name == "HitoriGame") and
+			(cfg.buildcfg == "Debug" or cfg.buildcfg == "Release" or cfg.buildcfg == "Shipping") then
+			local directory = path.join(_MAIN_SCRIPT_DIR, "Build/SymbolPublishing")
+			local sheet = path.join(directory, cfg.project.name .. "." .. cfg.buildcfg .. ".props")
+			os.mkdir(directory)
+			if not os.isfile(sheet) then
+				assert(os.copyfile(path.join(_MAIN_SCRIPT_DIR, "Setup/SymbolPublishing.props"), sheet))
+			end
+			premake.push('<ImportGroup Label="PropertySheets" %s>', premake.vstudio.vc2010.condition(cfg))
+			premake.w('<Import Project="%s" />', path.translate(path.getrelative(cfg.project.location, sheet), "\\"))
+			premake.pop('</ImportGroup>')
+		end
+	end)
+end
+
 -- SlnGenerator가 저장된 사용자 환경 변수를 읽어 이 프로세스에 전달한다.
 local FbxSdkRoot = os.getenv("FBX_SDK_ROOT")
 if not FbxSdkRoot or FbxSdkRoot == "" then
@@ -242,6 +263,10 @@ project "HitoriEngine"
 project "HitoriEditor"
 	location "Source/Editor"
 	kind     "WindowedApp"
+	-- 기본 OFF. Property Manager의 User Macro로 게시 여부·경로를 전달한다.
+	filter "configurations:Debug or Release or Shipping"
+		postbuildcommands { 'powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%{wks.location}/Setup/PostBuildSymbols.ps1" -Configuration "%{cfg.buildcfg}" -Target HitoriEditor -Publish "$(HitoriPublishSymbols)" -Store "$(HitoriSymbolStore)"' }
+	filter {}
 	CommonSettings()
 
 	-- FBX 해석은 Editor에서 수행하고 Runtime/Game은 SDK에 의존하지 않는다.
@@ -324,6 +349,9 @@ project "HitoriEditor"
 project "HitoriGame"
 	location "Source/Game"
 	kind     "WindowedApp"
+	filter "configurations:Debug or Release or Shipping"
+		postbuildcommands { 'powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%{wks.location}/Setup/PostBuildSymbols.ps1" -Configuration "%{cfg.buildcfg}" -Target HitoriGame -Publish "$(HitoriPublishSymbols)" -Store "$(HitoriSymbolStore)"' }
+	filter {}
 	CommonSettings()
 	dependson { "CrashDumpWriter" }
 	targetname "HitoriGame"

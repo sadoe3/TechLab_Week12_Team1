@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Premake가 최초 생성할 때 복사하는 기본값입니다. 로컬 복사본은 VS 속성 관리자의 사용자 매크로에서 수정합니다. -->
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup Label="UserMacros">
+    <HitoriPublishSymbols>0</HitoriPublishSymbols>
+    <HitoriSymbolStore>C:\SymbolStore</HitoriSymbolStore>
+  </PropertyGroup>
+</Project>
