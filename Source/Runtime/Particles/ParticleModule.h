@@ -3,6 +3,9 @@
 #include "UObject/Object.h"
 #include "ParticleModule.generated.h"
 
+struct FParticleEmitterInstance;
+struct FBaseParticle;
+
 UCLASS()
 class UParticleModule : public UObject
 {
@@ -11,9 +14,9 @@ class UParticleModule : public UObject
 public:
 	UParticleModule();
 
-	// Phase 2에서 FParticleEmitterInstance, FBaseParticle이 생기면 연다.
-	// virtual void Spawn(FParticleEmitterInstance* Owner, int32 Offset, float SpawnTime, FBaseParticle* ParticleBase) {}
-	// virtual void Update(FParticleEmitterInstance* Owner, int32 Offset, float DeltaTime) {}
+	// 모듈은 에셋이라 여러 PSC가 공유하므로, 결과는 Owner의 파티클 메모리(Offset 위치)에 쓴다
+	virtual void Spawn(FParticleEmitterInstance* Owner, int32 Offset, float SpawnTime, FBaseParticle* ParticleBase) {}
+	virtual void Update(FParticleEmitterInstance* Owner, int32 Offset, float DeltaTime) {}
 
 	// 파티클 한 개마다 FBaseParticle 뒤에 붙일 바이트 수. Emitter가 이 값으로 Payload 자리를 배정한다
 	virtual int32 RequiredBytes() const { return 0; }

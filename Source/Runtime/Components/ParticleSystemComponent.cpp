@@ -5,7 +5,6 @@
 
 UParticleSystemComponent::UParticleSystemComponent()
 {
-	// 우리 엔진은 기본값이 Tick 꺼짐이라, 시뮬레이션을 돌리려면 직접 켜야 한다
 	PrimaryComponentTick.bCanEverTick = true;
 
 	SetTemplate(UParticleSystem::GetDefault());

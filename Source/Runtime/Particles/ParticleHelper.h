@@ -2,6 +2,7 @@
 
 #include "Math/Vector.h"
 #include "Math/Color.h"
+#include <cstdlib>
 
 // 모든 파티클 슬롯의 오프셋 0에 놓이는 공통 앞부분. 모듈 Payload는 이 뒤에 붙는다
 struct FBaseParticle
@@ -23,3 +24,10 @@ struct FBaseParticle
 };
 
 static_assert(sizeof(FBaseParticle) % 16 == 0, "FBaseParticle은 16바이트 배수여야 Payload 시작이 정렬된다");
+
+#define DECLARE_PARTICLE_PTR(Name, Address) FBaseParticle* Name = (FBaseParticle*)(Address);
+
+inline float RandRange(float Min, float Max)
+{
+	return Min + (Max - Min) * (static_cast<float>(rand()) / static_cast<float>(RAND_MAX));
+}

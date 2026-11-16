@@ -5,6 +5,7 @@
 #include "Particles/ParticleLODLevel.h"
 #include "Particles/ParticleModuleSpawn.h"
 #include "Particles/ParticleModuleLifetime.h"
+#include "Components/ParticleSystemComponent.h"
 
 FParticleEmitterInstance::FParticleEmitterInstance(UParticleEmitter* InTemplate, UParticleSystemComponent* InComponent)
 	: SpriteTemplate(InTemplate), Component(InComponent)
@@ -50,5 +51,54 @@ void FParticleEmitterInstance::Init()
 
 void FParticleEmitterInstance::Tick(float DeltaTime)
 {
-	// TODO: Step 3 Spawn, Step 4 Update/Kill
+	// Spawn 개수 계산 후 SpawnParticles 호출
+	float FloatCount = SpawnFraction + CurrentLODLevel->SpawnModule->Rate * DeltaTime;
+	int32 SpawnCount = static_cast<int32>(FloatCount);
+	SpawnFraction = FloatCount - static_cast<float>(SpawnCount);
+	SpawnCount = FMath::Clamp(static_cast<int32>(FloatCount), 0, MaxActiveParticles - ActiveParticles);
+
+	if (SpawnCount > 0)
+	{
+		SpawnParticles(SpawnCount, 0.f, DeltaTime / static_cast<float>(SpawnCount), Component->GetWorldLocation(), FVector(1.f, 1.f, 1.f));
+	}
+	// Step 4 Update/Kill
+}
+
+void FParticleEmitterInstance::SpawnParticles(int32 Count, float StartTime, float Increment, const FVector& InitialLocation, const FVector& InitialVelocity)
+{
+	for (int32 i = 0; i < Count; ++i)
+	{
+		DECLARE_PARTICLE_PTR(Particle, ParticleData + ParticleIndices[ActiveParticles] * ParticleStride)
+		float SpawnTime = StartTime + Increment * (Count - (i + 1));
+
+		PreSpawn(Particle, InitialLocation, InitialVelocity);
+
+		for (const auto& Module : CurrentLODLevel->SpawnModules)
+		{
+			Module->Spawn(this, SpriteTemplate->ModuleOffsetMap[Module], SpawnTime, Particle);
+		}
+
+		PostSpawn(Particle, 0.f, SpawnTime);
+
+		ActiveParticles++;
+		ParticleCounter++;
+	}
+}
+
+void FParticleEmitterInstance::PreSpawn(FBaseParticle* Particle, const FVector& InitialLocation, const FVector& InitialVelocity)
+{
+	// 슬롯을 0으로 밀고 Location/Velocity/RelativeTime 기본값 설정
+	memset(Particle, 0, ParticleStride);
+	Particle->Location = InitialLocation;
+	Particle->Velocity = InitialVelocity;
+	Particle->BaseVelocity = InitialVelocity;
+	Particle->RelativeTime = 0.f;
+	Particle->Size = FVector(1.f, 1.f, 1.f);
+	Particle->Color = FLinearColor(1.f, 1.f, 1.f, 1.f);
+}
+
+void FParticleEmitterInstance::PostSpawn(FBaseParticle* Particle, float Interp, float SpawnTime)
+{
+	// SpawnTime만큼 Velocity로 위치를 앞당김
+	Particle->Location += Particle->Velocity * SpawnTime;
 }
