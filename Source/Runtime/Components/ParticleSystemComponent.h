@@ -26,6 +26,9 @@ public:
 
 	virtual void TickComponent(float DeltaTime) override;
 
+	// 기본 프록시는 메시가 없으면 아무것도 제출하지 않으므로 파티클 전용 프록시로 바꾼다
+	virtual FPrimitiveSceneProxy* CreateSceneProxy() override;
+
 	void SetTemplate(UParticleSystem* InTemplate);
 	UParticleSystem* GetTemplate() const { return Template; }
 

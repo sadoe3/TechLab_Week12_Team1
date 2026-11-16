@@ -4,6 +4,7 @@
 #include "Particles/ParticleEmitterInstance.h"
 #include "Particles/ParticleHelper.h"
 #include "Particles/ParticleDynamicData.h"
+#include "Engine/ParticleSystemSceneProxy.h"
 #include "Render/LineBatcher.h"
 #include "UObject/UObjectIterator.h"
 
@@ -48,6 +49,11 @@ void UParticleSystemComponent::TickComponent(float DeltaTime)
 		EmitterRenderData.Add(Data);
 		Data->EmitterIndex = i;
 	}
+}
+
+FPrimitiveSceneProxy* UParticleSystemComponent::CreateSceneProxy()
+{
+	return new FParticleSystemSceneProxy(this);
 }
 
 void UParticleSystemComponent::SetTemplate(UParticleSystem* InTemplate)
