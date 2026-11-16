@@ -18,6 +18,9 @@ struct FParticleEmitterInstance
 
 	void Init();
 
+	// PSC가 매 프레임 부른다. Spawn → Update → Kill 순서로 채운다
+	void Tick(float DeltaTime);
+
 	UParticleEmitter* SpriteTemplate = nullptr;
 	UParticleSystemComponent* Component = nullptr;
 

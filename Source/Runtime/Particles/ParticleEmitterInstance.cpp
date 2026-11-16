@@ -47,3 +47,8 @@ void FParticleEmitterInstance::Init()
 	}
 	ActiveParticles = 0;
 }
+
+void FParticleEmitterInstance::Tick(float DeltaTime)
+{
+	// TODO: Step 3 Spawn, Step 4 Update/Kill
+}
