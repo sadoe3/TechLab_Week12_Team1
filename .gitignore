@@ -433,6 +433,7 @@ FodyWeavers.xsd
 /.vs/
 /Saved/
 *.sln
+*.slnx
 *.vcxproj
 *.vcxproj.filters
 *.vcxproj.user

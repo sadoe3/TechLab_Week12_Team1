@@ -63,6 +63,11 @@ if not exist "%BIN%\HitoriGame.exe" (
     rem /b: cmd 창 전체가 아니라 이 스크립트만 종료. 1은 실패 코드
 )
 
+if not exist "%BIN%\CrashDumpWriter.exe" (
+    echo [Package] CrashDumpWriter.exe not found after build.
+    exit /b 1
+)
+
 rem ---- 2. 출력 폴더 초기화 ----
 if exist "%OUT%" rmdir /s /q "%OUT%"
 rem 이전 패키지가 있으면 통째로 삭제 (/s: 하위 전부, /q: 확인 묻지 않음)
@@ -71,6 +76,7 @@ rem → 지난번에 남은 쓰레기 파일이 섞이지 않도록 매번 깨�
 mkdir "%OUT%"
 
 copy /y "%BIN%\HitoriGame.exe" "%OUT%\" >nul
+copy /y "%BIN%\CrashDumpWriter.exe" "%OUT%\" >nul
 rem 실행 파일 복사. /y: 덮어쓰기 확인 생략, >nul: 출력 숨김
 
 rem ---- 3. 게임 데이터 폴더 복사 ----
