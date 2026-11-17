@@ -4,6 +4,15 @@
 #include <DbgHelp.h>
 #include <filesystem>
 
+// CRT callback을 Windows software exception으로 연결할 때 사용하는 application-defined code다.
+enum class EWindowsRuntimeError : DWORD
+{
+	InvalidParameter = 0xE0000001,
+	PureCall = 0xE0000002,
+	Abort = 0xE0000003,
+	Terminate = 0xE0000004
+};
+
 // Dump 전체가 아니라 사고 지점을 전달한다. stack/module 등은 MiniDumpWriteDump가 target에서 읽는다.
 // 첫 exception record와 CPU context를 소유해 원래 EXCEPTION_POINTERS의 수명에 의존하지 않는다.
 // 같은 x64 build 사이의 전달용이며 영구 저장 형식이나 IPC protocol은 아니다.

@@ -2,6 +2,21 @@
 #include <fstream>
 #include <cstdlib>
 
+namespace
+{
+	const char* GetCrashReason(DWORD ExceptionCode)
+	{
+		switch (static_cast<EWindowsRuntimeError>(ExceptionCode))
+		{
+		case EWindowsRuntimeError::InvalidParameter: return "InvalidParameter";
+		case EWindowsRuntimeError::PureCall: return "PureCall";
+		case EWindowsRuntimeError::Abort: return "Abort";
+		case EWindowsRuntimeError::Terminate: return "Terminate";
+		default: return "UnhandledException";
+		}
+	}
+}
+
 int wmain(int ArgumentCount, wchar_t** Arguments)
 {
 	if (ArgumentCount != 4)
@@ -35,6 +50,7 @@ int wmain(int ArgumentCount, wchar_t** Arguments)
 		std::ofstream ReportFile(ReportDirectory / L"Report.json");
 		ReportFile << "{\n  \"ProcessId\": " << TargetProcessId << ",\n  \"ThreadId\": " << CrashContext.ThreadId
 			<< ",\n  \"ExceptionCode\": " << CrashContext.ExceptionRecord.ExceptionCode
+			<< ",\n  \"CrashReason\": \"" << GetCrashReason(CrashContext.ExceptionRecord.ExceptionCode) << "\""
 			<< ",\n  \"DumpError\": " << WriterError << ",\n  \"WriterProcessId\": " << GetCurrentProcessId() << "\n}\n";
 		ReportFile.close();
 		SetEvent(ReportChannel.CompletionEvent);

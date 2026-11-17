@@ -1,5 +1,9 @@
 #include "WindowsCrashReporting.h"
 #include "CrashReportChannel.h"
+#include <cstdlib>
+#include <csignal>
+#include <exception>
+#include <crtdbg.h>
 
 namespace
 {
@@ -8,13 +12,20 @@ namespace
 	FCrashReportChannel ReportChannel;
 	HANDLE WriterProcessHandle = nullptr;
 	LPTOP_LEVEL_EXCEPTION_FILTER PreviousExceptionFilter = nullptr;
-	bool FilterInstalled = false;
+	_invalid_parameter_handler PreviousInvalidParameterHandler = nullptr;
+	_purecall_handler PreviousPureCallHandler = nullptr;
+	std::terminate_handler PreviousTerminateHandler = nullptr;
+	using FSignalHandler = void (*)(int);
+	FSignalHandler PreviousAbortHandler = SIG_DFL;
+	unsigned int PreviousAbortBehavior = 0;
+#if defined(_DEBUG)
+	int PreviousAssertReportMode = 0;
+#endif
+	bool HandlersInstalled = false;
 	volatile LONG CrashClaimed = 0;
 
-	// Unhandled exception이 등록된 top-level filter에 도달하면 Windows가 process 종료 전에 호출한다.
-	// 사고 context를 공유하고 CrashDumpWriter process에 Dump 기록을 요청한 뒤, 완료 또는 timeout 후 engine을 강제 종료한다.
-	// 외부에서 process를 강제 종료하는 모든 경우에 호출되는 callback은 아니다.
-	LONG WINAPI HandleUnhandledException(EXCEPTION_POINTERS* SourceExceptionPointers)
+	// SEH와 runtime callback 모두 같은 writer 요청·대기·종료 경로를 사용한다.
+	LONG ReportCrashAndTerminate(EXCEPTION_POINTERS* SourceExceptionPointers)
 	{
 		// 최초 사고만 공유 데이터를 쓴다. 이후 진입도 동일한 완료 event를 기다린다.
 		if (InterlockedCompareExchange(&CrashClaimed, 1, 0) == 0)
@@ -40,6 +51,48 @@ namespace
 		// Crash 이후에는 정상 cleanup이 기대하는 상태가 유효하다고 보장할 수 없기 때문이다.
 		TerminateProcess(GetCurrentProcess(), SourceExceptionPointers->ExceptionRecord->ExceptionCode);
 		return EXCEPTION_EXECUTE_HANDLER;
+	}
+
+	// Unhandled exception이 top-level filter에 도달하면 Windows가 종료 전에 호출한다.
+	// 외부 강제 종료 모두를 받는 callback은 아니다. 여기서 기존 writer에 Dump를 요청한다.
+	LONG WINAPI HandleUnhandledException(EXCEPTION_POINTERS* SourceExceptionPointers)
+	{
+		return ReportCrashAndTerminate(SourceExceptionPointers);
+	}
+
+	[[noreturn]] void ReportRuntimeError(EWindowsRuntimeError Error)
+	{
+		// CRT callback에는 EXCEPTION_POINTERS가 없다. software exception으로 Windows context를 얻는다.
+		// 이는 보고 시점의 stack이며, C++ exception의 최초 throw 시점을 보장하지 않는다.
+		__try
+		{
+			RaiseException(static_cast<DWORD>(Error), EXCEPTION_NONCONTINUABLE, 0, nullptr);
+		}
+		__except (ReportCrashAndTerminate(GetExceptionInformation()))
+		{
+			std::_Exit(EXIT_FAILURE);
+		}
+		std::_Exit(EXIT_FAILURE);
+	}
+
+	void HandleInvalidParameter(const wchar_t*, const wchar_t*, const wchar_t*, unsigned int, uintptr_t)
+	{
+		ReportRuntimeError(EWindowsRuntimeError::InvalidParameter);
+	}
+
+	void HandlePureCall()
+	{
+		ReportRuntimeError(EWindowsRuntimeError::PureCall);
+	}
+
+	void HandleAbort(int)
+	{
+		ReportRuntimeError(EWindowsRuntimeError::Abort);
+	}
+
+	void HandleTerminate()
+	{
+		ReportRuntimeError(EWindowsRuntimeError::Terminate);
 	}
 }
 
@@ -91,16 +144,41 @@ DWORD WindowsCrashReporting::Initialize(const std::filesystem::path& ReportDirec
 	}
 
 	CrashClaimed = 0;
+	PreviousAbortHandler = std::signal(SIGABRT, HandleAbort);
+	if (PreviousAbortHandler == SIG_ERR)
+	{
+		Shutdown();
+		return ERROR_INVALID_FUNCTION;
+	}
+	// Debug CRT의 abort dialog가 SIGABRT 전달 전에 수집을 막지 않도록 한다.
+	PreviousAbortBehavior = _set_abort_behavior(0, _WRITE_ABORT_MSG | _CALL_REPORTFAULT);
+#if defined(_DEBUG)
+	// Debug CRT는 invalid parameter handler보다 먼저 assertion dialog를 표시할 수 있다.
+	PreviousAssertReportMode = _CrtSetReportMode(_CRT_ASSERT, _CRTDBG_MODE_DEBUG);
+#endif
+	PreviousInvalidParameterHandler = _set_invalid_parameter_handler(HandleInvalidParameter);
+	PreviousPureCallHandler = _set_purecall_handler(HandlePureCall);
+	PreviousTerminateHandler = std::set_terminate(HandleTerminate);
 	PreviousExceptionFilter = SetUnhandledExceptionFilter(HandleUnhandledException);
-	FilterInstalled = true;
+	HandlersInstalled = true;
 	return ERROR_SUCCESS;
 }
 
 void WindowsCrashReporting::Shutdown()
 {
-	if (FilterInstalled)
+	if (HandlersInstalled)
+	{
 		SetUnhandledExceptionFilter(PreviousExceptionFilter);
-	FilterInstalled = false;
+		std::set_terminate(PreviousTerminateHandler);
+		_set_purecall_handler(PreviousPureCallHandler);
+		_set_invalid_parameter_handler(PreviousInvalidParameterHandler);
+		std::signal(SIGABRT, PreviousAbortHandler);
+		_set_abort_behavior(PreviousAbortBehavior, _WRITE_ABORT_MSG | _CALL_REPORTFAULT);
+#if defined(_DEBUG)
+		_CrtSetReportMode(_CRT_ASSERT, PreviousAssertReportMode);
+#endif
+	}
+	HandlersInstalled = false;
 
 	if (WriterProcessHandle)
 	{
