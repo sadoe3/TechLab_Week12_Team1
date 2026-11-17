@@ -81,6 +81,7 @@ struct VS_OUT
     float2 UV : TEXCOORD0;
     float3 WorldNormal : TEXCOORD4;
     float4 WorldTangent : TEXCOORD5;
+    nointerpolation float4 ParticleColor : TEXCOORD6; // 메시 파티클 인스턴스 색 (일반 메시는 1)
 #if LIGHTING_MODEL_GOURAUD
     float3 VertexDiffuse : TEXCOORD1;
     float3 VertexSpecular : TEXCOORD2;
@@ -411,6 +412,7 @@ VS_OUT Uber_VS(VS_IN Input)
     float4 ViewPosition = mul(WorldPosition, View);
     Output.Position = mul(ViewPosition, Projection);
     Output.Color = Input.Color;
+    Output.ParticleColor = PARTICLE_INSTANCE_COLOR(Input);
 #if GPU_SKIN
     if (ShadowFlags.y > 0.5f)
     {
@@ -460,6 +462,7 @@ FUberOutput Uber_PS(VS_OUT Input)
     {
         SurfaceColor = Input.Color;
     }
+    SurfaceColor *= Input.ParticleColor;
     float3 Albedo = SurfaceColor.rgb * BaseColor.rgb;
     float3 Diffuse;
     float3 Specular = 0.0f;

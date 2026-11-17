@@ -39,6 +39,7 @@ struct PS_INPUT
     float4 WorldTangent : TANGENT;
     float2 UV : TEXCOORD0;
     nointerpolation float ReceiveShadow : TEXCOORD1; // 오브젝트 상수(b2)는 VS에만 묶이므로 VS가 넘긴다
+    nointerpolation float4 ParticleColor : TEXCOORD2; // 메시 파티클 인스턴스 색 (일반 메시는 1)
 };
 
 struct GBUFFER_OUTPUT
@@ -86,6 +87,7 @@ PS_INPUT mainVS(VS_INPUT Input)
     Output.WorldTangent = float4(T, Handedness);
     Output.UV = Input.UV;
     Output.ReceiveShadow = ShadowFlags.x;
+    Output.ParticleColor = PARTICLE_INSTANCE_COLOR(Input);
     return Output;
 }
 
@@ -95,7 +97,7 @@ GBUFFER_OUTPUT mainPS(PS_INPUT Input)
 
     float4 TextureColor = ColorTexture.Sample(ColorSampler, Input.UV + UVOffset);
     // 색 텍스처는 UNORM으로 읽히므로 sRGB 값을 선형 조명 공간으로 변환한다.
-    float3 LinearAlbedo = pow(max(TextureColor.rgb, 0.0f), 2.2f) * BaseColor.rgb;
+    float3 LinearAlbedo = pow(max(TextureColor.rgb, 0.0f), 2.2f) * BaseColor.rgb * Input.ParticleColor.rgb;
     float3 Normal = normalize(Input.WorldNormal);
     if (TextureFlags.x > 0.5f)
     {
