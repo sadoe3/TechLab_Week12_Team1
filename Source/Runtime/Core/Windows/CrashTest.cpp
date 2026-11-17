@@ -10,7 +10,7 @@ namespace
 	__declspec(noinline) void CauseMainCrash()
 	{
 		volatile int* InvalidAddress = nullptr;
-		// Source Indexing 검증 표식: CRASH_SOURCE_REVISION_B — 이 build의 Git source인지 확인한다.
+		// Source Indexing 검증 표식: CRASH_SOURCE_REVISION_C — 새 Dump가 이 commit의 source를 가져오는지 확인한다.
 		*InvalidAddress = 1;
 	}
 }
