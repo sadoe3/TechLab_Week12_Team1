@@ -125,7 +125,7 @@ void FParticleSystemSceneProxy::GetDynamicMeshElements(FRenderQueue& Queue, cons
 		Packet.Material = SpriteSource.Material;
 		Packet.StartIndex = 0;
 		Packet.IndexCount = static_cast<uint32>(Source.ActiveParticleCount) * 6;
-		// 지금은 이미터 단위로만 정렬한다. 파티클 단위 정렬은 Phase 4
 		Packet.CameraToParticleDistance = DistanceSq;
+		Packet.SortPriority = PSC->GetTranslucencySortPriority();
 	}
 }

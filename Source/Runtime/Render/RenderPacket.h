@@ -25,6 +25,7 @@ struct FRenderPacket
 	UMaterial* Material = nullptr;
 	const void* MaterialParamData = nullptr;
 	float CameraToParticleDistance = 0.0f;
+	int32 SortPriority = 0; // 반투명 정렬에서 거리보다 먼저 비교한다
 	uint32 MaterialParamDataSize = 0;
 	uint32 StartIndex = 0;
 	uint32 IndexCount = 0; // 0이면 인덱스 버퍼 전체를 사용한다
@@ -110,7 +111,8 @@ class FRenderQueue : public TArray<FRenderPacket>
 		if (Packet.Material->PSOType != EPSOType::StaticMesh_Opaque)
 		{
 			const uint64 DistanceBits = static_cast<uint64>(std::bit_cast<uint32>(Packet.CameraToParticleDistance));
-			return (1ull << 63) | (~DistanceBits & 0xFFFFFFFFull);
+			const uint64 PriorityBits = static_cast<uint64>(std::bit_cast<uint32>(FMath::Clamp(Packet.SortPriority + 0x8000, 0, 0xFFFF))) ;
+			return (1ull << 63) | (PriorityBits & 0xFFFFull) << 32 | (~DistanceBits & 0xFFFFFFFFull);
 		}
 
 		const uint64 MeshKey = Packet.Mesh ? Packet.Mesh->SortID : 0xFFFFu;

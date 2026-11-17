@@ -29,6 +29,11 @@ public:
 
 	const TArray<FDynamicEmitterDataBase*>& GetEmitterRenderData() const { return EmitterRenderData; }
 	uint32 GetRenderDataVersion() const { return RenderDataVersion; }
+	int32 GetTranslucencySortPriority() const { return TranslucencySortPriority; }
+
+	// 거리 정렬보다 먼저 비교된다. 클수록 나중에 그려져 앞에 보인다
+	UPROPERTY(EditAnywhere)
+	int32 TranslucencySortPriority = 0;
 
 private:
 	void ReleaseEmitterInstances();
