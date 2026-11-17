@@ -125,8 +125,12 @@ TUniquePtr<FDynamicEmitterDataBase> FParticleMeshEmitterInstance::GetDynamicData
 	Data->Source.bUseLocalSpace = (CurrentLODLevel && CurrentLODLevel->RequiredModule)
 		? CurrentLODLevel->RequiredModule->bUseLocalSpace
 		: false;
+	Data->Source.SortMode = (CurrentLODLevel && CurrentLODLevel->RequiredModule)
+		? static_cast<uint8>(CurrentLODLevel->RequiredModule->SortMode)
+		: 0;
 
 	Data->Source.ParticleMatrices.Reserve(ActiveParticles);
+	Data->Source.RelativeTimes.Reserve(ActiveParticles);
 	for (int32 i = 0; i < ActiveParticles; ++i)
 	{
 		const FBaseParticle* Particle = GetParticleAtIndex(i);
@@ -136,6 +140,7 @@ TUniquePtr<FDynamicEmitterDataBase> FParticleMeshEmitterInstance::GetDynamicData
 		}
 		const FRotator Rot(Particle->Rotation.X, Particle->Rotation.Y, Particle->Rotation.Z);
 		Data->Source.ParticleMatrices.Add(FTransform(Rot, Particle->Location, Particle->Size).GetLocalMatrix());
+		Data->Source.RelativeTimes.Add(Particle->RelativeTime);
 	}
 
 	Data->Source.ActiveParticleCount = Data->Source.ParticleMatrices.Num();

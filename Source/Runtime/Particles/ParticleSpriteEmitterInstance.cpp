@@ -99,6 +99,9 @@ TUniquePtr<FDynamicEmitterDataBase> FParticleSpriteEmitterInstance::GetDynamicDa
 	Data->Source.bUseLocalSpace = (CurrentLODLevel && CurrentLODLevel->RequiredModule)
 		? CurrentLODLevel->RequiredModule->bUseLocalSpace
 		: false;
+	Data->Source.SortMode = (CurrentLODLevel && CurrentLODLevel->RequiredModule)
+		? static_cast<uint8>(CurrentLODLevel->RequiredModule->SortMode)
+		: 0;
 
 	Data->Source.Particles.Reserve(ActiveParticles);
 	for (int32 i = 0; i < ActiveParticles; ++i)
@@ -108,7 +111,7 @@ TUniquePtr<FDynamicEmitterDataBase> FParticleSpriteEmitterInstance::GetDynamicDa
 		{
 			continue;
 		}
-		Data->Source.Particles.Add({ Particle->Location, Particle->Size, Particle->Color });
+		Data->Source.Particles.Add({ Particle->Location, Particle->Size, Particle->Color, Particle->RelativeTime });
 	}
 
 	Data->Source.ActiveParticleCount = Data->Source.Particles.Num();

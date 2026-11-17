@@ -32,6 +32,8 @@ struct FDynamicEmitterReplayDataBase
 	EDynamicEmitterType eEmitterType = EDynamicEmitterType::DET_Unknown;
 	int32 ActiveParticleCount = 0;
 	bool bUseLocalSpace = false;
+	/** RequiredModule->SortMode (EParticleSortMode 값) */
+	uint8 SortMode = 0;
 };
 
 /**
@@ -91,6 +93,8 @@ struct FDynamicSpriteEmitterReplayData : public FDynamicEmitterReplayDataBase
 		FVector Location = FVector::ZeroVector;
 		FVector Size = FVector::OneVector;
 		FVector4 Color = FVector4(1.0f, 1.0f, 1.0f, 1.0f);
+		/** 수명 진행도 0~1 (Age 정렬용) */
+		float RelativeTime = 0.0f;
 	};
 
 	TArray<FSpriteParticleSnapshot> Particles;
@@ -138,6 +142,8 @@ struct FDynamicSpriteEmitterData : public FDynamicEmitterDataBase
 struct FDynamicMeshEmitterReplayData : public FDynamicEmitterReplayDataBase
 {
 	TArray<FMatrix> ParticleMatrices;
+	/** ParticleMatrices와 같은 순서의 수명 진행도 0~1 (Age 정렬용) */
+	TArray<float> RelativeTimes;
 };
 
 /**

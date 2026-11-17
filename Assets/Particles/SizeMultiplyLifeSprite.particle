@@ -18,6 +18,7 @@
           "PeakActiveParticles": 64,
           "RequiredModule": {
             "bUseLocalSpace": true,
+            "SortMode": "DistanceToView",
             "bKillOnDeactivate": false,
             "bKillOnCompleted": false,
             "EmitterDuration": 1.0,

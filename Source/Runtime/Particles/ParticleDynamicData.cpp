@@ -1,5 +1,6 @@
 #include "EnginePCH.h"
 #include "Particles/ParticleDynamicData.h"
+#include "Particles/ParticleModuleRequired.h"
 #include "Engine/ParticleSystemSceneProxy.h"
 #include "Render/Mesh.h"
 #include "Render/RenderPacket.h"
@@ -8,6 +9,67 @@
 
 namespace
 {
+	/**
+	 * 이미터 안의 파티클 그리기 순서를 정한다 (Unreal FDynamicSpriteEmitterDataBase::SortSpriteParticles 대응).
+	 * OutOrder[i] = i번째로 그릴 파티클의 인덱스. 뒤에서 앞으로 그려야 알파 블렌딩이 맞으므로 거리·깊이는 큰 것부터.
+	 * 카메라 정보가 없는 뷰는 정렬하지 않는다.
+	 */
+	template <typename FGetPosition, typename FGetRelativeTime>
+	void BuildSortOrder(int32 Count, uint8 InSortMode, const FViewContext& View,
+		FGetPosition&& GetPosition, FGetRelativeTime&& GetRelativeTime, TArray<int32>& OutOrder)
+	{
+		OutOrder.SetNum(Count);
+		for (int32 Index = 0; Index < Count; ++Index)
+		{
+			OutOrder[Index] = Index;
+		}
+
+		const EParticleSortMode SortMode = static_cast<EParticleSortMode>(InSortMode);
+		const bool bHasView = View.CameraForward.Dot(View.CameraForward) > 1e-12f;
+		if (SortMode == EParticleSortMode::PSORTMODE_None || Count < 2)
+		{
+			return;
+		}
+		if (!bHasView && (SortMode == EParticleSortMode::PSORTMODE_ViewProjDepth || SortMode == EParticleSortMode::PSORTMODE_DistanceToView))
+		{
+			return;
+		}
+
+		// 키를 한 번만 계산하고, 키가 큰 것부터 그린다
+		TArray<float> Keys;
+		Keys.SetNum(Count);
+		for (int32 Index = 0; Index < Count; ++Index)
+		{
+			float Key = 0.0f;
+			switch (SortMode)
+			{
+			case EParticleSortMode::PSORTMODE_ViewProjDepth:
+				Key = (GetPosition(Index) - View.CameraPosition).Dot(View.CameraForward);
+				break;
+			case EParticleSortMode::PSORTMODE_DistanceToView:
+			{
+				const FVector Delta = GetPosition(Index) - View.CameraPosition;
+				Key = Delta.Dot(Delta);
+				break;
+			}
+			case EParticleSortMode::PSORTMODE_Age_OldestFirst:
+				Key = GetRelativeTime(Index);
+				break;
+			case EParticleSortMode::PSORTMODE_Age_NewestFirst:
+				Key = -GetRelativeTime(Index);
+				break;
+			default:
+				break;
+			}
+			Keys[Index] = Key;
+		}
+
+		std::stable_sort(OutOrder.begin(), OutOrder.end(), [&Keys](int32 A, int32 B)
+		{
+			return Keys[A] > Keys[B];
+		});
+	}
+
 	FVector TransformPosition(const FVector& Position, const FMatrix& Matrix)
 	{
 		const FVector4 Transformed = FVector4(Position.X, Position.Y, Position.Z, 1.0f) * Matrix;
@@ -68,13 +130,18 @@ void FDynamicSpriteEmitterData::GetDynamicMeshElements(
 		return Source.bUseLocalSpace ? TransformPosition(Location, ComponentToWorld) : Location;
 	};
 
-	// 1) 인스턴스 데이터 채우기. 큐가 이번 프레임 동안 보관한다.
+	// 1) 이미터 내부 정렬 (SortMode)
+	TArray<int32> Order;
+	BuildSortOrder(Count, Source.SortMode, View, WorldPositionOf,
+		[&](int32 Index) { return Source.Particles[Index].RelativeTime; }, Order);
+
+	// 2) 정렬 순서대로 인스턴스 데이터 채우기. 큐가 이번 프레임 동안 보관한다.
 	FParticleSpriteInstance* Instances = Queue.AllocateInstances<FParticleSpriteInstance>(static_cast<uint32>(Count));
 	FVector PositionSum = FVector::ZeroVector;
 	for (int32 DrawIndex = 0; DrawIndex < Count; ++DrawIndex)
 	{
-		const FDynamicSpriteEmitterReplayData::FSpriteParticleSnapshot& Particle = Source.Particles[DrawIndex];
-		const FVector WorldPos = WorldPositionOf(DrawIndex);
+		const FDynamicSpriteEmitterReplayData::FSpriteParticleSnapshot& Particle = Source.Particles[Order[DrawIndex]];
+		const FVector WorldPos = WorldPositionOf(Order[DrawIndex]);
 		PositionSum = PositionSum + WorldPos;
 
 		FParticleSpriteInstance& Instance = Instances[DrawIndex];
@@ -88,11 +155,11 @@ void FDynamicSpriteEmitterData::GetDynamicMeshElements(
 		Instance.Color = Particle.Color;
 	}
 
-	// 2) 카메라 축 행렬(Facing, Right, Up, 이동 0)을 오브젝트 상수(World)로 보낸다. VS가 파티클마다 빌보드를 세운다.
+	// 3) 카메라 축 행렬(Facing, Right, Up, 이동 0)을 오브젝트 상수(World)로 보낸다. VS가 파티클마다 빌보드를 세운다.
 	const FMatrix* CameraAxes = Queue.StoreWorldMatrix(View.BuildBillboardMatrix(FVector::ZeroVector, 1.0f, 1.0f));
 	const float EmitterDistSq = DistanceSqToCenter(PositionSum, Count, View);
 
-	// 3) 이미터당 패킷 1개 (쿼드 섹션이 여럿이면 섹션당 1개) = 드로우콜 1번
+	// 4) 이미터당 패킷 1개 (쿼드 섹션이 여럿이면 섹션당 1개) = 드로우콜 1번
 	const auto AddPacket = [&](uint32 StartIndex, uint32 IndexCount)
 	{
 		FRenderPacket& Packet = Queue.AddDefaulted_GetRef();
@@ -157,18 +224,24 @@ void FDynamicMeshEmitterData::GetDynamicMeshElements(
 		PositionSum = PositionSum + FVector(WorldMatrices[Index].M[3][0], WorldMatrices[Index].M[3][1], WorldMatrices[Index].M[3][2]);
 	}
 
-	// 2) 인스턴스 데이터 채우기
+	// 2) 이미터 내부 정렬 (SortMode)
+	TArray<int32> Order;
+	BuildSortOrder(Count, Source.SortMode, View,
+		[&](int32 Index) { return FVector(WorldMatrices[Index].M[3][0], WorldMatrices[Index].M[3][1], WorldMatrices[Index].M[3][2]); },
+		[&](int32 Index) { return Index < Source.RelativeTimes.Num() ? Source.RelativeTimes[Index] : 0.0f; }, Order);
+
+	// 3) 정렬 순서대로 인스턴스 데이터 채우기
 	FParticleMeshInstance* Instances = Queue.AllocateInstances<FParticleMeshInstance>(static_cast<uint32>(Count));
 	for (int32 DrawIndex = 0; DrawIndex < Count; ++DrawIndex)
 	{
-		Instances[DrawIndex].World = WorldMatrices[DrawIndex];
+		Instances[DrawIndex].World = WorldMatrices[Order[DrawIndex]];
 	}
 
 	// 인스턴스마다 월드 행렬이 있으므로 오브젝트 상수(World)는 단위 행렬
 	const FMatrix* IdentityModel = Queue.StoreWorldMatrix(FMatrix::Identity);
 	const float EmitterDistSq = DistanceSqToCenter(PositionSum, Count, View);
 
-	// 3) 이미터×섹션당 패킷 1개 = 드로우콜 1번 (섹션마다 머티리얼이 다를 수 있다)
+	// 4) 이미터×섹션당 패킷 1개 = 드로우콜 1번 (섹션마다 머티리얼이 다를 수 있다)
 	const auto AddPacket = [&](UMaterial* Material, uint32 StartIndex, uint32 IndexCount)
 	{
 		FRenderPacket& Packet = Queue.AddDefaulted_GetRef();

@@ -27,6 +27,49 @@
 
 namespace
 {
+	// SortMode는 파일에 항목 이름(PSORTMODE_ 뺀 부분)으로 저장한다. 예: "DistanceToView"
+	struct FSortModeName
+	{
+		EParticleSortMode Mode;
+		const char* Name;
+	};
+	constexpr FSortModeName SortModeNames[] = {
+		{ EParticleSortMode::PSORTMODE_None, "None" },
+		{ EParticleSortMode::PSORTMODE_ViewProjDepth, "ViewProjDepth" },
+		{ EParticleSortMode::PSORTMODE_DistanceToView, "DistanceToView" },
+		{ EParticleSortMode::PSORTMODE_Age_OldestFirst, "Age_OldestFirst" },
+		{ EParticleSortMode::PSORTMODE_Age_NewestFirst, "Age_NewestFirst" },
+	};
+
+	const char* SortModeToString(EParticleSortMode Mode)
+	{
+		for (const FSortModeName& Entry : SortModeNames)
+		{
+			if (Entry.Mode == Mode) return Entry.Name;
+		}
+		return "None";
+	}
+
+	// 문자열(이름) 또는 숫자 모두 받는다. 키가 없거나 모르는 값이면 None.
+	EParticleSortMode SortModeFromJson(const json& Value)
+	{
+		if (Value.is_string())
+		{
+			const std::string Name = Value.get<std::string>();
+			for (const FSortModeName& Entry : SortModeNames)
+			{
+				if (Name == Entry.Name || Name == std::string("PSORTMODE_") + Entry.Name) return Entry.Mode;
+			}
+		}
+		else if (Value.is_number_integer())
+		{
+			const int32 Index = Value.get<int32>();
+			if (Index >= 0 && Index <= static_cast<int32>(EParticleSortMode::PSORTMODE_Age_NewestFirst))
+				return static_cast<EParticleSortMode>(Index);
+		}
+		return EParticleSortMode::PSORTMODE_None;
+	}
+
 	// .particle은 nlohmann json으로 직접 쓰지만, 엔진 타입(리플렉션 프로퍼티, 머티리얼 참조)은
 	// 엔진의 FStructuredArchive 직렬화 코드를 그대로 재사용하기 위해 json 조각 <-> 구조화 아카이브를 왕복시킨다.
 	json WriteStructured(const std::function<void(FStructuredArchive::FSlot)>& WriteFunc)
@@ -183,6 +226,9 @@ bool ParticleSystemFile::Read(const std::filesystem::path& Path, UParticleSystem
 						const json& ReqJson = LODJson["RequiredModule"];
 						UParticleModuleRequired* Req = NewObject<UParticleModuleRequired>();
 						Req->bUseLocalSpace = ReqJson.value("bUseLocalSpace", false);
+						Req->SortMode = ReqJson.contains("SortMode")
+							? SortModeFromJson(ReqJson["SortMode"])
+							: EParticleSortMode::PSORTMODE_None;
 						Req->bKillOnDeactivate = ReqJson.value("bKillOnDeactivate", false);
 						Req->bKillOnCompleted = ReqJson.value("bKillOnCompleted", false);
 						Req->EmitterDuration = ReqJson.value("EmitterDuration", 1.0f);
@@ -325,6 +371,7 @@ bool ParticleSystemFile::Write(const std::filesystem::path& Path, UParticleSyste
 				const UParticleModuleRequired* Req = LOD->RequiredModule;
 				json ReqJson = json::object();
 				ReqJson["bUseLocalSpace"] = Req->bUseLocalSpace;
+				ReqJson["SortMode"] = SortModeToString(Req->SortMode);
 				ReqJson["bKillOnDeactivate"] = Req->bKillOnDeactivate;
 				ReqJson["bKillOnCompleted"] = Req->bKillOnCompleted;
 				ReqJson["EmitterDuration"] = Req->EmitterDuration;
