@@ -10,6 +10,7 @@
 #include "Editor/Viewports/EditorViewportClient.h"
 
 #include "GameFramework/Actor/SkeletalMeshActor.h"
+#include "GameFramework/Actor/Emitter.h"
 
 #include "Input/InputSystem.h"
 
@@ -111,6 +112,17 @@ void FEditorControlsPanel::OnRender()
 	ImGui::SameLine();
 	if (ImGui::Button("Decal"))
 		World->SpawnActor(ADecalActor::StaticClass());
+	ImGui::SameLine();
+	if (ImGui::Button("Mesh Emitter"))
+		World->SpawnActor(AEmitter::StaticClass());
+	ImGui::SameLine();
+	if (ImGui::Button("Sprite Emitter"))
+	{
+		if (AEmitter* EmitterActor = Cast<AEmitter>(World->SpawnActor(AEmitter::StaticClass())))
+		{
+			EmitterActor->SetupTestSpriteParticleSystem();
+		}
+	}
 
 	ImGui::Dummy(ImVec2(0.0f, SubsectionGap));
 	ImGui::SeparatorText("Skeletal Mesh");

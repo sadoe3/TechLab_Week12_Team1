@@ -1,0 +1,90 @@
+{
+  "UpdateTime_FPS": 60.0,
+  "UpdateTime_Delta": 0.0166666675,
+  "WarmupTime": 0.0,
+  "WarmupTickRate": 0.0,
+  "bUseFixedRelativeBoundingBox": false,
+  "bOrientZAxisTowardCamera": false,
+  "Emitters": [
+    {
+      "EmitterName": "SizeMultiplyLifeEmitter",
+      "InitialAllocationCount": 64,
+      "bDisabled": false,
+      "bIsSoloing": false,
+      "LODLevels": [
+        {
+          "Level": 0,
+          "bEnabled": true,
+          "PeakActiveParticles": 64,
+          "RequiredModule": {
+            "bUseLocalSpace": true,
+            "bKillOnDeactivate": false,
+            "bKillOnCompleted": false,
+            "EmitterDuration": 1.0,
+            "EmitterDelay": 0.0,
+            "EmitterLoops": 0,
+            "MaxDrawCount": 500
+          },
+          "SpawnModule": {
+            "Rate": 15.0,
+            "RateScale": 1.0,
+            "bProcessSpawnRate": true,
+            "bProcessBurstList": true,
+            "BurstList": []
+          },
+          "TypeDataModule": {
+            "Type": "Sprite",
+            "SubImages_Horizontal": 1,
+            "SubImages_Vertical": 1,
+            "bFaceCamera": true
+          },
+          "Modules": [
+            {
+              "Class": "UParticleModuleLifetime",
+              "Properties": {
+                "LifetimeMin": 1.5,
+                "LifetimeMax": 2.0
+              }
+            },
+            {
+              "Class": "UParticleModuleVelocity",
+              "Properties": {
+                "StartVelocityMin": { "X": -0.5, "Y": -0.5, "Z": 1.5 },
+                "StartVelocityMax": { "X": 0.5, "Y": 0.5, "Z": 2.5 },
+                "StartVelocityRadialMin": 0.0,
+                "StartVelocityRadialMax": 0.0,
+                "bInWorldSpace": false
+              }
+            },
+            {
+              "Class": "UParticleModuleSize",
+              "Properties": {
+                "StartSizeMin": { "X": 0.4, "Y": 0.4, "Z": 0.4 },
+                "StartSizeMax": { "X": 0.6, "Y": 0.6, "Z": 0.6 }
+              }
+            },
+            {
+              "Class": "UParticleModuleSizeMultiplyLife",
+              "Properties": {
+                "MultiplierStart": { "X": 0.5, "Y": 0.5, "Z": 0.5 },
+                "MultiplierEnd": { "X": 3.0, "Y": 3.0, "Z": 3.0 },
+                "bMultiplyX": true,
+                "bMultiplyY": true,
+                "bMultiplyZ": true
+              }
+            },
+            {
+              "Class": "UParticleModuleColorOverLife",
+              "Properties": {
+                "ColorStart": { "X": 1.0, "Y": 0.8, "Z": 0.3 },
+                "ColorEnd": { "X": 1.0, "Y": 0.2, "Z": 0.1 },
+                "AlphaStart": 1.0,
+                "AlphaEnd": 0.0
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

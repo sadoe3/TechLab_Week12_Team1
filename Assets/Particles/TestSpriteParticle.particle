@@ -1,0 +1,45 @@
+{
+  "UpdateTime_FPS": 60.0,
+  "UpdateTime_Delta": 0.0166666675,
+  "WarmupTime": 0.0,
+  "WarmupTickRate": 0.0,
+  "bUseFixedRelativeBoundingBox": false,
+  "bOrientZAxisTowardCamera": false,
+  "Emitters": [
+    {
+      "EmitterName": "TestSpriteEmitter",
+      "InitialAllocationCount": 32,
+      "bDisabled": false,
+      "bIsSoloing": false,
+      "LODLevels": [
+        {
+          "Level": 0,
+          "bEnabled": true,
+          "PeakActiveParticles": 32,
+          "RequiredModule": {
+            "bUseLocalSpace": true,
+            "bKillOnDeactivate": false,
+            "bKillOnCompleted": false,
+            "EmitterDuration": 1.0,
+            "EmitterDelay": 0.0,
+            "EmitterLoops": 0,
+            "MaxDrawCount": 500
+          },
+          "SpawnModule": {
+            "Rate": 10.0,
+            "RateScale": 1.0,
+            "bProcessSpawnRate": true,
+            "bProcessBurstList": true,
+            "BurstList": []
+          },
+          "TypeDataModule": {
+            "Type": "Sprite",
+            "SubImages_Horizontal": 4,
+            "SubImages_Vertical": 4,
+            "bFaceCamera": true
+          }
+        }
+      ]
+    }
+  ]
+}
