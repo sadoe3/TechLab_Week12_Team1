@@ -60,4 +60,12 @@ public:
 
 	UPROPERTY(EditAnywhere)
 	int32 MaxDrawCount = 500;
+
+	/** SubUV 가로 분할 수 (Unreal UParticleModuleRequired::SubImages_Horizontal 대응) */
+	UPROPERTY(EditAnywhere)
+	int32 SubImages_Horizontal = 1;
+
+	/** SubUV 세로 분할 수 (Unreal UParticleModuleRequired::SubImages_Vertical 대응) */
+	UPROPERTY(EditAnywhere)
+	int32 SubImages_Vertical = 1;
 };

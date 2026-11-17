@@ -282,16 +282,7 @@ void UParticleSystemComponent::InitParticles()
 			continue;
 		}
 
-		FParticleEmitterInstance* NewInstance = nullptr;
-		if (LOD0->TypeDataModule)
-		{
-			NewInstance = LOD0->TypeDataModule->CreateInstance(Emitter, this);
-		}
-		else
-		{
-			// 언리얼 기본 규칙: TypeDataModule == nullptr이면 Sprite 이미터로 생성
-			NewInstance = new FParticleSpriteEmitterInstance(Emitter, this, nullptr);
-		}
+		FParticleEmitterInstance* NewInstance = Emitter->CreateInstance(this);
 
 		if (NewInstance)
 		{
