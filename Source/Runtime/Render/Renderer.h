@@ -56,6 +56,17 @@ private:
 	void EnsurePerObjectSlotCapacity(uint32 SlotCount);
 	void BindBatch(const FMeshDrawBatch& Batch);
 	void BindObject(const FMeshDrawBatch& Batch, const FMeshDrawBatch::FItem& Item);
+	// 배치의 인스턴스 데이터를 stride별 동적 StructuredBuffer에 올리고 t15(VS)에 바인딩한다.
+	bool BindInstances(const FMeshDrawBatch& Batch);
+
+	// StructuredBuffer는 생성 시 stride가 고정되므로 stride마다 하나씩 둔다. 배치마다 Map-Discard로 덮어쓴다.
+	struct FInstanceBufferSlot
+	{
+		uint32 Stride = 0;
+		TUniquePtr<FStructuredBuffer> Buffer;
+	};
+	TArray<FInstanceBufferSlot> InstanceBuffers;
+
 	TUniquePtr<FConstantBuffer> ObjectCB;
 	TUniquePtr<FConstantBuffer> ViewCB;
 	TUniquePtr<FConstantBuffer> MaterialCB;

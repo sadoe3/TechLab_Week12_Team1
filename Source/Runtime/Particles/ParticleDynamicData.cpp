@@ -3,25 +3,42 @@
 #include "Engine/ParticleSystemSceneProxy.h"
 #include "Render/Mesh.h"
 #include "Render/RenderPacket.h"
+#include "Render/RenderResourceManager.h"
 #include <algorithm>
 
-void FDynamicSpriteEmitterData::BuildParticleParams()
+namespace
 {
-	ParticleParams.Empty();
-	ParticleParams.Reserve(Source.Particles.Num());
-	for (const FDynamicSpriteEmitterReplayData::FSpriteParticleSnapshot& Particle : Source.Particles)
+	FVector TransformPosition(const FVector& Position, const FMatrix& Matrix)
 	{
-		// CurrentFrame, AtlasRowSize(세로 칸 수), AtlasColSize(가로 칸 수), Alpha
-		// SubUV 애니메이션이 아직 없으므로 아틀라스의 0번 칸만 그린다. (ParticleSubUVShader가 칸을 고르고, BillboardShader는 무시)
-		FSubUVConstants Params{ 0.0f,
-			static_cast<float>(std::max(SubImagesVertical, 1)),
-			static_cast<float>(std::max(SubImagesHorizontal, 1)),
-			Particle.Color.W };
-		Params.Tint = FVector4(Particle.Color.X, Particle.Color.Y, Particle.Color.Z, 1.0f);
-		// 반투명 패스는 톤 매핑 이후 LDR SceneColor에 그려지므로 Billboard와 동일하게 sRGB 디코드를 끈다.
-		Params.DecodeSRGB = 0.0f;
-		ParticleParams.Add(Params);
+		const FVector4 Transformed = FVector4(Position.X, Position.Y, Position.Z, 1.0f) * Matrix;
+		return FVector(Transformed.X, Transformed.Y, Transformed.Z);
 	}
+
+	/** 이미터 배치 하나를 반투명 큐에서 정렬할 거리: 카메라에서 파티클 중심까지 거리의 제곱 */
+	float DistanceSqToCenter(const FVector& Sum, int32 Count, const FViewContext& View)
+	{
+		if (Count <= 0)
+		{
+			return 0.0f;
+		}
+		const float Inv = 1.0f / static_cast<float>(Count);
+		const FVector Center(Sum.X * Inv, Sum.Y * Inv, Sum.Z * Inv);
+		const FVector Delta = Center - View.CameraPosition;
+		return Delta.Dot(Delta);
+	}
+}
+
+void FDynamicSpriteEmitterData::BuildMaterialParams()
+{
+	// CurrentFrame, AtlasRowSize(세로 칸 수), AtlasColSize(가로 칸 수), Alpha
+	// 인스턴스 셰이더는 프레임·알파·Tint를 인스턴스 데이터에서 읽고, 여기서는 이미터 공통 값만 쓴다.
+	EmitterParams = FSubUVConstants{ 0.0f,
+		static_cast<float>(std::max(SubImagesVertical, 1)),
+		static_cast<float>(std::max(SubImagesHorizontal, 1)),
+		1.0f };
+	EmitterParams.Tint = FVector4(1.0f, 1.0f, 1.0f, 1.0f);
+	// 반투명 패스는 톤 매핑 이후 LDR SceneColor에 그려지므로 Billboard와 동일하게 sRGB 디코드를 끈다.
+	EmitterParams.DecodeSRGB = 0.0f;
 }
 
 void FDynamicSpriteEmitterData::GetDynamicMeshElements(
@@ -29,8 +46,7 @@ void FDynamicSpriteEmitterData::GetDynamicMeshElements(
 	const FViewContext& View,
 	FRenderQueue& Queue) const
 {
-	if (!Proxy || !QuadMesh || !Material || Source.Particles.IsEmpty()
-		|| ParticleParams.Num() != Source.Particles.Num())
+	if (!Proxy || !QuadMesh || !Material || Source.Particles.IsEmpty())
 	{
 		return;
 	}
@@ -44,55 +60,67 @@ void FDynamicSpriteEmitterData::GetDynamicMeshElements(
 
 	const FMatrix& ComponentToWorld = Proxy->GetLocalToWorld();
 	const FStaticMeshData& MeshData = QuadMesh->GetMeshData(0);
+	const int32 Count = Source.Particles.Num();
 
-	for (int32 ParticleIndex = 0; ParticleIndex < Source.Particles.Num(); ++ParticleIndex)
+	const auto WorldPositionOf = [&](int32 Index)
 	{
-		const FDynamicSpriteEmitterReplayData::FSpriteParticleSnapshot& Particle = Source.Particles[ParticleIndex];
-		const FSubUVConstants* ParamData = &ParticleParams[ParticleIndex];
-		FVector WorldPos = Particle.Location;
-		if (Source.bUseLocalSpace)
-		{
-			const FVector4 Transformed = FVector4(WorldPos.X, WorldPos.Y, WorldPos.Z, 1.0f) * ComponentToWorld;
-			WorldPos = FVector(Transformed.X, Transformed.Y, Transformed.Z);
-		}
+		const FVector& Location = Source.Particles[Index].Location;
+		return Source.bUseLocalSpace ? TransformPosition(Location, ComponentToWorld) : Location;
+	};
 
-		const FMatrix BillboardMat = View.BuildBillboardMatrix(WorldPos, Particle.Size.X, Particle.Size.Y);
-		const FMatrix* ModelPtr = Queue.StoreWorldMatrix(BillboardMat);
-		const FVector Delta = WorldPos - View.CameraPosition;
-		const float DistSq = Delta.Dot(Delta);
+	// 1) 인스턴스 데이터 채우기. 큐가 이번 프레임 동안 보관한다.
+	FParticleSpriteInstance* Instances = Queue.AllocateInstances<FParticleSpriteInstance>(static_cast<uint32>(Count));
+	FVector PositionSum = FVector::ZeroVector;
+	for (int32 DrawIndex = 0; DrawIndex < Count; ++DrawIndex)
+	{
+		const FDynamicSpriteEmitterReplayData::FSpriteParticleSnapshot& Particle = Source.Particles[DrawIndex];
+		const FVector WorldPos = WorldPositionOf(DrawIndex);
+		PositionSum = PositionSum + WorldPos;
 
-		if (MeshData.Sections.IsEmpty())
+		FParticleSpriteInstance& Instance = Instances[DrawIndex];
+		Instance.Position[0] = WorldPos.X;
+		Instance.Position[1] = WorldPos.Y;
+		Instance.Position[2] = WorldPos.Z;
+		Instance.SubImageIndex = 0.0f; // SubUV 애니메이션 전까지 아틀라스 0번 칸
+		Instance.Size[0] = Particle.Size.X;
+		Instance.Size[1] = Particle.Size.Y;
+		Instance.Padding[0] = Instance.Padding[1] = 0.0f;
+		Instance.Color = Particle.Color;
+	}
+
+	// 2) 카메라 축 행렬(Facing, Right, Up, 이동 0)을 오브젝트 상수(World)로 보낸다. VS가 파티클마다 빌보드를 세운다.
+	const FMatrix* CameraAxes = Queue.StoreWorldMatrix(View.BuildBillboardMatrix(FVector::ZeroVector, 1.0f, 1.0f));
+	const float EmitterDistSq = DistanceSqToCenter(PositionSum, Count, View);
+
+	// 3) 이미터당 패킷 1개 (쿼드 섹션이 여럿이면 섹션당 1개) = 드로우콜 1번
+	const auto AddPacket = [&](uint32 StartIndex, uint32 IndexCount)
+	{
+		FRenderPacket& Packet = Queue.AddDefaulted_GetRef();
+		Packet.Proxy = Proxy;
+		Packet.Model = CameraAxes;
+		Packet.Mesh = QuadMesh;
+		Packet.VertexBuffer = VB;
+		Packet.IndexBuffer = IB;
+		Packet.Material = Material;
+		Packet.MaterialParamData = &EmitterParams;
+		Packet.MaterialParamDataSize = sizeof(FSubUVConstants);
+		Packet.CameraToParticleDistance = EmitterDistSq;
+		Packet.StartIndex = StartIndex;
+		Packet.IndexCount = IndexCount;
+		Packet.InstanceData = Instances;
+		Packet.InstanceStride = sizeof(FParticleSpriteInstance);
+		Packet.InstanceCount = static_cast<uint32>(Count);
+	};
+
+	if (MeshData.Sections.IsEmpty())
+	{
+		AddPacket(0, 0);
+	}
+	else
+	{
+		for (const FStaticMeshSection& Section : MeshData.Sections)
 		{
-			FRenderPacket& Packet = Queue.AddDefaulted_GetRef();
-			Packet.Proxy = Proxy;
-			Packet.Model = ModelPtr;
-			Packet.Mesh = QuadMesh;
-			Packet.VertexBuffer = VB;
-			Packet.IndexBuffer = IB;
-			Packet.Material = Material;
-			Packet.MaterialParamData = ParamData;
-			Packet.MaterialParamDataSize = sizeof(FSubUVConstants);
-			Packet.CameraToParticleDistance = DistSq;
-			Packet.StartIndex = 0;
-			Packet.IndexCount = 0;
-		}
-		else
-		{
-			for (const FStaticMeshSection& Section : MeshData.Sections)
-			{
-				FRenderPacket& Packet = Queue.AddDefaulted_GetRef();
-				Packet.Proxy = Proxy;
-				Packet.Model = ModelPtr;
-				Packet.Mesh = QuadMesh;
-				Packet.VertexBuffer = VB;
-				Packet.IndexBuffer = IB;
-				Packet.Material = Material;
-				Packet.MaterialParamData = ParamData;
-				Packet.MaterialParamDataSize = sizeof(FSubUVConstants);
-				Packet.CameraToParticleDistance = DistSq;
-				Packet.StartIndex = Section.StartIndex;
-				Packet.IndexCount = Section.IndexCount;
-			}
+			AddPacket(Section.StartIndex, Section.IndexCount);
 		}
 	}
 }
@@ -116,40 +144,58 @@ void FDynamicMeshEmitterData::GetDynamicMeshElements(
 
 	const FMatrix& ComponentToWorld = Proxy->GetLocalToWorld();
 	const FStaticMeshData& MeshData = StaticMesh->GetMeshData(0);
+	const int32 Count = Source.ParticleMatrices.Num();
 
-	for (const FMatrix& LocalOrWorldMat : Source.ParticleMatrices)
+	// 1) 월드 행렬 계산 (로컬 공간 이미터는 컴포넌트 변환을 곱한다)
+	TArray<FMatrix> WorldMatrices;
+	WorldMatrices.SetNum(Count);
+	FVector PositionSum = FVector::ZeroVector;
+	for (int32 Index = 0; Index < Count; ++Index)
 	{
-		const FMatrix FinalMat = Source.bUseLocalSpace
-			? (LocalOrWorldMat * ComponentToWorld)
-			: LocalOrWorldMat;
-		const FMatrix* ModelPtr = Queue.StoreWorldMatrix(FinalMat);
+		const FMatrix& LocalOrWorld = Source.ParticleMatrices[Index];
+		WorldMatrices[Index] = Source.bUseLocalSpace ? (LocalOrWorld * ComponentToWorld) : LocalOrWorld;
+		PositionSum = PositionSum + FVector(WorldMatrices[Index].M[3][0], WorldMatrices[Index].M[3][1], WorldMatrices[Index].M[3][2]);
+	}
 
-		if (MeshData.Sections.IsEmpty())
+	// 2) 인스턴스 데이터 채우기
+	FParticleMeshInstance* Instances = Queue.AllocateInstances<FParticleMeshInstance>(static_cast<uint32>(Count));
+	for (int32 DrawIndex = 0; DrawIndex < Count; ++DrawIndex)
+	{
+		Instances[DrawIndex].World = WorldMatrices[DrawIndex];
+	}
+
+	// 인스턴스마다 월드 행렬이 있으므로 오브젝트 상수(World)는 단위 행렬
+	const FMatrix* IdentityModel = Queue.StoreWorldMatrix(FMatrix::Identity);
+	const float EmitterDistSq = DistanceSqToCenter(PositionSum, Count, View);
+
+	// 3) 이미터×섹션당 패킷 1개 = 드로우콜 1번 (섹션마다 머티리얼이 다를 수 있다)
+	const auto AddPacket = [&](UMaterial* Material, uint32 StartIndex, uint32 IndexCount)
+	{
+		FRenderPacket& Packet = Queue.AddDefaulted_GetRef();
+		Packet.Proxy = Proxy;
+		Packet.Model = IdentityModel;
+		Packet.Mesh = StaticMesh;
+		Packet.VertexBuffer = VB;
+		Packet.IndexBuffer = IB;
+		Packet.Material = Material;
+		Packet.CameraToParticleDistance = EmitterDistSq;
+		Packet.StartIndex = StartIndex;
+		Packet.IndexCount = IndexCount;
+		Packet.InstanceData = Instances;
+		Packet.InstanceStride = sizeof(FParticleMeshInstance);
+		Packet.InstanceCount = static_cast<uint32>(Count);
+	};
+
+	if (MeshData.Sections.IsEmpty())
+	{
+		AddPacket(OverrideMaterial ? OverrideMaterial : StaticMesh->GetMaterial(0), 0, 0);
+	}
+	else
+	{
+		for (const FStaticMeshSection& Section : MeshData.Sections)
 		{
-			FRenderPacket& Packet = Queue.AddDefaulted_GetRef();
-			Packet.Proxy = Proxy;
-			Packet.Model = ModelPtr;
-			Packet.Mesh = StaticMesh;
-			Packet.VertexBuffer = VB;
-			Packet.IndexBuffer = IB;
-			Packet.Material = OverrideMaterial ? OverrideMaterial : StaticMesh->GetMaterial(0);
-			Packet.StartIndex = 0;
-			Packet.IndexCount = 0;
-		}
-		else
-		{
-			for (const FStaticMeshSection& Section : MeshData.Sections)
-			{
-				FRenderPacket& Packet = Queue.AddDefaulted_GetRef();
-				Packet.Proxy = Proxy;
-				Packet.Model = ModelPtr;
-				Packet.Mesh = StaticMesh;
-				Packet.VertexBuffer = VB;
-				Packet.IndexBuffer = IB;
-				Packet.Material = OverrideMaterial ? OverrideMaterial : StaticMesh->GetMaterial(Section.MaterialSlotIndex);
-				Packet.StartIndex = Section.StartIndex;
-				Packet.IndexCount = Section.IndexCount;
-			}
+			AddPacket(OverrideMaterial ? OverrideMaterial : StaticMesh->GetMaterial(Section.MaterialSlotIndex),
+				Section.StartIndex, Section.IndexCount);
 		}
 	}
 }

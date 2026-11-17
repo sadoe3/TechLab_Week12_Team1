@@ -155,9 +155,10 @@ void RenderCommand::DrawIndexed(uint32 IndexCount, uint32 StartIndexLocation, in
 	RenderDevice->GetContext()->DrawIndexed(IndexCount, StartIndexLocation, BaseVertexLocation);
 }
 
-void RenderCommand::DrawInstance(uint32 IndexCount, uint32 StartIndexLocation, int32 BaseVertexLocation)
+void RenderCommand::DrawIndexedInstanced(uint32 IndexCountPerInstance, uint32 InstanceCount, uint32 StartIndexLocation, int32 BaseVertexLocation)
 {
-	//RenderDevice->GetContext()->DrawInstanced();
+	// 셰이더는 SV_InstanceID(0 ~ InstanceCount-1)로 인스턴스 StructuredBuffer를 읽는다. 정점별 인스턴스 버퍼는 쓰지 않으므로 StartInstance는 0.
+	RenderDevice->GetContext()->DrawIndexedInstanced(IndexCountPerInstance, InstanceCount, StartIndexLocation, BaseVertexLocation, 0);
 }
 
 void RenderCommand::UpdateBufferData(FBuffer* InBuffer, const void* Data, uint32 DataSize)

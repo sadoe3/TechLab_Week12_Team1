@@ -56,10 +56,19 @@ public:
 
 	static FPipelineState* GetPSO(const EPSOType& InType);
 	static FShaderProgram* GetForwardShaderProgram(ELightingModel Model);
+	// GetShaderProgram과 달리 없으면 DefaultShader로 대체하지 않고 nullptr를 돌려준다 (변형 존재 여부 확인용).
+	static FShaderProgram* FindShaderProgram(const FString& InName);
+
+	static constexpr const char* ParticleInstanceSuffix = "#PARTICLE_INSTANCE";
 private:
-	
+
 	void LoadOrCompileShader(const FString& Path);
 	void CreateSkinnedVariant(const FString& Path, const char* LightingMacro, const FShaderProgram& Base);
+	// 매크로 하나(VariantMacro=1)를 더 켜서 VS만 다시 컴파일하고 Base.Name + Suffix로 등록한다. PS는 Base 것을 함께 쓴다.
+	void CreateVertexShaderVariant(const FString& Path, const char* LightingMacro, const FShaderProgram& Base,
+		const char* VariantMacro, const char* Suffix);
+	// 소스에 마커가 있으면 그 셰이더의 변형(GPU 스킨, 파티클 인스턴스)을 만든다.
+	void CreateVariantsFromSource(const FString& Path, const std::string& Source, const char* LightingMacro, const FShaderProgram& Base);
 	void InitPipelineStates();
 
 	TMap<FString, TUniquePtr<FVertexShader>> VertexShaderMap;

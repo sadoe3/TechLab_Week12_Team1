@@ -46,6 +46,11 @@ struct FMeshDrawBatch
 	FIndexBuffer* IndexBuffer = nullptr;
 	const FStructuredBuffer* BoneBuffer = nullptr;
 
+	// 인스턴싱: InstanceCount > 0이면 FRenderer가 InstanceData를 t15(VS)에 올리고 Item마다 DrawIndexedInstanced로 그린다.
+	const void* InstanceData = nullptr;
+	uint32 InstanceStride = 0;
+	uint32 InstanceCount = 0;
+
 	TArray<FTextureBinding> Textures;
 	ESamplerState Sampler = ESamplerState::LinearClamp;
 	EShaderBindFlagBits SamplerStages = EShaderBindFlagBits::Pixel;

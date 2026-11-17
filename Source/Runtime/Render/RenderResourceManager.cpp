@@ -26,8 +26,8 @@ constexpr FPipelineTableEntry PipelineTable[] =
 	{ EPSOType::StaticMesh_Opaque,       nullptr,                                            EPrimitiveTopology::TriangleList, ERasterizerState::SolidBack, EBlendState::Opaque,       EDepthStencilState::Default },
 	{ EPSOType::StaticMesh_Translucent,  "Resources/Shader/StaticMeshTranslucentShader.hlsl", EPrimitiveTopology::TriangleList, ERasterizerState::SolidBack, EBlendState::AlphaBlend,   EDepthStencilState::ReadOnly },
 	{ EPSOType::StaticMesh_Wireframe,    nullptr,                                    EPrimitiveTopology::TriangleList, ERasterizerState::Wireframe, EBlendState::Opaque,       EDepthStencilState::Default },
-	{ EPSOType::Particle_AlphaBlend,     "Resources/Shader/ParticleSubUVShader.hlsl", EPrimitiveTopology::TriangleList, ERasterizerState::SolidNone, EBlendState::AlphaBlend,   EDepthStencilState::ReadOnly },
-	{ EPSOType::Particle_Additive,       "Resources/Shader/ParticleSubUVShader.hlsl", EPrimitiveTopology::TriangleList, ERasterizerState::SolidNone, EBlendState::Additive,     EDepthStencilState::ReadOnly },
+	{ EPSOType::Particle_AlphaBlend,     "Resources/Shader/ParticleSpriteShader.hlsl", EPrimitiveTopology::TriangleList, ERasterizerState::SolidNone, EBlendState::AlphaBlend,   EDepthStencilState::ReadOnly },
+	{ EPSOType::Particle_Additive,       "Resources/Shader/ParticleSpriteShader.hlsl", EPrimitiveTopology::TriangleList, ERasterizerState::SolidNone, EBlendState::Additive,     EDepthStencilState::ReadOnly },
 	{ EPSOType::Skybox,                  "Resources/Shader/SkyboxShader.hlsl",        EPrimitiveTopology::TriangleList, ERasterizerState::SolidNone, EBlendState::Opaque,       EDepthStencilState::ReadOnly },
 	{ EPSOType::Grid,                    "Resources/Shader/GridShader.hlsl",          EPrimitiveTopology::TriangleList, ERasterizerState::SolidBack, EBlendState::AlphaBlend,   EDepthStencilState::Default },
 	{ EPSOType::Outline_Mask,            "Resources/Shader/OutlineShader.hlsl",       EPrimitiveTopology::TriangleList, ERasterizerState::SolidNone, EBlendState::NoColorWrite, EDepthStencilState::StencilMask },
@@ -98,6 +98,7 @@ void FRenderResourceManager::InitPipelineStates()
 		ShaderProgramMap[Key] = MakeUnique<FShaderProgram>(VSRaw, PSRaw);
 		ShaderProgramMap[Key]->Name = Key;
 		CreateSkinnedVariant(Path, Name, *ShaderProgramMap[Key]);
+		CreateVertexShaderVariant(Path, Name, *ShaderProgramMap[Key], "PARTICLE_INSTANCE", ParticleInstanceSuffix);
 		if (std::strcmp(Name, "VIEW_MODE_WORLD_NORMAL") == 0)
 			PipelineStateMap[EPSOType::StaticMesh_WorldNormal]->Shader = ShaderProgramMap[Key].get();
 	}
@@ -153,11 +154,8 @@ void FRenderResourceManager::ScanShaders(const fs::path& ShaderRoot)
 		// 키는 지금까지처럼 엔진 상대 경로("Resources/Shader/X.hlsl")로 둔다.
 		FString Path = FPaths::ToUtf8(Entry.path().lexically_relative(FPaths::EngineDir()));
 		LoadOrCompileShader(Path);
-		if (Source.find("GPU_SKIN_VS_INPUT") != std::string::npos)
-		{
-			if (TUniquePtr<FShaderProgram>* Base = ShaderProgramMap.Find(Path))
-				CreateSkinnedVariant(Path, nullptr, **Base);
-		}
+		if (TUniquePtr<FShaderProgram>* Base = ShaderProgramMap.Find(Path))
+			CreateVariantsFromSource(Path, Source, nullptr, **Base);
 	}
 }
 
@@ -221,26 +219,48 @@ void FRenderResourceManager::LoadOrCompileShader(const FString& Path)
 // UberLit 조명 변형처럼 매크로로 VS를 컴파일하고 이름으로 등록한다. PS는 기존 것을 함께 쓴다
 void FRenderResourceManager::CreateSkinnedVariant(const FString& Path, const char* LightingMacro, const FShaderProgram& Base)
 {
-	const D3D_SHADER_MACRO SkinOnly[] = { { "GPU_SKIN", "1" }, { nullptr, nullptr } };
-	const D3D_SHADER_MACRO LitSkin[] = { { LightingMacro, "1" }, { "GPU_SKIN", "1" }, { nullptr, nullptr } };
+	CreateVertexShaderVariant(Path, LightingMacro, Base, "GPU_SKIN", "#GPU_SKIN");
+}
+
+void FRenderResourceManager::CreateVertexShaderVariant(const FString& Path, const char* LightingMacro, const FShaderProgram& Base,
+	const char* VariantMacro, const char* Suffix)
+{
+	const D3D_SHADER_MACRO VariantOnly[] = { { VariantMacro, "1" }, { nullptr, nullptr } };
+	const D3D_SHADER_MACRO LitVariant[] = { { LightingMacro, "1" }, { VariantMacro, "1" }, { nullptr, nullptr } };
 
 	FString CSOPath;
-	FShaderByteCode Code = RenderUtil::GetOrCompile(Path, "mainVS", EShaderType::Vertex, CSOPath, LightingMacro ? LitSkin : SkinOnly);
+	FShaderByteCode Code = RenderUtil::GetOrCompile(Path, "mainVS", EShaderType::Vertex, CSOPath, LightingMacro ? LitVariant : VariantOnly);
 	if (!Code.IsValid())
 	{
-		HTR_LOG(Error, "[Shader] GPU skin variant compile failed: {}", Base.Name);
+		HTR_LOG(Error, "[Shader] {} variant compile failed: {}", VariantMacro, Base.Name);
 		return;
 	}
 	TUniquePtr<FVertexShader> VS = RenderCommand::CreateVertexShader(Code);
 	if (!VS || !VS->IsValid())
 	{
-		HTR_LOG(Error, "[Shader] GPU skin variant create failed: {}", Base.Name);
+		HTR_LOG(Error, "[Shader] {} variant create failed: {}", VariantMacro, Base.Name);
 		return;
 	}
 
 	FVertexShader* VSRaw = VS.get();
 	VertexShaderMap[CSOPath] = std::move(VS);
-	const FString Key = Base.Name + "#GPU_SKIN";
+	const FString Key = Base.Name + Suffix;
 	ShaderProgramMap[Key] = MakeUnique<FShaderProgram>(VSRaw, Base.PixelShader);
 	ShaderProgramMap[Key]->Name = Key;
+}
+
+void FRenderResourceManager::CreateVariantsFromSource(const FString& Path, const std::string& Source, const char* LightingMacro, const FShaderProgram& Base)
+{
+	if (Source.find("GPU_SKIN_VS_INPUT") != std::string::npos)
+		CreateVertexShaderVariant(Path, LightingMacro, Base, "GPU_SKIN", "#GPU_SKIN");
+	// 파티클 인스턴싱 변형: SV_InstanceID로 t15의 인스턴스 데이터를 읽는 VS (FRenderPacket::InstanceCount > 0일 때 사용)
+	if (Source.find("PARTICLE_INSTANCE_VS_INPUT") != std::string::npos)
+		CreateVertexShaderVariant(Path, LightingMacro, Base, "PARTICLE_INSTANCE", ParticleInstanceSuffix);
+}
+
+FShaderProgram* FRenderResourceManager::FindShaderProgram(const FString& InName)
+{
+	if (TUniquePtr<FShaderProgram>* Found = Get().ShaderProgramMap.Find(InName))
+		return Found->get();
+	return nullptr;
 }

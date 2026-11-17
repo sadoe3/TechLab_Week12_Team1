@@ -35,6 +35,30 @@ struct FDynamicEmitterReplayDataBase
 };
 
 /**
+ * 스프라이트 파티클 1개의 GPU 인스턴스 데이터 (Unreal FParticleSpriteVertex 대응)
+ * ParticleSpriteCommon.hlsli의 FParticleSpriteInstance와 바이트 단위로 같아야 한다.
+ */
+struct FParticleSpriteInstance
+{
+	float Position[3];      // 월드 위치
+	float SubImageIndex;    // SubUV 칸 번호 (SubUV 모듈 전까지 0)
+	float Size[2];          // 가로, 세로
+	float Padding[2];
+	FVector4 Color;         // rgb: Tint, a: 알파
+};
+static_assert(sizeof(FParticleSpriteInstance) == 48, "ParticleSpriteCommon.hlsli FParticleSpriteInstance와 크기가 같아야 한다");
+
+/**
+ * 메시 파티클 1개의 GPU 인스턴스 데이터 (Unreal FMeshParticleInstanceVertex 대응)
+ * ParticleInstanceCommon.hlsli의 FParticleMeshInstance와 같아야 한다.
+ */
+struct FParticleMeshInstance
+{
+	FMatrix World;
+};
+static_assert(sizeof(FParticleMeshInstance) == 64, "ParticleInstanceCommon.hlsli FParticleMeshInstance와 크기가 같아야 한다");
+
+/**
  * 렌더 스레드/SceneProxy가 다형성으로 소비하는 이미터별 동적 렌더 데이터 기반 클래스
  * (Unreal FDynamicEmitterDataBase 대응)
  */
@@ -89,8 +113,8 @@ struct FDynamicSpriteEmitterData : public FDynamicEmitterDataBase
 		const FViewContext& View,
 		FRenderQueue& Queue) const override;
 
-	/** Source.Particles를 바탕으로 파티클별 셰이더 파라미터(Tint/Alpha)를 만든다. 스냅샷 생성 직후 1회 호출. */
-	void BuildParticleParams();
+	/** 이미터 공통 머티리얼 파라미터(아틀라스 칸 수, sRGB 디코드)를 만든다. 스냅샷 생성 직후 1회 호출. */
+	void BuildMaterialParams();
 
 	FDynamicSpriteEmitterReplayData Source;
 	UStaticMesh* QuadMesh = nullptr;
@@ -101,10 +125,10 @@ struct FDynamicSpriteEmitterData : public FDynamicEmitterDataBase
 	int32 SubImagesVertical = 1;
 
 	/**
-	 * 파티클별 머티리얼 파라미터. 렌더 패킷이 포인터로 참조하므로 이 스냅샷이 살아 있는 동안 재할당하면 안 된다.
-	 * (BillboardShader/ParticleSubUVShader의 SpriteAlpha·Tint가 비면 0으로 읽혀 스프라이트가 투명해진다)
+	 * 이미터 공통 머티리얼 파라미터(b1). 렌더 패킷이 포인터로 참조하므로 이 스냅샷이 살아 있는 동안 유지된다.
+	 * 파티클마다 다른 Tint/Alpha/프레임은 인스턴스 데이터(FParticleSpriteInstance)로 간다.
 	 */
-	TArray<FSubUVConstants> ParticleParams;
+	FSubUVConstants EmitterParams{};
 };
 
 /**

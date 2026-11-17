@@ -121,6 +121,6 @@ TUniquePtr<FDynamicEmitterDataBase> FParticleSpriteEmitterInstance::GetDynamicDa
 		Data->SubImagesHorizontal = SpriteTypeData->SubImages_Horizontal;
 		Data->SubImagesVertical = SpriteTypeData->SubImages_Vertical;
 	}
-	Data->BuildParticleParams();
+	Data->BuildMaterialParams();
 	return Data;
 }

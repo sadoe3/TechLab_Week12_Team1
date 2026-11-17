@@ -17,7 +17,7 @@ struct FSubUVConstants
 	float DecodeSRGB = 1.0f;
 	float Padding[3]{};
 };
-static_assert(sizeof(FSubUVConstants) == 48, "ParticleSubUVShader.hlsl cbuffer subuv와 크기가 같아야 한다");
+static_assert(sizeof(FSubUVConstants) == 48, "ParticleSpriteShader.hlsl/BillboardShader.hlsl의 b1 cbuffer와 크기가 같아야 한다");
 
 UCLASS()
 class UBillboardComponent : public UPrimitiveComponent

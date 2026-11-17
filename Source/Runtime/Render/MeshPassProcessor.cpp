@@ -24,10 +24,12 @@ namespace
 		}
 	}
 
+	// 패킷이 행렬을 직접 실었으면(빌보드, 파티클) 그것을, 아니면 프록시의 월드 행렬을 쓴다.
+	// World.cpp의 per-object slot도 Model을 먼저 쓰므로 slot 경로와 직접 업로드 경로가 같은 행렬을 쓰게 된다.
 	const FMatrix& PacketWorld(const FRenderPacket& Packet)
 	{
-		if (Packet.Proxy) return Packet.Proxy->GetLocalToWorld();
-		return Packet.Model ? *Packet.Model : FMatrix::Identity;
+		if (Packet.Model) return *Packet.Model;
+		return Packet.Proxy ? Packet.Proxy->GetLocalToWorld() : FMatrix::Identity;
 	}
 
 	uint64 GroupKey(const FStaticDrawGroup& Group)
@@ -136,6 +138,22 @@ namespace
 		if (!Skinned) return false;
 		Batch.Pipeline.Shader = Skinned;
 		Batch.BoneBuffer = Packet.BoneBuffer;
+		return true;
+	}
+
+	// 인스턴스 패킷이면 같은 패스 셰이더의 "#PARTICLE_INSTANCE" VS 변형으로 바꾸고 인스턴스 데이터를 배치에 싣는다.
+	// 변형이 없는 셰이더(인스턴싱을 모르는 머티리얼)는 그릴 수 없으므로 false를 돌려 패킷을 건너뛴다.
+	bool ApplyParticleInstance(FMeshDrawBatch& Batch, const FRenderPacket& Packet)
+	{
+		if (Packet.InstanceCount == 0) return true;
+		if (!Packet.InstanceData || Packet.InstanceStride == 0 || !Batch.Pipeline.Shader) return false;
+		FShaderProgram* Instanced = FRenderResourceManager::FindShaderProgram(
+			Batch.Pipeline.Shader->Name + FRenderResourceManager::ParticleInstanceSuffix);
+		if (!Instanced) return false;
+		Batch.Pipeline.Shader = Instanced;
+		Batch.InstanceData = Packet.InstanceData;
+		Batch.InstanceStride = Packet.InstanceStride;
+		Batch.InstanceCount = Packet.InstanceCount;
 		return true;
 	}
 
@@ -258,6 +276,7 @@ bool FMeshPassProcessor::Build(const FSceneView& View, const FRenderQueue& Queue
 		if (!BuildBatch(Batch, VB, IB, Packet.Material, Pass, View,
 			LightingModel, Packet.MaterialParamData, Packet.MaterialParamDataSize)) return false;
 		if (!ApplyGpuSkin(Batch, Packet)) continue;
+		if (!ApplyParticleInstance(Batch, Packet)) continue;
 
 		const uint32 IndexCount = Packet.IndexCount ? Packet.IndexCount : Batch.IndexBuffer->GetIndexCount();
 		const void* ObjectKey = Packet.Proxy ? static_cast<const void*>(Packet.Proxy) : static_cast<const void*>(&Packet);

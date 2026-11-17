@@ -4,6 +4,7 @@
 #include "LightEvaluation.hlsli"
 #include "LightGridCommon.hlsli"
 #include "GpuSkinCommon.hlsli"
+#include "ParticleInstanceCommon.hlsli"
 
 // 셰이더 스캐너는 매크로 정의 없이 이 파일을 컴파일하므로 기본 변형에는 Lambert를 쓴다.
 // 명시적인 변형은 조명 모델 또는 뷰 모드 하나만 1로 설정한다.
@@ -70,6 +71,7 @@ struct VS_IN
 	float2 UV : TEXCOORD;
 	float4 Color : COLOR;
 	GPU_SKIN_VS_INPUT
+	PARTICLE_INSTANCE_VS_INPUT
 };
 
 struct VS_OUT
@@ -404,6 +406,7 @@ VS_OUT Uber_VS(VS_IN Input)
 {
     VS_OUT Output;
     GPU_SKIN_APPLY(Input, Input.Position, Input.Normal, Input.Tangent);
+    PARTICLE_INSTANCE_APPLY(Input, Input.Position, Input.Normal, Input.Tangent);
     float4 WorldPosition = mul(float4(Input.Position, 1.0f), World);
     float4 ViewPosition = mul(WorldPosition, View);
     Output.Position = mul(ViewPosition, Projection);

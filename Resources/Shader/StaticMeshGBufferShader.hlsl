@@ -1,5 +1,6 @@
 #pragma pack_matrix(row_major)
 #include "GpuSkinCommon.hlsli"
+#include "ParticleInstanceCommon.hlsli"
 
 cbuffer ViewConstants : register(b0)
 {
@@ -28,6 +29,7 @@ struct VS_INPUT
 	float2 UV : TEXCOORD;
 	float4 Color : COLOR;
 	GPU_SKIN_VS_INPUT
+	PARTICLE_INSTANCE_VS_INPUT
 };
 
 struct PS_INPUT
@@ -72,6 +74,7 @@ PS_INPUT mainVS(VS_INPUT Input)
 {
     PS_INPUT Output;
     GPU_SKIN_APPLY(Input, Input.Position, Input.Normal, Input.Tangent);
+    PARTICLE_INSTANCE_APPLY(Input, Input.Position, Input.Normal, Input.Tangent);
     float4 WorldPosition = mul(float4(Input.Position, 1.0f), World);
 
     Output.Position = mul(WorldPosition, VP);
