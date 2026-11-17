@@ -192,14 +192,14 @@ project "HitoriHeaderTool"
 		"Source/Programs/HitoriHeaderTool/**.cpp",
 	}
 
--- UI 없는 외부 Dump writer. Runtime 전체나 renderer를 링크하지 않는다.
+-- 외부 Dump writer. 저장 성공 시 결과 dialog만 표시하며 Runtime/renderer는 링크하지 않는다.
 project "CrashDumpWriter"
 	location "Source/Programs/CrashDumpWriter"
 	kind "ConsoleApp"
 	CommonSettings()
 	files { "Source/Programs/CrashDumpWriter/**.cpp", "Source/Runtime/Core/Windows/WindowsCrashDump.*", "Source/Runtime/Core/Windows/CrashReportChannel.*" }
 	includedirs { "Source/Runtime" }
-	links { "Dbghelp.lib" }
+	links { "Dbghelp.lib", "User32.lib" }
 
 -- 런타임. 에디터를 모른다. include 경로에 Source/Editor가 없는 것이 그 방벽이다.
 -- location이 소스 루트와 같아야 "모든 파일 표시"에서 폴더가 보인다.
