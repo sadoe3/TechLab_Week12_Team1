@@ -83,8 +83,38 @@ void FParticleSystemSceneProxy::GetDynamicMeshElements(FRenderQueue& Queue, cons
 	const UParticleSystemComponent* PSC = static_cast<const UParticleSystemComponent*>(GetComponent());
 	UpdateDynamicBuffers(PSC);
 
+	if (!IndexBuffer) return;
+
+	// 셰이더가 World[1]/World[2]를 카메라 Right/Up으로 읽는다. 단위 길이여야 Size가 그대로 크기가 된다
+	const FMatrix* CameraAxes = nullptr;
+
+	const FVector Delta = PSC->GetWorldLocation() - View.CameraPosition;
+	const float DistanceSq = Delta.Dot(Delta);
+
 	for (const FDynamicEmitterDataBase* Data : PSC->GetEmitterRenderData())
 	{
-		// TODO: Step 5 - 이미터마다 정점을 채우고 패킷 1개를 제출한다
+		const FDynamicEmitterReplayDataBase& Source = Data->GetSource();
+		if (Source.eEmitterType != EDynamicEmitterType::Sprite || Source.ActiveParticleCount == 0) continue;
+
+		const FDynamicSpriteEmitterReplayDataBase& SpriteSource = static_cast<const FDynamicSpriteEmitterReplayDataBase&>(Source);
+		FVertexBuffer* VB = EmitterVertexBuffers.IsValidIndex(Data->EmitterIndex) ? EmitterVertexBuffers[Data->EmitterIndex].get() : nullptr;
+		if (!SpriteSource.Material || !VB) continue;
+
+		if (!CameraAxes)
+		{
+			CameraAxes = Queue.StoreWorldMatrix(View.BuildBillboardMatrix(FVector::ZeroVector, 1.0f, 1.0f));
+		}
+
+		FRenderPacket& Packet = Queue.AddDefaulted_GetRef();
+		// Proxy를 넣으면 렌더러가 b2에 LocalToWorld를 넣어 버리므로 비우고 Model로 카메라 축을 보낸다
+		Packet.Proxy = nullptr;
+		Packet.Model = CameraAxes;
+		Packet.VertexBuffer = VB;
+		Packet.IndexBuffer = IndexBuffer.get();
+		Packet.Material = SpriteSource.Material;
+		Packet.StartIndex = 0;
+		Packet.IndexCount = static_cast<uint32>(Source.ActiveParticleCount) * 6;
+		// 지금은 이미터 단위로만 정렬한다. 파티클 단위 정렬은 Phase 4
+		Packet.CameraToParticleDistance = DistanceSq;
 	}
 }
