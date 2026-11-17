@@ -484,8 +484,8 @@ void UAssetManager::CreateParticleSpriteMaterial()
 	SpriteMat->PSOType = EPSOType::ParticleSprite;
 	SpriteMat->Shader = FRenderResourceManager::GetShaderProgram("Resources/Shader/ParticleSpriteShader.hlsl");
 	SpriteMat->Textures.Add(GetAssetByPath<UTexture2D>("Engine/SubUV/StarParticle.png"));
-	SpriteMat->BlendState = EBlendState::Opaque;
-	SpriteMat->DepthStencilState = EDepthStencilState::Default;
+	SpriteMat->BlendState = EBlendState::AlphaBlend;
+	SpriteMat->DepthStencilState = EDepthStencilState::ReadOnly;
 	SpriteMat->SamplerState = ESamplerState::LinearClamp;
 	RegisterAsset("ParticleSpriteMaterial", SpriteMat);
 }

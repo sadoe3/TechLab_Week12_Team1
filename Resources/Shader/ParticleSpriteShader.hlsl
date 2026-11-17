@@ -56,10 +56,8 @@ PS_INPUT mainVS(VS_INPUT input)
 
 float4 mainPS(PS_INPUT input) : SV_TARGET
 {
-    // 텍스처 × 파티클 색, 알파가 낮은 픽셀은 버린다
+    // 텍스처 × 파티클 색. 가장자리 알파는 버리지 않고 블렌드로 섞는다
     float4 C = SpriteTexture.Sample(SpriteSampler, input.uv);
     C *= input.color;
-    clip(C.a - 0.5f);
-    
     return C;
 }
