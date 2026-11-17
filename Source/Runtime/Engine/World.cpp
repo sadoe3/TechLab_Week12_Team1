@@ -527,8 +527,8 @@ void UWorld::GatherRenderPackets(FRenderQueue& RenderQueue, const FViewContext* 
 				{
 					if (!SlotDest || NextExtraSlot >= MaxSlots) break;
 					FRenderPacket& Packet = RenderQueue[p];
-					const FMatrix& Model = Packet.Proxy ? Packet.Proxy->GetLocalToWorld() : Packet.Model ? *Packet.Model : FMatrix::Identity;
-					const FMatrix WorldToLocal = Packet.Proxy ? Packet.Proxy->GetWorldToLocal() : Model.Inverse();
+					const FMatrix& Model = Packet.Model ? *Packet.Model : (Packet.Proxy ? Packet.Proxy->GetLocalToWorld() : FMatrix::Identity);
+					const FMatrix WorldToLocal = (!Packet.Model && Packet.Proxy) ? Packet.Proxy->GetWorldToLocal() : Model.Inverse();
 					WritePerObjectConstants(SlotDest + size_t(NextExtraSlot) * ObjectSlotBytes, Model, WorldToLocal, !Packet.Proxy || Packet.Proxy->bReceiveShadow);
 					Packet.Slot = NextExtraSlot++;
 				}

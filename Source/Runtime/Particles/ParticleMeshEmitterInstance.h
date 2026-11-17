@@ -20,7 +20,8 @@ public:
 	virtual void Init() override;
 	virtual void Tick(float DeltaTime, bool bSuppressSpawning) override;
 	virtual void UpdateBoundingBox(float DeltaTime) override;
-	virtual bool IsMeshEmitter() const override { return true; }
+	virtual float GetParticleExtent(const FBaseParticle& Particle) const override;
+	virtual TUniquePtr<FDynamicEmitterDataBase> GetDynamicData(bool bSelected) override;
 
 	UStaticMesh* GetMesh() const;
 	UMaterial* GetOverrideMaterial() const;

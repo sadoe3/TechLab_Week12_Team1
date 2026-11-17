@@ -1,4 +1,4 @@
-﻿#include "EnginePCH.h"
+#include "EnginePCH.h"
 #include "Render/SceneRenderer.h"
 #include "Render/Renderer.h"
 #include "Render/SceneLightResources.h"
@@ -1252,7 +1252,7 @@ void FSceneRenderer::GatherRenderPackets(FScene& Scene, FSceneRenderData& Data,
 				{
 					if (!bPrepareObjectSlots || NextExtraSlot >= MaxSlots) break;
 					FRenderPacket& Packet = RenderQueue[p];
-					const FMatrix& Model = Packet.Proxy ? Packet.Proxy->GetLocalToWorld() : Packet.Model ? *Packet.Model : FMatrix::Identity;
+					const FMatrix& Model = Packet.Model ? *Packet.Model : (Packet.Proxy ? Packet.Proxy->GetLocalToWorld() : FMatrix::Identity);
 					Data.ObjectConstants[NextExtraSlot] = MakePerObjectConstants(Model);
 					Packet.Slot = NextExtraSlot++;
 				}
