@@ -66,6 +66,8 @@ public:
 	/** 활성/비활성 슬롯 인덱스 배열 */
 	uint16* ParticleIndices = nullptr;
 
+	/** 모듈 Payload가 시작되는 위치 (= sizeof(FBaseParticle)) */
+	int32 PayloadOffset = 0;
 	int32 ParticleStride = 0;
 	int32 ParticleSize = 0;
 	int32 ActiveParticles = 0;

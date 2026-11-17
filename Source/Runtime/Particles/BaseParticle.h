@@ -39,7 +39,10 @@ struct FBaseParticle
 	FVector4 Color = FVector4(1.0f, 1.0f, 1.0f, 1.0f);
 
 	int32 Flags = 0;
+	// Payload 시작(= sizeof)이 16바이트 경계에 오도록 맞춘다
+	int32 Padding[2] = {};
 };
+static_assert(sizeof(FBaseParticle) % 16 == 0, "FBaseParticle은 16바이트 배수여야 Payload 시작이 정렬된다");
 
 #define DECLARE_PARTICLE(Name, Address) \
 	FBaseParticle& Name = *((FBaseParticle*)(Address));
