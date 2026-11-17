@@ -11,6 +11,13 @@ enum class EParticleScreenAlignment : uint8
 	Velocity,       // 속도 방향으로 길게 늘어난다
 };
 
+UENUM()
+enum class EParticleSortMode : uint8
+{
+	None,            // 생성 순서 그대로 그린다
+	DistanceToView,  // 카메라에서 먼 것부터 그린다
+};
+
 UCLASS()
 class UParticleModuleRequired : public UParticleModule
 {
@@ -25,4 +32,7 @@ public:
 
 	UPROPERTY(EditAnywhere)
 	EParticleScreenAlignment ScreenAlignment = EParticleScreenAlignment::FacingCamera;
+
+	UPROPERTY(EditAnywhere)
+	EParticleSortMode SortMode = EParticleSortMode::DistanceToView;
 };

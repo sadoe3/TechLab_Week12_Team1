@@ -150,7 +150,7 @@ FDynamicEmitterDataBase* FParticleEmitterInstance::GetDynamicData()
 	memcpy(Data->Source.DataContainer.ParticleData, ParticleData, MaxActiveParticles * ParticleStride);
 	memcpy(Data->Source.DataContainer.ParticleIndices, ParticleIndices, MaxActiveParticles * sizeof(uint16));
 	Data->Source.Scale = Component->GetWorldScale3D();
-	Data->Source.SortMode = 0;
+	Data->Source.SortMode = CurrentLODLevel->RequiredModule ? static_cast<int32>(CurrentLODLevel->RequiredModule->SortMode) : 0;
 	Data->Source.Material = CurrentLODLevel->RequiredModule ? CurrentLODLevel->RequiredModule->Material : nullptr;
 	return Data;
 }

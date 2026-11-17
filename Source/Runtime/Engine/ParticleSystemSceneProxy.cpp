@@ -3,6 +3,7 @@
 
 #include "Components/ParticleSystemComponent.h"
 #include "Particles/ParticleDynamicData.h"
+#include "Particles/ParticleModuleRequired.h"
 #include "Render/RenderCommand.h"
 
 FParticleSystemSceneProxy::FParticleSystemSceneProxy(UParticleSystemComponent* InComponent)
@@ -17,10 +18,10 @@ void FParticleSystemSceneProxy::UpdateRenderState()
 	UpdateCommonFlags();
 }
 
-void FParticleSystemSceneProxy::UpdateDynamicBuffers(const UParticleSystemComponent* PSC)
+void FParticleSystemSceneProxy::UpdateDynamicBuffers(const UParticleSystemComponent* PSC, const FViewContext& View)
 {
-	// 버전 검사
-	if (PSC->GetRenderDataVersion() == FilledVersion)
+	// 버전, 카메라 위치 검사
+	if (PSC->GetRenderDataVersion() == FilledVersion && View.CameraPosition == FilledCameraPosition)
 	{
 		return;
 	}
@@ -50,10 +51,19 @@ void FParticleSystemSceneProxy::UpdateDynamicBuffers(const UParticleSystemCompon
 
 		if (Source.ActiveParticleCount == 0 || !VB) continue;
 
+		// SortMode가 None이 아니면 SortSpriteParticles로 SortOrder를 채우고 넘긴다
+		bool bHasSortMode = Source.SortMode != static_cast<int32>(EParticleSortMode::None);
+		if (bHasSortMode)
+		{
+			Sprite->SortSpriteParticles(Source.SortMode, View.CameraPosition, SortOrder);
+		}
+
 		// WRITE_DISCARD라 이전 내용이 없으니 살아 있는 파티클을 전부 다시 쓴다
 		FParticleSpriteVertex* Dst = static_cast<FParticleSpriteVertex*>(RenderCommand::MapWriteDiscard(VB.get()));
 		if (!Dst) continue;
-		Sprite->FillVertices(Dst);
+
+		Sprite->FillVertices(Dst, bHasSortMode ? &SortOrder : nullptr);
+
 		RenderCommand::Unmap(VB.get());
 	}
 
@@ -74,14 +84,15 @@ void FParticleSystemSceneProxy::UpdateDynamicBuffers(const UParticleSystemCompon
 		RenderCommand::UpdateBufferData(IndexBuffer.get(), Indices.GetData(), IndexCount * sizeof(uint32));
 	}
 
-	// 버전 갱신
+	// 버전, 카메라 위치 갱신
 	FilledVersion = PSC->GetRenderDataVersion();
+	FilledCameraPosition = View.CameraPosition;
 }
 
 void FParticleSystemSceneProxy::GetDynamicMeshElements(FRenderQueue& Queue, const FViewContext& View)
 {
 	const UParticleSystemComponent* PSC = static_cast<const UParticleSystemComponent*>(GetComponent());
-	UpdateDynamicBuffers(PSC);
+	UpdateDynamicBuffers(PSC, View);
 
 	if (!IndexBuffer) return;
 

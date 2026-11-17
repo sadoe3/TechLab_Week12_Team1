@@ -1,6 +1,8 @@
 #pragma once
 
 #include "Core/Types.h"
+#include "Containers/Array.h"
+#include <algorithm>
 #include "Math/Vector.h"
 #include "Render/Vertex.h"
 #include "Particles/ParticleHelper.h"
@@ -82,11 +84,39 @@ struct FDynamicEmitterDataBase
 	virtual const FDynamicEmitterReplayDataBase& GetSource() const = 0;
 };
 
+// 파티클 본체 대신 (인덱스, 거리)만 정렬해 뷰마다 다른 순서를 싸게 만든다
+struct FParticleOrder
+{
+	int32 ParticleIndex;
+	float Z;
+};
+
 struct FDynamicSpriteEmitterDataBase : public FDynamicEmitterDataBase
 {
-	// Phase 4: SortSpriteParticles
+	// SortMode는 EParticleSortMode 값. OutOrder에 그릴 순서를 채운다
+	void SortSpriteParticles(int32 SortMode, const FVector& CameraPosition, TArray<FParticleOrder>& OutOrder) const;
 	virtual int32 GetDynamicVertexStride() const = 0;
 };
+
+inline void FDynamicSpriteEmitterDataBase::SortSpriteParticles(int32 SortMode, const FVector& CameraPosition, TArray<FParticleOrder>& OutOrder) const
+{
+	const FDynamicEmitterReplayDataBase& Source = GetSource();
+	const FParticleDataContainer& Container = Source.DataContainer;
+
+	OutOrder.SetNum(Source.ActiveParticleCount);
+	for (int32 i = 0; i < Source.ActiveParticleCount; ++i)
+	{
+		const int32 Index = Container.ParticleIndices[i];
+		const FBaseParticle& Particle = *reinterpret_cast<const FBaseParticle*>(Container.ParticleData + Index * Source.ParticleStride);
+		const FVector Delta = Particle.Location - CameraPosition;
+
+		OutOrder[i].ParticleIndex = Index;
+		OutOrder[i].Z = Delta.SizeSquared();
+	}
+
+	std::sort(OutOrder.begin(), OutOrder.end(),
+		[](const FParticleOrder& A, const FParticleOrder& B) { return A.Z > B.Z; });
+}
 
 struct FDynamicSpriteEmitterData : public FDynamicSpriteEmitterDataBase
 {
@@ -95,19 +125,20 @@ struct FDynamicSpriteEmitterData : public FDynamicSpriteEmitterDataBase
 	virtual const FDynamicEmitterReplayDataBase& GetSource() const override { return Source; }
 	virtual int32 GetDynamicVertexStride() const override { return sizeof(FParticleSpriteVertex); }
 
-	// Dst에는 ActiveParticleCount * 4 칸이 있어야 한다
-	void FillVertices(FParticleSpriteVertex* Dst) const;
+	// Dst에는 ActiveParticleCount * 4 칸이 있어야 한다. Order가 null이면 생성 순서대로 채운다
+	void FillVertices(FParticleSpriteVertex* Dst, const TArray<FParticleOrder>* Order) const;
 };
 
 // 스냅샷의 살아 있는 파티클마다 정점 4개를 채운다 (UV만 다르게)
-inline void FDynamicSpriteEmitterData::FillVertices(FParticleSpriteVertex* Dst) const
+inline void FDynamicSpriteEmitterData::FillVertices(FParticleSpriteVertex* Dst, const TArray<FParticleOrder>* Order) const
 {
 	static const FVector2 Corners[4] = { FVector2(0.f, 0.f), FVector2(1.f, 0.f), FVector2(1.f, 1.f), FVector2(0.f, 1.f) };
 
 	const FParticleDataContainer& Container = Source.DataContainer;
 	for (int32 i = 0; i < Source.ActiveParticleCount; ++i)
 	{
-		const int32 Index = Container.ParticleIndices[i];
+		// Order가 있으면 그 순서로 파티클을 꺼낸다
+		const int32 Index = Order ? (*Order)[i].ParticleIndex : Container.ParticleIndices[i];
 		const FBaseParticle& Particle = *reinterpret_cast<const FBaseParticle*>(Container.ParticleData + Index * Source.ParticleStride);
 
 		FParticleSpriteVertex Vertex;
