@@ -30,6 +30,9 @@ public:
 	/** 모든 이미터의 모듈/LOD 캐시를 갱신한다. */
 	void UpdateAllModuleLists();
 
+	void SetPath(const FString& InPath) { AssetPath = InPath; }
+	const FString& GetPath() const { return AssetPath; }
+
 public:
 	UPROPERTY(EditAnywhere)
 	float UpdateTime_FPS = 60.0f;
@@ -53,4 +56,5 @@ public:
 
 protected:
 	TArray<UParticleEmitter*> Emitters;
+	FString AssetPath;
 };

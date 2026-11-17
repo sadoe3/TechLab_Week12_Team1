@@ -4,6 +4,7 @@
 #include "Asset/AssetUtils.h"
 #include "Asset/RenderAsset.h"
 #include "Animation/AnimSequence.h"
+#include "Particles/ParticleSystem.h"
 #include "UObject/Casts.h"
 
 FJsonArchiveOutputFormatter::FJsonArchiveOutputFormatter(FArchive& InInner)
@@ -183,6 +184,21 @@ void FJsonArchiveOutputFormatter::Serialize(UObject*& Value)
 		else
 		{
 			Top() = nullptr;
+		}
+		return;
+	}
+
+	// UParticleSystem은 URenderAsset이 아니므로 따로 경로를 쓴다. (없으면 씬 저장 시 "Template": null이 됨)
+	if (UParticleSystem* ParticleSystem = Cast<UParticleSystem>(Value))
+	{
+		const FString& Path = ParticleSystem->GetPath();
+		if (!Path.empty())
+		{
+			Top() = Path;
+		}
+		else
+		{
+			Top() = nullptr;   // 코드로 조립한 템플릿처럼 파일이 없는 시스템은 되찾을 수 없다
 		}
 		return;
 	}
