@@ -12,7 +12,7 @@ namespace
 	/**
 	 * 이미터 안의 파티클 그리기 순서를 정한다 (Unreal FDynamicSpriteEmitterDataBase::SortSpriteParticles 대응).
 	 * OutOrder[i] = i번째로 그릴 파티클의 인덱스. 뒤에서 앞으로 그려야 알파 블렌딩이 맞으므로 거리·깊이는 큰 것부터.
-	 * 카메라 정보가 없는 뷰는 정렬하지 않는다.
+	 * 그림자 패스나 카메라 정보가 없는 뷰는 정렬하지 않는다.
 	 */
 	template <typename FGetPosition, typename FGetRelativeTime>
 	void BuildSortOrder(int32 Count, uint8 InSortMode, const FViewContext& View,
@@ -25,7 +25,7 @@ namespace
 		}
 
 		const EParticleSortMode SortMode = static_cast<EParticleSortMode>(InSortMode);
-		const bool bHasView = View.CameraForward.Dot(View.CameraForward) > 1e-12f;
+		const bool bHasView = !View.bShadowDepthPass && View.CameraForward.Dot(View.CameraForward) > 1e-12f;
 		if (SortMode == EParticleSortMode::PSORTMODE_None || Count < 2)
 		{
 			return;
@@ -108,6 +108,11 @@ void FDynamicSpriteEmitterData::GetDynamicMeshElements(
 	const FViewContext& View,
 	FRenderQueue& Queue) const
 {
+	// 반투명 스프라이트는 깊이 그림자를 만들지 않는다 (Unreal도 반투명은 일반 그림자 깊이에 들어가지 않음)
+	if (View.bShadowDepthPass)
+	{
+		return;
+	}
 	if (!Proxy || !QuadMesh || !Material || Source.Particles.IsEmpty())
 	{
 		return;
@@ -197,6 +202,10 @@ void FDynamicMeshEmitterData::GetDynamicMeshElements(
 	const FViewContext& View,
 	FRenderQueue& Queue) const
 {
+	if (View.bShadowDepthPass && !bCastShadows)
+	{
+		return;
+	}
 	if (!Proxy || !StaticMesh || Source.ParticleMatrices.IsEmpty())
 	{
 		return;
@@ -224,7 +233,7 @@ void FDynamicMeshEmitterData::GetDynamicMeshElements(
 		PositionSum = PositionSum + FVector(WorldMatrices[Index].M[3][0], WorldMatrices[Index].M[3][1], WorldMatrices[Index].M[3][2]);
 	}
 
-	// 2) 이미터 내부 정렬 (SortMode)
+	// 2) 이미터 내부 정렬 (SortMode). 그림자 패스는 정렬하지 않는다.
 	TArray<int32> Order;
 	BuildSortOrder(Count, Source.SortMode, View,
 		[&](int32 Index) { return FVector(WorldMatrices[Index].M[3][0], WorldMatrices[Index].M[3][1], WorldMatrices[Index].M[3][2]); },
@@ -237,13 +246,18 @@ void FDynamicMeshEmitterData::GetDynamicMeshElements(
 		Instances[DrawIndex].World = WorldMatrices[Order[DrawIndex]];
 	}
 
-	// 인스턴스마다 월드 행렬이 있으므로 오브젝트 상수(World)는 단위 행렬
+	// 인스턴스마다 월드 행렬이 있으므로 오브젝트 상수(World)는 단위 행렬. 그림자 Build는 여기에 PreTranslation만 더한다.
 	const FMatrix* IdentityModel = Queue.StoreWorldMatrix(FMatrix::Identity);
-	const float EmitterDistSq = DistanceSqToCenter(PositionSum, Count, View);
+	const float EmitterDistSq = View.bShadowDepthPass ? 0.0f : DistanceSqToCenter(PositionSum, Count, View);
 
 	// 4) 이미터×섹션당 패킷 1개 = 드로우콜 1번 (섹션마다 머티리얼이 다를 수 있다)
 	const auto AddPacket = [&](UMaterial* Material, uint32 StartIndex, uint32 IndexCount)
 	{
+		// 그림자 깊이에는 불투명 머티리얼만 넣는다
+		if (View.bShadowDepthPass && (!Material || Material->PSOType != EPSOType::StaticMesh_Opaque))
+		{
+			return;
+		}
 		FRenderPacket& Packet = Queue.AddDefaulted_GetRef();
 		Packet.Proxy = Proxy;
 		Packet.Model = IdentityModel;
@@ -261,7 +275,8 @@ void FDynamicMeshEmitterData::GetDynamicMeshElements(
 
 	if (MeshData.Sections.IsEmpty())
 	{
-		AddPacket(OverrideMaterial ? OverrideMaterial : StaticMesh->GetMaterial(0), 0, 0);
+		// 그림자 Build는 IndexCount 0인 패킷을 건너뛰므로 전체 인덱스 수를 직접 넣는다
+		AddPacket(OverrideMaterial ? OverrideMaterial : StaticMesh->GetMaterial(0), 0, IB->GetIndexCount());
 	}
 	else
 	{

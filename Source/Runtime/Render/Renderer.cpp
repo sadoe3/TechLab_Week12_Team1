@@ -115,7 +115,7 @@ void FRenderer::DrawMeshes(std::span<const FMeshDrawBatch> Batches)
 
 bool FRenderer::BindInstances(const FMeshDrawBatch& Batch)
 {
-	const void* InstanceData = Batch.InstanceData;
+	const void* InstanceData = Batch.GetInstanceData();
 	if (!InstanceData || Batch.InstanceStride == 0) return false;
 
 	FInstanceBufferSlot* Slot = nullptr;

@@ -249,7 +249,8 @@ void FSceneRenderer::AddInteractingPrimitives(FScene& Scene, FProjectedShadowInf
 		{
 			if (!Proxy->bCastsShadow || !Proxy->IsShown(View.bGameView)) return;
 			if (Proxy->IsSkinned() && !CachedViewContext.bShowSkeletalMesh) return;
-			if ((!Proxy->GetMesh() && !Proxy->HasDynamicMeshElements()) || !Proxy->GetRenderState()) return;
+			// 동적 요소(파티클 등)는 캐시된 RenderState 없이 그림자 Build에서 패킷을 직접 만든다.
+			if (!Proxy->HasDynamicMeshElements() && (!Proxy->GetMesh() || !Proxy->GetRenderState())) return;
 
 			// 카메라에서 너무 작게 보이는 Caster는 그림자도 눈에 띄지 않는다 (r.Shadow.RadiusThreshold).
 			const FAABB& Bounds = Proxy->GetBounds();

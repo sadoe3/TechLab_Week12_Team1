@@ -1,6 +1,7 @@
 #include "EnginePCH.h"
 #include "Components/ParticleSystemComponent.h"
 #include "Engine/ParticleSystemSceneProxy.h"
+#include "Engine/Scene.h"
 #include "Particles/ParticleDynamicData.h"
 #include "Particles/ParticleEmitter.h"
 #include "Particles/ParticleEmitterInstance.h"
@@ -145,6 +146,15 @@ void UParticleSystemComponent::UpdateRenderBounds()
 	};
 	if (SameVector(NewBounds.Min, CachedLocalBounds.Min) && SameVector(NewBounds.Max, CachedLocalBounds.Max))
 	{
+		// 바운드가 그대로여도 파티클은 매 프레임 움직이므로 캐시된 그림자 타일을 무효화해야 한다
+		// (USkinnedMeshComponent::SendRenderDynamicData와 같은 방식)
+		if (FPrimitiveSceneProxy* Proxy = GetSceneProxy())
+		{
+			if (Proxy->GetScene() && Proxy->bCastsShadow)
+			{
+				Proxy->GetScene()->InvalidateShadowsInBounds(Proxy->GetBounds());
+			}
+		}
 		return;
 	}
 	CachedLocalBounds = NewBounds;

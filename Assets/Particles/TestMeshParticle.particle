@@ -37,7 +37,7 @@
             "MeshPath": "Sphere",
             "LODSizeScale": 1.0,
             "bUseStaticMeshLODs": true,
-            "bCastShadows": false,
+            "bCastShadows": true,
             "bOverrideMaterial": false
           }
         }

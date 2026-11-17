@@ -1,6 +1,7 @@
 // Resources/Shader/ShadowDepth.hlsl
 #pragma pack_matrix(row_major)
 #include "GpuSkinCommon.hlsli"
+#include "ParticleInstanceCommon.hlsli"
 
 cbuffer ViewConstants : register(b0)
 {
@@ -32,6 +33,7 @@ struct VS_INPUT
     float4 Color : COLOR;
 #endif
     GPU_SKIN_VS_INPUT
+    PARTICLE_INSTANCE_VS_INPUT
 };
 struct VS_OUTPUT
 {
@@ -53,6 +55,7 @@ VS_OUTPUT mainVS(VS_INPUT Input)
 {
     VS_OUTPUT Output;
     GPU_SKIN_APPLY(Input, Input.Position, Input.Normal, Input.Tangent);
+    PARTICLE_INSTANCE_APPLY_PN(Input, Input.Position, Input.Normal);
     const float4 WorldPosition = mul(float4(Input.Position, 1.0f), World);
     const float3 WorldNormal = normalize(mul(float4(Input.Normal, 0.0f), NormalMatrix).xyz);
     Output.Position = mul(WorldPosition, VP);

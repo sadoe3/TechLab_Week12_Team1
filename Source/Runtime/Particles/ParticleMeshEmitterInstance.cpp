@@ -128,6 +128,7 @@ TUniquePtr<FDynamicEmitterDataBase> FParticleMeshEmitterInstance::GetDynamicData
 	Data->Source.SortMode = (CurrentLODLevel && CurrentLODLevel->RequiredModule)
 		? static_cast<uint8>(CurrentLODLevel->RequiredModule->SortMode)
 		: 0;
+	Data->bCastShadows = MeshTypeData && MeshTypeData->bCastShadows;
 
 	Data->Source.ParticleMatrices.Reserve(ActiveParticles);
 	Data->Source.RelativeTimes.Reserve(ActiveParticles);

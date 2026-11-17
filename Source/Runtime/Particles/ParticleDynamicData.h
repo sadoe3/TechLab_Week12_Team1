@@ -166,6 +166,8 @@ struct FDynamicMeshEmitterData : public FDynamicEmitterDataBase
 	FDynamicMeshEmitterReplayData Source;
 	UStaticMesh* StaticMesh = nullptr;
 	UMaterial* OverrideMaterial = nullptr;
+	/** UParticleModuleTypeDataMesh::bCastShadows. 컴포넌트 bCastShadow도 켜져 있어야 그림자 패스에 들어온다. */
+	bool bCastShadows = false;
 };
 
 /**
