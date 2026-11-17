@@ -40,13 +40,16 @@ void FParticleEmitterInstance::InitParameters(UParticleEmitter* InTemplate, UPar
 void FParticleEmitterInstance::Init()
 {
 	ParticleSize = sizeof(FBaseParticle);
-	ParticleStride = sizeof(FBaseParticle);
+	PayloadOffset = sizeof(FBaseParticle);
 
 	if (SpriteTemplate)
 	{
 		SpriteTemplate->CacheEmitterModuleInfo();
 		CurrentLODLevel = SpriteTemplate->GetLODLevel(CurrentLODLevelIndex);
+		ParticleSize = SpriteTemplate->ParticleSize;
 	}
+	// 슬롯마다 시작 주소가 16바이트 경계에 오도록 크기를 올림한다
+	ParticleStride = (ParticleSize + 15) & ~15;
 
 	if (CurrentLODLevel && CurrentLODLevel->RequiredModule)
 	{
@@ -212,7 +215,7 @@ void FParticleEmitterInstance::Tick_ModuleUpdate(float DeltaTime)
 	{
 		if (Module && Module->bEnabled && Module->bUpdateModule)
 		{
-			Module->Update(this, 0, DeltaTime);
+			Module->Update(this, SpriteTemplate->GetModuleOffset(Module), DeltaTime);
 		}
 	}
 }
@@ -223,7 +226,7 @@ void FParticleEmitterInstance::Tick_ModuleFinalUpdate(float DeltaTime)
 	{
 		if (Module && Module->bEnabled && Module->bFinalUpdateModule)
 		{
-			Module->FinalUpdate(this, 0, DeltaTime);
+			Module->FinalUpdate(this, SpriteTemplate->GetModuleOffset(Module), DeltaTime);
 		}
 	}
 }
@@ -353,7 +356,8 @@ void FParticleEmitterInstance::SpawnParticles(int32 Count, float StartTime, floa
 		const uint16 ParticleIndex = ParticleIndices[ActiveParticles];
 		FBaseParticle* Particle = reinterpret_cast<FBaseParticle*>(ParticleData + static_cast<size_t>(ParticleIndex) * ParticleStride);
 
-		// PreSpawn
+		// PreSpawn: 재사용 슬롯이라 Payload에 이전 파티클 값이 남아 있으므로 슬롯 전체를 먼저 지운다
+		std::memset(Particle, 0, ParticleStride);
 		*Particle = FBaseParticle();
 		Particle->Location = InitialLocation;
 		Particle->OldLocation = InitialLocation;
@@ -369,7 +373,7 @@ void FParticleEmitterInstance::SpawnParticles(int32 Count, float StartTime, floa
 		{
 			if (Module && Module->bEnabled)
 			{
-				Module->Spawn(this, 0, SpawnTime, Particle);
+				Module->Spawn(this, SpriteTemplate->GetModuleOffset(Module), SpawnTime, Particle);
 			}
 		}
 
