@@ -92,12 +92,53 @@ void FRenderer::DrawMeshes(std::span<const FMeshDrawBatch> Batches)
 				EShaderBindFlagBits::Vertex | EShaderBindFlagBits::Pixel);
 		
 		PreviousTextureCount = static_cast<uint32>(Batch.Textures.Num());
+
+		// 인스턴스 배치: 인스턴스 데이터를 올린 뒤 Item(섹션)마다 DrawIndexedInstanced 한 번으로 InstanceCount개를 그린다.
+		if (Batch.InstanceCount > 0)
+		{
+			if (!BindInstances(Batch)) continue;
+			for (const FMeshDrawBatch::FItem& Item : Batch.Items)
+			{
+				BindObject(Batch, Item);
+				RenderCommand::DrawIndexedInstanced(Item.IndexCount, Batch.InstanceCount, Item.StartIndex);
+			}
+			continue;
+		}
+
 		for (const FMeshDrawBatch::FItem& Item : Batch.Items)
 		{
 			BindObject(Batch, Item);
 			RenderCommand::DrawIndexed(Item.IndexCount, Item.StartIndex);
 		}
 	}
+}
+
+bool FRenderer::BindInstances(const FMeshDrawBatch& Batch)
+{
+	const void* InstanceData = Batch.GetInstanceData();
+	if (!InstanceData || Batch.InstanceStride == 0) return false;
+
+	FInstanceBufferSlot* Slot = nullptr;
+	for (FInstanceBufferSlot& Candidate : InstanceBuffers)
+		if (Candidate.Stride == Batch.InstanceStride) { Slot = &Candidate; break; }
+	if (!Slot)
+	{
+		InstanceBuffers.Add({ Batch.InstanceStride, nullptr });
+		Slot = &InstanceBuffers.Last();
+	}
+
+	// 모자라면 2배씩 키운다 (최소 256개)
+	if (!Slot->Buffer || Slot->Buffer->GetCapacity() < Batch.InstanceCount)
+	{
+		uint32 NewCapacity = Slot->Buffer ? Slot->Buffer->GetCapacity() : 256u;
+		while (NewCapacity < Batch.InstanceCount) NewCapacity *= 2;
+		Slot->Buffer = RenderCommand::CreateDynamicStructuredBuffer(NewCapacity, Batch.InstanceStride);
+		if (!Slot->Buffer) return false;
+	}
+
+	RenderCommand::UpdateBufferData(Slot->Buffer.get(), InstanceData, Batch.InstanceCount * Batch.InstanceStride);
+	RenderCommand::BindShaderResource(ParticleInstanceBufferSlot, Slot->Buffer.get(), EShaderBindFlagBits::Vertex);
+	return true;
 }
 
 void FRenderer::EnsurePerObjectSlotCapacity(uint32 SlotCount)

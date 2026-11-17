@@ -3,7 +3,6 @@
 
 #include "Editor/Gizmo/Gizmo.h"
 
-#include "GameFramework/Actor/ParticleActor.h"
 #include "GameFramework/Actor/StaticMeshActor.h"
 #include "GameFramework/Actor/DirectionalLightActor.h"
 #include "GameFramework/Actor/PointLightActor.h"
@@ -50,7 +49,6 @@ public:
 	TArray<UClass*> Classes
 	{
 		AStaticMeshActor::StaticClass(),
-		AParticleActor::StaticClass(),
 		ATextRenderActor::StaticClass(),
 		AExponentialHeightFogActor::StaticClass(),
 		ACharacter::StaticClass(),

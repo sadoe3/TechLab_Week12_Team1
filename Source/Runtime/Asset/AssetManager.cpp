@@ -22,6 +22,8 @@
 #include "Animation/AnimSequenceFile.h"
 #include "Animation/BlendSpace1D.h"
 #include "Animation/BlendSpaceFile.h"
+#include "Particles/ParticleSystem.h"
+#include "Particles/ParticleSystemFile.h"
 #include "Asset/AssetUtils.h"
 
 #include "Render/ImageLoader.h"
@@ -468,7 +470,7 @@ void UAssetManager::CreateParticleMaterial()
 {
 	UMaterial* ParticleMat = NewObject<UMaterial>();
 	ParticleMat->PSOType = EPSOType::Particle_AlphaBlend;
-	ParticleMat->Shader = FRenderResourceManager::GetShaderProgram("Resources/Shader/ParticleSubUVShader.hlsl");
+	ParticleMat->Shader = FRenderResourceManager::GetShaderProgram("Resources/Shader/ParticleSpriteShader.hlsl");
 	ParticleMat->Textures.Add(GetAssetByPath<UTexture2D>("Engine/SubUV/StarParticle.png"));
 	ParticleMat->BlendState = EBlendState::AlphaBlend;
 	ParticleMat->DepthStencilState = EDepthStencilState::ReadOnly;
@@ -490,6 +492,7 @@ void UAssetManager::Shutdown()
 	Get().SoundMap.Empty();
 	Get().AnimSequenceMap.Empty();
 	Get().BlendSpaceMap.Empty();
+	Get().ParticleSystemMap.Empty();
 }
 
 
@@ -840,4 +843,29 @@ UBlendSpace1D* UAssetManager::LoadBlendSpace(const FString& Path)
 
 	Get().BlendSpaceMap[Key] = BlendSpace;
 	return BlendSpace;
+}
+
+UParticleSystem* UAssetManager::LoadParticleSystem(const FString& Path)
+{
+	// 같은 파일을 절대 경로(Details 패널)와 에셋 키(씬 로드)로 불러도 한 객체를 공유하도록 정규 에셋 키로 캐시한다.
+	const FString AssetKey = FAssetUtils::GetAssetKey(Path);
+	const FString Key = MakeLookupKey(AssetKey.empty() ? Path : AssetKey);
+	if (UParticleSystem** Found = Get().ParticleSystemMap.Find(Key))
+	{
+		return *Found;
+	}
+
+	const FString FilePath = FAssetUtils::ResolveAssetFilePath(Path);
+	UParticleSystem* ParticleSystem = NewObject<UParticleSystem>();
+
+	FString Error;
+	if (!ParticleSystemFile::Read(std::filesystem::path(FilePath.empty() ? Path : FilePath), *ParticleSystem, Error))
+	{
+		HTR_LOG(Warning, "Failed to load ParticleSystem: {} ({})", Path, Error);
+		delete ParticleSystem;
+		return nullptr;
+	}
+
+	Get().ParticleSystemMap[Key] = ParticleSystem;
+	return ParticleSystem;
 }

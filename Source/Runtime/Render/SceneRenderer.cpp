@@ -1,4 +1,4 @@
-﻿#include "EnginePCH.h"
+#include "EnginePCH.h"
 #include "Render/SceneRenderer.h"
 #include "Render/Renderer.h"
 #include "Render/SceneLightResources.h"
@@ -562,11 +562,13 @@ bool FSceneRenderer::AddCorePasses(FRenderGraphBuilder& Graph, FRenderer* Render
 					// 실제 메시 패스와 같은 VS를 사용해 깊이 계산을 일치시킨다.
 					FShaderProgram DepthProgram(nullptr, DepthPipeline->Shader->PixelShader);
 					FShaderProgram SkinnedDepthProgram(nullptr, DepthPipeline->Shader->PixelShader);
+					FShaderProgram InstancedDepthProgram(nullptr, DepthPipeline->Shader->PixelShader);
 					TArray<FMeshDrawBatch> DepthBatches = ForwardBatches;
 					for (FMeshDrawBatch& Batch : DepthBatches)
 					{
-						// GPU 스킨 배치는 VS가 달라서 프로그램을 나눈다
-						FShaderProgram& Program = Batch.BoneBuffer ? SkinnedDepthProgram : DepthProgram;
+						// GPU 스킨·파티클 인스턴스 배치는 VS가 달라서 프로그램을 나눈다 (인스턴스 데이터는 배치에 그대로 남는다)
+						FShaderProgram& Program = Batch.InstanceCount > 0 ? InstancedDepthProgram
+							: (Batch.BoneBuffer ? SkinnedDepthProgram : DepthProgram);
 						Program.VertexShader = Batch.Pipeline.Shader->VertexShader;
 						Batch.Pipeline = *DepthPipeline;
 						Batch.Pipeline.Shader = &Program;
@@ -1252,7 +1254,7 @@ void FSceneRenderer::GatherRenderPackets(FScene& Scene, FSceneRenderData& Data,
 				{
 					if (!bPrepareObjectSlots || NextExtraSlot >= MaxSlots) break;
 					FRenderPacket& Packet = RenderQueue[p];
-					const FMatrix& Model = Packet.Proxy ? Packet.Proxy->GetLocalToWorld() : Packet.Model ? *Packet.Model : FMatrix::Identity;
+					const FMatrix& Model = Packet.Model ? *Packet.Model : (Packet.Proxy ? Packet.Proxy->GetLocalToWorld() : FMatrix::Identity);
 					Data.ObjectConstants[NextExtraSlot] = MakePerObjectConstants(Model);
 					Packet.Slot = NextExtraSlot++;
 				}

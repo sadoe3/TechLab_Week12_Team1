@@ -24,10 +24,12 @@ namespace
 		}
 	}
 
+	// 패킷이 행렬을 직접 실었으면(빌보드, 파티클) 그것을, 아니면 프록시의 월드 행렬을 쓴다.
+	// World.cpp의 per-object slot도 Model을 먼저 쓰므로 slot 경로와 직접 업로드 경로가 같은 행렬을 쓰게 된다.
 	const FMatrix& PacketWorld(const FRenderPacket& Packet)
 	{
-		if (Packet.Proxy) return Packet.Proxy->GetLocalToWorld();
-		return Packet.Model ? *Packet.Model : FMatrix::Identity;
+		if (Packet.Model) return *Packet.Model;
+		return Packet.Proxy ? Packet.Proxy->GetLocalToWorld() : FMatrix::Identity;
 	}
 
 	uint64 GroupKey(const FStaticDrawGroup& Group)
@@ -139,6 +141,22 @@ namespace
 		return true;
 	}
 
+	// 인스턴스 패킷이면 같은 패스 셰이더의 "#PARTICLE_INSTANCE" VS 변형으로 바꾸고 인스턴스 데이터를 배치에 싣는다.
+	// 변형이 없는 셰이더(인스턴싱을 모르는 머티리얼)는 그릴 수 없으므로 false를 돌려 패킷을 건너뛴다.
+	bool ApplyParticleInstance(FMeshDrawBatch& Batch, const FRenderPacket& Packet)
+	{
+		if (Packet.InstanceCount == 0) return true;
+		if (!Packet.InstanceData || Packet.InstanceStride == 0 || !Batch.Pipeline.Shader) return false;
+		FShaderProgram* Instanced = FRenderResourceManager::FindShaderProgram(
+			Batch.Pipeline.Shader->Name + FRenderResourceManager::ParticleInstanceSuffix);
+		if (!Instanced) return false;
+		Batch.Pipeline.Shader = Instanced;
+		Batch.InstanceData = Packet.InstanceData;
+		Batch.InstanceStride = Packet.InstanceStride;
+		Batch.InstanceCount = Packet.InstanceCount;
+		return true;
+	}
+
 	FMeshDrawBatch::FItem BuildItem(const FMatrix& World, const FSceneView& View,
 		EMeshPassType Pass, uint32 Slot, uint32 StartIndex, uint32 IndexCount,
 		const void* ObjectKey, bool bOccludedByGpu, bool bReceiveShadow, bool bReceivesDecals, const FAABB &Bounds,
@@ -196,7 +214,7 @@ namespace
 	}
 
 	FMeshDrawBatch::FItem MakeShadowItem(const FPrimitiveSceneProxy* Proxy, uint32 StartIndex, uint32 IndexCount,
-		const FVector& PreTranslation)
+		const FVector& PreTranslation, const FMatrix* WorldOverride = nullptr)
 	{
 		FMeshDrawBatch::FItem Item{};
 		Item.StartIndex = StartIndex;
@@ -204,7 +222,8 @@ namespace
 		Item.ObjectKey = Proxy;
 
 		// ShadowDepth.hlsl은 법선(NormalMatrix)으로 기울기 bias를 구하므로 오브젝트 상수 전체를 올린다
-		FPerObjectConstants Constants = MakePerObjectConstants(Proxy->GetLocalToWorld());
+		// 인스턴스 패킷은 인스턴스마다 월드 행렬이 따로 있으므로 패킷의 행렬(단위 행렬)에 PreTranslation만 더한다.
+		FPerObjectConstants Constants = MakePerObjectConstants(WorldOverride ? *WorldOverride : Proxy->GetLocalToWorld());
 		Constants.World.M[3][0] += PreTranslation.X;
 		Constants.World.M[3][1] += PreTranslation.Y;
 		Constants.World.M[3][2] += PreTranslation.Z;
@@ -258,6 +277,7 @@ bool FMeshPassProcessor::Build(const FSceneView& View, const FRenderQueue& Queue
 		if (!BuildBatch(Batch, VB, IB, Packet.Material, Pass, View,
 			LightingModel, Packet.MaterialParamData, Packet.MaterialParamDataSize)) return false;
 		if (!ApplyGpuSkin(Batch, Packet)) continue;
+		if (!ApplyParticleInstance(Batch, Packet)) continue;
 
 		const uint32 IndexCount = Packet.IndexCount ? Packet.IndexCount : Batch.IndexBuffer->GetIndexCount();
 		const void* ObjectKey = Packet.Proxy ? static_cast<const void*>(Packet.Proxy) : static_cast<const void*>(&Packet);
@@ -291,13 +311,16 @@ bool FMeshPassProcessor::Build(const TArray<FPrimitiveSceneProxy*>& ShadowMeshes
 	FRenderQueue DynamicPackets;
 	for (FPrimitiveSceneProxy* Proxy : ShadowMeshes)
 	{
-		if (!Proxy || !Proxy->GetRenderState())
+		if (!Proxy)
 			continue;
 
+		// 동적 요소(스켈레탈, 파티클)는 캐시된 RenderState가 없어도 패킷을 직접 만든다.
 		if (!Proxy->GetMesh() && Proxy->HasDynamicMeshElements())
 		{
 			DynamicPackets.Reset();
-			Proxy->GetDynamicMeshElements(DynamicPackets, FViewContext());
+			FViewContext ShadowContext;
+			ShadowContext.bShadowDepthPass = true;
+			Proxy->GetDynamicMeshElements(DynamicPackets, ShadowContext);
 			for (const FRenderPacket& Packet : DynamicPackets)
 			{
 				if (!Packet.VertexBuffer || !Packet.IndexBuffer || Packet.IndexCount == 0)
@@ -307,15 +330,29 @@ bool FMeshPassProcessor::Build(const TArray<FPrimitiveSceneProxy*>& ShadowMeshes
 				Batch.VertexBuffer = Packet.VertexBuffer;
 				Batch.IndexBuffer = Packet.IndexBuffer;
 				if (!ApplyGpuSkin(Batch, Packet)) continue;
+				if (!ApplyParticleInstance(Batch, Packet)) continue;
+				// DynamicPackets는 이 함수의 지역 큐라서 프록시마다 Reset되고(인스턴스 블록 재사용) 함수가 끝나면 해제된다.
+				// 그림자는 Build 이후에 그리므로 인스턴스 데이터를 배치에 복사해 둔다.
+				if (Batch.InstanceCount > 0)
+				{
+					const uint32 Bytes = Batch.InstanceCount * Batch.InstanceStride;
+					Batch.OwnedInstanceData.SetNum(static_cast<int32>(Bytes));
+					std::memcpy(Batch.OwnedInstanceData.GetData(), Batch.InstanceData, Bytes);
+					Batch.InstanceData = nullptr;
+				}
 				Batch.bUseObjectSlots = false;
 				Batch.bBindViewConstants = true;
 				Batch.ObjectBindingSlot = 2;
 				Batch.ObjectStages = EShaderBindFlagBits::Vertex;
-				Batch.Items.Add(MakeShadowItem(Proxy, Packet.StartIndex, Packet.IndexCount, PreTranslation));
+				Batch.Items.Add(MakeShadowItem(Proxy, Packet.StartIndex, Packet.IndexCount, PreTranslation,
+					Packet.InstanceCount > 0 ? Packet.Model : nullptr));
 				OutBatches.Add(std::move(Batch));
 			}
 			continue;
 		}
+
+		if (!Proxy->GetRenderState())
+			continue;
 
 		UStaticMesh* Mesh = Proxy->GetMesh();
 		if (!Mesh || Proxy->GetLODCount() == 0)

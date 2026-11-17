@@ -11,6 +11,7 @@
 class FPrimitiveSceneProxy;
 inline constexpr uint32 InvalidObjectSlot = ~0u;
 inline constexpr uint32 BoneMatrixBufferSlot = 14; // GpuSkinCommon.hlsli의 t14
+inline constexpr uint32 ParticleInstanceBufferSlot = 15; // ParticleInstanceCommon.hlsli / ParticleSpriteCommon.hlsli의 t15
 
 struct FRenderPacket
 {
@@ -32,6 +33,14 @@ struct FRenderPacket
 	uint8 LODIndex = 0;
 	bool bOccludedByGpu = false;
 	int32 DebugWeightBone = -1; // 웨이트 히트맵 본 번호. -1이면 끔
+
+	// 인스턴싱 (Unreal FMeshBatchElement::NumInstances 대응)
+	// InstanceCount > 0이면 이 패킷 하나가 같은 메시를 InstanceCount번 DrawIndexedInstanced 한 번으로 그린다.
+	// InstanceData는 FRenderQueue::AllocateInstances가 보관하는 인스턴스별 데이터(파티클 하나당 InstanceStride 바이트)이고,
+	// 렌더러가 그리기 직전에 StructuredBuffer(t15, VS)로 올린다. 셰이더는 "#PARTICLE_INSTANCE" 변형으로 바뀐다.
+	const void* InstanceData = nullptr;
+	uint32 InstanceStride = 0;
+	uint32 InstanceCount = 0;
 };
 
 struct FViewContext
@@ -46,6 +55,8 @@ struct FViewContext
 	bool bOrthographic = false;
 	bool bGameView = false;
 	bool bShowSkeletalMesh = true;
+	// 그림자 깊이 패스가 동적 요소를 모을 때 true. 카메라 정보가 없으므로 정렬하지 않고, 그림자를 드리우지 않는 요소는 빠진다.
+	bool bShadowDepthPass = false;
 	float CameraDepth = 0.0f;
 	FMatrix ViewProjection = FMatrix::Identity;
 	void Prepare()
@@ -103,6 +114,9 @@ class FRenderQueue : public TArray<FRenderPacket>
 	TArray<TUniquePtr<FMatrixBlock>> MatrixBlocks;
 	uint32 MatrixCount = 0;
 	uint32 FirstTranslucentIndex = 0;
+	// 인스턴스 데이터 블록. 패킷이 포인터로 참조하므로 Reset 전까지 주소가 바뀌면 안 된다 (블록마다 따로 할당).
+	TArray<TUniquePtr<TArray<uint8>>> InstanceBlocks;
+	uint32 InstanceBlockCount = 0;
 
 	// 패킷 정렬 키 생성
 	static uint64 MakeSortKey(const FRenderPacket& Packet)
@@ -126,7 +140,9 @@ public:
 	FRenderQueue(FRenderQueue&& Other) noexcept
 		: FPackets(std::move(Other)), MatrixBlocks(std::move(Other.MatrixBlocks)),
 		  MatrixCount(std::exchange(Other.MatrixCount, 0)),
-		  FirstTranslucentIndex(std::exchange(Other.FirstTranslucentIndex, 0)) {}
+		  FirstTranslucentIndex(std::exchange(Other.FirstTranslucentIndex, 0)),
+		  InstanceBlocks(std::move(Other.InstanceBlocks)),
+		  InstanceBlockCount(std::exchange(Other.InstanceBlockCount, 0)) {}
 	FRenderQueue& operator=(FRenderQueue&& Other) noexcept
 	{
 		if (this != &Other)
@@ -135,8 +151,21 @@ public:
 			MatrixBlocks = std::move(Other.MatrixBlocks);
 			MatrixCount = std::exchange(Other.MatrixCount, 0);
 			FirstTranslucentIndex = std::exchange(Other.FirstTranslucentIndex, 0);
+			InstanceBlocks = std::move(Other.InstanceBlocks);
+			InstanceBlockCount = std::exchange(Other.InstanceBlockCount, 0);
 		}
 		return *this;
+	}
+
+	// 이번 프레임 동안 살아 있는 인스턴스 배열 Count개를 할당한다. 호출한 쪽이 채우고 패킷의 InstanceData로 넘긴다.
+	template <typename T>
+	T* AllocateInstances(uint32 Count)
+	{
+		if (InstanceBlockCount >= static_cast<uint32>(InstanceBlocks.Num()))
+			InstanceBlocks.Add(MakeUnique<TArray<uint8>>());
+		TArray<uint8>& Block = *InstanceBlocks[InstanceBlockCount++];
+		Block.SetNum(static_cast<int32>(Count * sizeof(T)), false);
+		return reinterpret_cast<T*>(Block.GetData());
 	}
 	const FMatrix* StoreWorldMatrix(const FMatrix& World)
 	{
@@ -202,5 +231,6 @@ public:
 		FPackets::Reset();
 		MatrixCount = 0;
 		FirstTranslucentIndex = 0;
+		InstanceBlockCount = 0;
 	}
 };

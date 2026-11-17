@@ -12,7 +12,10 @@
 #include "Components/SkeletalMeshComponent.h"
 #include "Components/SkinnedMeshComponent.h"
 #include "Components/TextRenderComponent.h"
-#include "Components/ParticleSubUVComponent.h"
+#include "Components/BillboardComponent.h"
+#include "Components/ParticleSystemComponent.h"
+#include "Particles/ParticleSystem.h"
+#include "Particles/ParticleSystemFile.h"
 #include "Components/SpotLightComponent.h"
 #include "Editor/EditorUI/ImGuiRenderer.h"
 #include "Components/DirectionalLightComponent.h"
@@ -633,6 +636,116 @@ namespace
 		}
 	}
 
+	void DrawParticleSystemSlot(UObject* Owner, UParticleSystem** ParticleSystemPtr)
+	{
+		UParticleSystem* Current = *ParticleSystemPtr;
+		const FString CurrentPath = Current ? Current->GetPath() : "";
+		FString CurrentFileName = "None";
+		if (Current)
+		{
+			CurrentFileName = CurrentPath.empty() ? "InMemoryParticleSystem" : GetAssetDisplayName(CurrentPath);
+		}
+
+		ImGui::SetNextItemWidth(-1.0f);
+
+		bool bOpen = ImGui::BeginCombo("##ParticleSystem", CurrentFileName.c_str());
+		if (ImGui::IsItemHovered() && Current && !CurrentPath.empty())
+		{
+			ImGui::SetTooltip("%s", CurrentPath.c_str());
+		}
+
+		if (bOpen)
+		{
+			if (ImGui::Selectable("None", Current == nullptr))
+			{
+				if (UParticleSystemComponent* ParticleComp = Cast<UParticleSystemComponent>(Owner))
+					ParticleComp->SetTemplate(nullptr);
+				else
+					*ParticleSystemPtr = nullptr;
+			}
+
+			TArray<FString> ListedPaths;
+			for (TObjectIterator<UParticleSystem> Itr; Itr; ++Itr)
+			{
+				const bool bSelected = (*Itr == Current);
+				const FString ItemPath = Itr->GetPath();
+				const FString ItemName = ItemPath.empty() ? "InMemoryParticleSystem" : GetAssetDisplayName(ItemPath);
+				if (!ItemPath.empty())
+				{
+					ListedPaths.Add(ItemPath);
+				}
+
+				ImGui::PushID(*Itr);
+				if (ImGui::Selectable(ItemName.c_str(), bSelected))
+				{
+					if (UParticleSystemComponent* ParticleComp = Cast<UParticleSystemComponent>(Owner))
+						ParticleComp->SetTemplate(*Itr);
+					else
+						*ParticleSystemPtr = *Itr;
+				}
+				if (ImGui::IsItemHovered() && !ItemPath.empty())
+				{
+					ImGui::SetTooltip("%s", ItemPath.c_str());
+				}
+				ImGui::PopID();
+				if (bSelected)
+					ImGui::SetItemDefaultFocus();
+			}
+
+			const std::filesystem::path AssetsDir("Assets");
+			if (std::filesystem::exists(AssetsDir) && std::filesystem::is_directory(AssetsDir))
+			{
+				for (const auto& Entry : std::filesystem::recursive_directory_iterator(AssetsDir))
+				{
+					if (!Entry.is_regular_file())
+					{
+						continue;
+					}
+
+					const FString FullPath = Entry.path().generic_string();
+					if (!ParticleSystemFile::IsParticleSystemPath(FullPath))
+					{
+						continue;
+					}
+
+					const FString AssetKey = FAssetUtils::GetAssetKey(FullPath);
+					bool bAlreadyListed = false;
+					for (const FString& Listed : ListedPaths)
+					{
+						if (Listed == AssetKey || Listed == FullPath)
+						{
+							bAlreadyListed = true;
+							break;
+						}
+					}
+					if (bAlreadyListed)
+					{
+						continue;
+					}
+
+					ImGui::PushID(FullPath.c_str());
+					if (ImGui::Selectable(GetAssetDisplayName(FullPath).c_str(), false))
+					{
+						if (UParticleSystem* Loaded = UAssetManager::LoadParticleSystem(FullPath))
+						{
+							if (UParticleSystemComponent* ParticleComp = Cast<UParticleSystemComponent>(Owner))
+								ParticleComp->SetTemplate(Loaded);
+							else
+								*ParticleSystemPtr = Loaded;
+						}
+					}
+					if (ImGui::IsItemHovered())
+					{
+						ImGui::SetTooltip("%s", AssetKey.c_str());
+					}
+					ImGui::PopID();
+				}
+			}
+
+			ImGui::EndCombo();
+		}
+	}
+
 	UMaterial* EnsureMaterialOverride(UMeshComponent* MeshComponent, int32 Slot, UMaterial* Effective, UMaterial* Override)
 	{
 		// 이 컴포넌트 전용 인스턴스가 아니면 지금 적용 중인 머티리얼을 복제해서 덮어쓰기로 만든다.
@@ -1161,6 +1274,10 @@ namespace
 			else if (PropertyClass == UStaticMesh::StaticClass())
 			{
 				DrawMeshSlot(Object, reinterpret_cast<UStaticMesh**>(ObjPtr));
+			}
+			else if (PropertyClass == UParticleSystem::StaticClass())
+			{
+				DrawParticleSystemSlot(Object, reinterpret_cast<UParticleSystem**>(ObjPtr));
 			}
 			else if (PropertyClass == UTexture2D::StaticClass())
 			{

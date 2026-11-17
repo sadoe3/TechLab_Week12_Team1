@@ -5,6 +5,8 @@
 #include "Asset/AssetManager.h"
 #include "Animation/AnimSequence.h"
 #include "Animation/AnimSequenceFile.h"
+#include "Particles/ParticleSystem.h"
+#include "Particles/ParticleSystemFile.h"
 
 
 FJsonArchiveInputFormatter::FJsonArchiveInputFormatter(FArchive& InInner)
@@ -236,6 +238,20 @@ void FJsonArchiveInputFormatter::Serialize(UObject*& Value)
         else
         {
             HTR_LOG(Warning, "Load: animation '{}' not found, keeping default", AssetPath);
+        }
+        return;
+    }
+
+    // .particle 경로는 UParticleSystem으로 로드한다 (URenderAsset 맵에 없으므로 아래 분기로는 못 찾는다)
+    if (ParticleSystemFile::IsParticleSystemPath(AssetPath))
+    {
+        if (UParticleSystem* ParticleSystem = UAssetManager::LoadParticleSystem(AssetPath))
+        {
+            Value = ParticleSystem;
+        }
+        else
+        {
+            HTR_LOG(Warning, "Load: particle system '{}' not found, keeping default", AssetPath);
         }
         return;
     }
