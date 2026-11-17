@@ -52,6 +52,7 @@ public:
 	void CreateDefaultMaterial();
 	void CreateBillboardMaterial();
 	void CreateParticleMaterial();
+	void CreateParticleSpriteMaterial();
 	void CreateEditorArrowMaterial();
 
 	// 경로는 "Assets/Models/a.obj"와 "Models/a.obj"를 같은 에셋으로 본다.

@@ -188,6 +188,7 @@ void UAssetManager::Init(const FAssetLoadProgress& OnProgress)
 	Get().CreateDefaultMeshes();
 	Get().CreateBillboardMaterial();
 	Get().CreateParticleMaterial();
+	Get().CreateParticleSpriteMaterial();
 	Get().CreateEditorArrowMaterial();
 }
 
@@ -475,6 +476,18 @@ void UAssetManager::CreateParticleMaterial()
 	ParticleMat->ParamLayout = EMaterialParamLayout::ParticleSubUV;
 	ParticleMat->ParamBuffer = RenderCommand::CreateConstantBuffer(256);
 	RegisterAsset("SubUVMaterial", ParticleMat);
+}
+
+void UAssetManager::CreateParticleSpriteMaterial()
+{
+	UMaterial* SpriteMat = NewObject<UMaterial>();
+	SpriteMat->PSOType = EPSOType::ParticleSprite;
+	SpriteMat->Shader = FRenderResourceManager::GetShaderProgram("Resources/Shader/ParticleSpriteShader.hlsl");
+	SpriteMat->Textures.Add(GetAssetByPath<UTexture2D>("Engine/SubUV/StarParticle.png"));
+	SpriteMat->BlendState = EBlendState::Opaque;
+	SpriteMat->DepthStencilState = EDepthStencilState::Default;
+	SpriteMat->SamplerState = ESamplerState::LinearClamp;
+	RegisterAsset("ParticleSpriteMaterial", SpriteMat);
 }
 
 void UAssetManager::CreateEditorArrowMaterial() {
