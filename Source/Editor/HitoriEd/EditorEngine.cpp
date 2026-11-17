@@ -262,13 +262,12 @@ void UEditorEngine::InitPanels()
 			Gizmo->SetTarget(Root, true);
 			DetailsPanel->SetTarget(Root ? Root->GetOwner() : nullptr);
 
-			UPrimitiveComponent* Primitive = Cast<UPrimitiveComponent>(Root);
-			if (!Primitive && Root && Root->GetOwner())
-			{
-				for (UActorComponent* C : Root->GetOwner()->GetComponents())
-					if ((Primitive = Cast<UPrimitiveComponent>(C))) break;
-			}
-			Outline->SetTarget(Primitive);
+			// 액터를 선택하면 그 액터의 Primitive 컴포넌트 전부(스태틱 메시 + 파티클 등)에 외곽선을 그린다.
+			// 액터를 대상으로 두므로 선택 뒤 Add Component로 붙인 컴포넌트도 다시 선택하지 않아도 바로 외곽선이 나온다.
+			if (Root && Root->GetOwner())
+				Outline->SetTargetActor(Root->GetOwner());
+			else
+				Outline->SetTarget(Cast<UPrimitiveComponent>(Root));
 		});
 
 	DetailsPanel->SetSelectionCallback(
@@ -931,7 +930,10 @@ void UEditorEngine::DeleteComponent(UActorComponent* Component)
 	if (IsPlaying() && !bIsPaused && !IsSimulatingInEditor())
 		return;
 	DetailsPanel->SelectComponent(nullptr);
-	Outline->SetTarget(nullptr);
+	// 외곽선은 액터 단위로 매 프레임 컴포넌트를 다시 모으므로, 지운 컴포넌트는 다음 프레임부터 자연히 빠진다.
+	// 컴포넌트 하나만 대상으로 잡혀 있던 경우에만 해제한다 (지워진 포인터를 그리지 않도록).
+	if (Outline->GetTarget() == Component)
+		Outline->SetTarget(nullptr);
 	Component->GetOwner()->DestroyComponent(Component);
 }
 
