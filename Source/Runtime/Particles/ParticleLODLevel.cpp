@@ -21,7 +21,8 @@ void UParticleLODLevel::UpdateModuleLists()
 		{
 			SpawnModules.Add(Module);
 		}
-		if (Module->bUpdateModule)
+		// Unreal과 같이 FinalUpdate 모듈도 UpdateModules에 넣고, 호출 시 플래그로 구분한다.
+		if (Module->bUpdateModule || Module->bFinalUpdateModule)
 		{
 			UpdateModules.Add(Module);
 		}

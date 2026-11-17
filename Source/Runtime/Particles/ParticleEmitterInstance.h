@@ -6,6 +6,7 @@
 class UParticleEmitter;
 class UParticleLODLevel;
 class UParticleSystemComponent;
+struct FDynamicEmitterDataBase;
 
 /**
  * UParticleEmitter 템플릿을 바탕으로 런타임에 파티클 풀을 관리·시뮬레이션하는 기반 인스턴스
@@ -22,13 +23,34 @@ public:
 	virtual void Resize(int32 NewMaxActiveParticles, bool bSetMaxActiveCount = true);
 
 	virtual void Tick(float DeltaTime, bool bSuppressSpawning);
+	/** EmitterTime/루프/딜레이 진행 (Unreal Tick_EmitterTimeSetup) */
+	virtual void Tick_EmitterTimeSetup(float DeltaTime);
+	/** Velocity·Size·RotationRate를 Base 값으로 되돌리고 RelativeTime을 진행한다 (Unreal ResetParticleParameters) */
+	virtual void ResetParticleParameters(float DeltaTime);
+	virtual void Tick_ModuleUpdate(float DeltaTime);
+	virtual void Tick_ModuleFinalUpdate(float DeltaTime);
 	virtual float Spawn(float DeltaTime);
+	/** 이번 프레임에 터질 BurstList 파티클 수 (Unreal GetCurrentBurstRateOffset). OutSpawnTime = 버스트 후 경과 시간 */
+	int32 GetCurrentBurstCount(float DeltaTime, float& OutSpawnTime);
+	/** 이미터 시간을 처음으로 되돌린다 (재활성화 시) */
+	virtual void Rewind();
+	/** 모든 루프를 끝냈고 살아있는 파티클도 없는가 */
+	bool HasCompleted() const;
+	/** RequiredModule->bKillOnDeactivate */
+	bool ShouldKillOnDeactivate() const;
 	virtual void SpawnParticles(int32 Count, float StartTime, float Increment, const FVector& InitialLocation, const FVector& InitialVelocity);
 	virtual void KillParticles();
 	virtual void KillParticlesForced(bool bFireEvents = false);
 	virtual void UpdateBoundingBox(float DeltaTime);
 
-	virtual bool IsMeshEmitter() const { return false; }
+	/** 렌더 스레드/SceneProxy에 전달할 동적 렌더 데이터 스냅샷을 생성한다. */
+	virtual TUniquePtr<FDynamicEmitterDataBase> GetDynamicData(bool bSelected);
+
+	/** 파티클 위치가 컴포넌트 로컬 공간인지 (RequiredModule->bUseLocalSpace). false면 월드 공간. */
+	bool IsLocalSpace() const;
+
+	/** 바운딩 박스 계산 시 파티클 중심에서 더할 반경. 타입별(Sprite/Mesh)로 실제 그려지는 크기를 반영한다. */
+	virtual float GetParticleExtent(const FBaseParticle& Particle) const;
 
 	UParticleLODLevel* GetCurrentLODLevel() const { return CurrentLODLevel; }
 	FBaseParticle* GetParticleAtIndex(int32 ActiveIndex) const;
@@ -51,11 +73,17 @@ public:
 
 	float EmitterTime = 0.0f;
 	float EmitterDuration = 1.0f;
+	/** 현재 루프의 EmitterDelay. EmitterTime이 이 값보다 작으면 스폰하지 않는다. */
+	float CurrentDelay = 0.0f;
+	/** SpawnModule->BurstList 항목별로 이번 루프에서 이미 터졌는지 (Unreal FLODBurstFired) */
+	/** (TArray<bool>은 std::vector<bool> 특수화라 참조를 돌려줄 수 없어 uint8로 둔다) */
+	TArray<uint8> BurstFired;
 	int32 LoopCount = 0;
 	float SpawnFraction = 0.0f;
 
 	bool bEnabled = true;
 	bool bEmitterIsDone = false;
 
+	/** 파티클 시뮬레이션 공간(IsLocalSpace()에 따라 로컬 또는 월드) 기준 바운딩 박스 */
 	FBox ParticleBoundingBox = { FVector::ZeroVector, FVector::ZeroVector };
 };
