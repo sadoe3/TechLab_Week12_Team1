@@ -2,6 +2,8 @@
 
 #include "Core/Types.h"
 #include "Math/Vector.h"
+#include "Render/Vertex.h"
+#include "Particles/ParticleHelper.h"
 #include <malloc.h>
 #include <cstring>
 
@@ -91,6 +93,33 @@ struct FDynamicSpriteEmitterData : public FDynamicSpriteEmitterDataBase
 	FDynamicSpriteEmitterReplayDataBase Source;
 
 	virtual const FDynamicEmitterReplayDataBase& GetSource() const override { return Source; }
-	// Step 3에서 FParticleSpriteVertex를 만들면 sizeof로 바꾼다
-	virtual int32 GetDynamicVertexStride() const override { return 0; }
+	virtual int32 GetDynamicVertexStride() const override { return sizeof(FParticleSpriteVertex); }
+
+	// Dst에는 ActiveParticleCount * 4 칸이 있어야 한다
+	void FillVertices(FParticleSpriteVertex* Dst) const;
 };
+
+// 스냅샷의 살아 있는 파티클마다 정점 4개를 채운다 (UV만 다르게)
+inline void FDynamicSpriteEmitterData::FillVertices(FParticleSpriteVertex* Dst) const
+{
+	static const FVector2 Corners[4] = { FVector2(0.f, 0.f), FVector2(1.f, 0.f), FVector2(1.f, 1.f), FVector2(0.f, 1.f) };
+
+	const FParticleDataContainer& Container = Source.DataContainer;
+	for (int32 i = 0; i < Source.ActiveParticleCount; ++i)
+	{
+		const int32 Index = Container.ParticleIndices[i];
+		const FBaseParticle& Particle = *reinterpret_cast<const FBaseParticle*>(Container.ParticleData + Index * Source.ParticleStride);
+
+		FParticleSpriteVertex Vertex;
+		Vertex.Position = Particle.Location;
+		Vertex.Rotation = Particle.Rotation;
+		Vertex.Size = FVector2(Particle.Size.X * Source.Scale.X, Particle.Size.Y * Source.Scale.Y);
+		Vertex.Color = Particle.Color;
+
+		for (int32 c = 0; c < 4; ++c)
+		{
+			Vertex.UV = Corners[c];
+			Dst[i * 4 + c] = Vertex;
+		}
+	}
+}

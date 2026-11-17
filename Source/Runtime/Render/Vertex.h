@@ -40,6 +40,17 @@ struct FTextVertex
 	FVector2 UV;
 };
 
+// 스프라이트 파티클 정점. 파티클 하나의 값을 4칸에 복사하고 UV(코너)만 다르게 넣어, 셰이더가 카메라 방향으로 펼친다.
+struct FParticleSpriteVertex
+{
+	FVector Position;       // 0  파티클 중심 (월드)
+	float Rotation;         // 12
+	FVector2 Size;          // 16
+	FVector2 UV;            // 24
+	FLinearColor Color;     // 32
+};
+static_assert(sizeof(FParticleSpriteVertex) == 48);
+
 // Todo: subuv
 struct FParticleVertex
 {

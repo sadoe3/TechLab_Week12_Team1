@@ -49,6 +49,9 @@ void UParticleSystemComponent::TickComponent(float DeltaTime)
 		EmitterRenderData.Add(Data);
 		Data->EmitterIndex = i;
 	}
+
+	// 프레임 마다 버전을 올린다
+	++RenderDataVersion;
 }
 
 FPrimitiveSceneProxy* UParticleSystemComponent::CreateSceneProxy()

@@ -35,6 +35,7 @@ public:
 	void DrawDebug(FLineBatcher* LineBatcher) const;
 
 	const TArray<FDynamicEmitterDataBase*>& GetEmitterRenderData() const { return EmitterRenderData; }
+	uint32 GetRenderDataVersion() const { return RenderDataVersion; }
 
 private:
 	void ReleaseEmitterInstances();
@@ -47,4 +48,7 @@ private:
 
 	// 매 프레임 Tick이 끝난 뒤 새로 만드는 렌더용 스냅샷. 렌더러는 읽기만 한다
 	TArray<FDynamicEmitterDataBase*> EmitterRenderData;
+
+	// 스냅샷을 새로 만들 때마다 오른다. 프록시는 이 값으로 뷰가 여러 개여도 정점을 한 번만 채운다
+	uint32 RenderDataVersion = 0;
 };
