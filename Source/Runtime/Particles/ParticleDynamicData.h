@@ -57,8 +57,9 @@ static_assert(sizeof(FParticleSpriteInstance) == 48, "ParticleSpriteCommon.hlsli
 struct FParticleMeshInstance
 {
 	FMatrix World;
+	FVector4 Color;         // rgb: Tint, a: 알파 (Color/ColorOverLife 모듈 결과)
 };
-static_assert(sizeof(FParticleMeshInstance) == 64, "ParticleInstanceCommon.hlsli FParticleMeshInstance와 크기가 같아야 한다");
+static_assert(sizeof(FParticleMeshInstance) == 80, "ParticleInstanceCommon.hlsli FParticleMeshInstance와 크기가 같아야 한다");
 
 /**
  * 렌더 스레드/SceneProxy가 다형성으로 소비하는 이미터별 동적 렌더 데이터 기반 클래스
@@ -144,6 +145,8 @@ struct FDynamicMeshEmitterReplayData : public FDynamicEmitterReplayDataBase
 	TArray<FMatrix> ParticleMatrices;
 	/** ParticleMatrices와 같은 순서의 수명 진행도 0~1 (Age 정렬용) */
 	TArray<float> RelativeTimes;
+	/** ParticleMatrices와 같은 순서의 파티클 색 (FBaseParticle::Color) */
+	TArray<FVector4> Colors;
 };
 
 /**

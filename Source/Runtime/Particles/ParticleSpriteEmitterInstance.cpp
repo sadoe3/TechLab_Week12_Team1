@@ -4,11 +4,9 @@
 #include "Particles/ParticleDynamicData.h"
 #include "Particles/ParticleLODLevel.h"
 #include "Particles/ParticleModuleRequired.h"
-#include "Particles/ParticleModuleTypeDataSprite.h"
 #include "Render/RenderPacket.h"
 
-FParticleSpriteEmitterInstance::FParticleSpriteEmitterInstance(UParticleEmitter* InEmitterParent, UParticleSystemComponent* InComponent, UParticleModuleTypeDataSprite* InSpriteTypeData)
-	: SpriteTypeData(InSpriteTypeData)
+FParticleSpriteEmitterInstance::FParticleSpriteEmitterInstance(UParticleEmitter* InEmitterParent, UParticleSystemComponent* InComponent)
 {
 	InitParameters(InEmitterParent, InComponent);
 }
@@ -16,11 +14,6 @@ FParticleSpriteEmitterInstance::FParticleSpriteEmitterInstance(UParticleEmitter*
 void FParticleSpriteEmitterInstance::Init()
 {
 	FParticleEmitterInstance::Init();
-
-	if (!SpriteTypeData && CurrentLODLevel)
-	{
-		SpriteTypeData = Cast<UParticleModuleTypeDataSprite>(CurrentLODLevel->TypeDataModule);
-	}
 }
 
 void FParticleSpriteEmitterInstance::Tick(float DeltaTime, bool bSuppressSpawning)
@@ -119,10 +112,10 @@ TUniquePtr<FDynamicEmitterDataBase> FParticleSpriteEmitterInstance::GetDynamicDa
 	{
 		return nullptr;
 	}
-	if (SpriteTypeData)
+	if (CurrentLODLevel && CurrentLODLevel->RequiredModule)
 	{
-		Data->SubImagesHorizontal = SpriteTypeData->SubImages_Horizontal;
-		Data->SubImagesVertical = SpriteTypeData->SubImages_Vertical;
+		Data->SubImagesHorizontal = CurrentLODLevel->RequiredModule->SubImages_Horizontal;
+		Data->SubImagesVertical = CurrentLODLevel->RequiredModule->SubImages_Vertical;
 	}
 	Data->BuildMaterialParams();
 	return Data;

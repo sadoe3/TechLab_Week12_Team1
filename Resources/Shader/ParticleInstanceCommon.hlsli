@@ -14,6 +14,7 @@
 struct FParticleMeshInstance
 {
     row_major float4x4 World;
+    float4 Color; // rgb: Tint, a: 알파 (파티클 Color 모듈 결과)
 };
 
 // FRenderer::BindInstances가 배치마다 채운다 (ParticleInstanceBufferSlot)
@@ -62,12 +63,16 @@ void ParticleInstanceTangent(uint InstanceID, inout float4 Tangent)
 // 탄젠트를 입력으로 받지 않는 셰이더(그림자 깊이)용
 #define PARTICLE_INSTANCE_APPLY_PN(Input, Position, Normal) \
     ParticleInstanceVertex(Input.ParticleInstanceID, Position, Normal)
+// 인스턴스 색. VS가 PS로 넘겨 표면 색에 곱한다.
+#define PARTICLE_INSTANCE_COLOR(Input) ParticleMeshInstances[Input.ParticleInstanceID].Color
 
 #else
 
 #define PARTICLE_INSTANCE_VS_INPUT
 #define PARTICLE_INSTANCE_APPLY(Input, Position, Normal, Tangent)
 #define PARTICLE_INSTANCE_APPLY_PN(Input, Position, Normal)
+// PS는 인스턴스/일반 VS 변형이 함께 쓰므로 VS 출력 구조는 같아야 한다. 일반 메시는 흰색(곱셈 항등)을 넘긴다.
+#define PARTICLE_INSTANCE_COLOR(Input) float4(1.0f, 1.0f, 1.0f, 1.0f)
 
 #endif
 

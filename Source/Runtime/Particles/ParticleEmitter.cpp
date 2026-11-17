@@ -3,6 +3,8 @@
 #include "Particles/ParticleLODLevel.h"
 #include "Particles/ParticleModule.h"
 #include "Particles/BaseParticle.h"
+#include "Particles/ParticleModuleTypeDataBase.h"
+#include "Particles/ParticleSpriteEmitterInstance.h"
 
 UParticleLODLevel* UParticleEmitter::GetLODLevel(int32 LODLevel) const
 {
@@ -24,6 +26,19 @@ void UParticleEmitter::AddLODLevel(UParticleLODLevel* InLODLevel)
 void UParticleEmitter::ClearLODLevels()
 {
 	LODLevels.Empty();
+}
+
+FParticleEmitterInstance* UParticleEmitter::CreateInstance(UParticleSystemComponent* InComponent)
+{
+	UParticleLODLevel* LOD0 = GetLODLevel(0);
+	if (LOD0 && LOD0->TypeDataModule)
+	{
+		// Mesh 등 특수 이미터는 TypeData가 자기 인스턴스 타입을 결정한다
+		return LOD0->TypeDataModule->CreateInstance(this, InComponent);
+	}
+
+	// 언리얼 규칙: TypeDataModule == nullptr이면 Sprite 이미터
+	return new FParticleSpriteEmitterInstance(this, InComponent);
 }
 
 void UParticleEmitter::CacheEmitterModuleInfo()

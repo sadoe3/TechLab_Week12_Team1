@@ -7,6 +7,8 @@
 
 class UParticleLODLevel;
 class UParticleModule;
+class UParticleSystemComponent;
+struct FParticleEmitterInstance;
 
 /**
  * 파티클 시스템 내 단일 이미터의 템플릿 정의 (Unreal Cascade UParticleEmitter 대응)
@@ -35,6 +37,12 @@ public:
 	void ClearLODLevels();
 
 	const TArray<UParticleLODLevel*>& GetLODLevels() const { return LODLevels; }
+
+	/**
+	 * 런타임 이미터 인스턴스 생성 (Unreal UParticleSpriteEmitter::CreateInstance 대응)
+	 * LOD0의 TypeDataModule이 있으면 그 TypeData(Mesh 등)에 생성을 위임하고, 없으면 기본 Sprite 인스턴스를 만든다.
+	 */
+	virtual FParticleEmitterInstance* CreateInstance(UParticleSystemComponent* InComponent);
 
 	/** 모듈 정보를 캐싱해 런타임 인스턴스 생성에 필요한 메타데이터를 갱신한다. */
 	virtual void CacheEmitterModuleInfo();
