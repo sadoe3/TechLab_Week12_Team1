@@ -19,7 +19,6 @@
 
 #include "Collision/Ray.h"
 #include "Components/BillboardComponent.h"
-#include "Components/ParticleSubUVComponent.h"
 #include "Components/ExponentialHeightFogComponent.h"
 
 #include "Components/StaticMeshComponent.h"
@@ -227,22 +226,6 @@ void UWorld::GameWorldTick(float DeltaTime)
 void UWorld::EditorWorldTick(float DeltaTime)
 {
 	// Editor World에서 실행
-
-	// 에디터 월드에서도 파티클 시뮬레이션은 틱이 돌아야 한다
-	for (TObjectIterator<UParticleSubUVComponent> Comp; Comp; ++Comp)
-	{
-		if (!Comp || !Comp->IsRegistered() || Comp->GetWorld() != this)
-		{
-			continue;
-		}
-
-		if (Comp->GetParticlesForView().IsEmpty())
-		{
-			Comp->SetParticles(10);
-		}
-
-		Comp->TickComponent(DeltaTime);
-	}
 
 	// 스프링 암 컴포넌트도 에디터에서 틱이 돌아야 한다
 	for (TObjectIterator<USpringArmComponent> Comp; Comp; ++Comp)

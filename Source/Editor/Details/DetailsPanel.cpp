@@ -12,7 +12,7 @@
 #include "Components/SkeletalMeshComponent.h"
 #include "Components/SkinnedMeshComponent.h"
 #include "Components/TextRenderComponent.h"
-#include "Components/ParticleSubUVComponent.h"
+#include "Components/BillboardComponent.h"
 #include "Components/ParticleSystemComponent.h"
 #include "Particles/ParticleSystem.h"
 #include "Particles/ParticleSystemFile.h"
