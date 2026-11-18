@@ -23,6 +23,7 @@
 
 #include "Components/StaticMeshComponent.h"
 #include "Components/SkinnedMeshComponent.h"
+#include "Components/ParticleSystemComponent.h"
 #include "Asset/LOD/StaticMeshLODSelector.h"
 
 #include "Math/Frustum.h"
@@ -246,6 +247,16 @@ void UWorld::EditorWorldTick(float DeltaTime)
 			continue;
 		}
 		Comp->UpdateInEditor();
+	}
+
+	// 레벨에 놓은 파티클도 재생 없이 미리 보인다 (Unreal: UParticleSystemComponent::bTickInEditor)
+	for (TObjectIterator<UParticleSystemComponent> Comp; Comp; ++Comp)
+	{
+		if (!Comp || !Comp->IsRegistered() || Comp->GetWorld() != this)
+		{
+			continue;
+		}
+		Comp->UpdateInEditor(DeltaTime);
 	}
 }
 

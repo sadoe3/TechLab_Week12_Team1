@@ -5,6 +5,7 @@
 #include "Render/Mesh.h"
 #include "Render/RenderPacket.h"
 #include "Render/RenderResourceManager.h"
+#include "Render/RenderCommand.h"
 #include <algorithm>
 
 namespace
@@ -290,4 +291,122 @@ void FDynamicMeshEmitterData::GetDynamicMeshElements(
 				Section.StartIndex, Section.IndexCount);
 		}
 	}
+}
+
+void FDynamicRibbonEmitterData::BuildRibbonVertices(const TArray<FDynamicRibbonEmitterReplayData::FRibbonPoint>& WorldPoints,
+	const FViewContext& View, TArray<FParticleRibbonVertex>& OutVertices)
+{
+	OutVertices.SetNum(WorldPoints.Num() * 2);
+
+	// 점 i마다 카메라를 향한 좌우 정점 2개(OutVertices[2i], OutVertices[2i+1])를 채운다
+	FVector WidthDirection{};
+	for (int32 i = 0; i < WorldPoints.Num(); ++i)
+	{
+		if (i + 1 < WorldPoints.Num())
+		{
+			const FVector RibbonDirection = WorldPoints[i + 1].Location - WorldPoints[i].Location;
+			const FVector Cross = RibbonDirection.Cross(View.CameraForward);
+			if (Cross.SizeSquared() > 1e-8f)
+			{
+				WidthDirection = Cross.Normalized();
+			}
+		}
+		
+		OutVertices[2 * i].Position = WorldPoints[i].Location + WidthDirection * (WorldPoints[i].Width / 2.f);
+		OutVertices[2 * i].UV.X = i * 0.5f;
+		OutVertices[2 * i].UV.Y = 0.f;
+		OutVertices[2 * i].Color = WorldPoints[i].Color;
+
+		OutVertices[2 * i + 1].Position = WorldPoints[i].Location - WidthDirection * (WorldPoints[i].Width / 2.f);
+		OutVertices[2 * i + 1].UV.X = i * 0.5f;
+		OutVertices[2 * i + 1].UV.Y = 1.f;
+		OutVertices[2 * i + 1].Color = WorldPoints[i].Color;
+	}
+}
+
+void FDynamicRibbonEmitterData::GetDynamicMeshElements(
+	const FParticleSystemSceneProxy* Proxy,
+	const FViewContext& View,
+	FRenderQueue& Queue) const
+{
+	// 반투명 띠는 그림자 깊이에 넣지 않는다
+	if (View.bShadowDepthPass)
+	{
+		return;
+	}
+	if (!Proxy || !Material || !Buffers || Source.Points.Num() < 2)
+	{
+		return;
+	}
+
+	// 1) 점을 월드 공간으로 (로컬 공간 이미터는 컴포넌트 변환을 곱한다)
+	const FMatrix& ComponentToWorld = Proxy->GetLocalToWorld();
+	TArray<FDynamicRibbonEmitterReplayData::FRibbonPoint> WorldPoints = Source.Points;
+	FVector PositionSum = FVector::ZeroVector;
+	for (FDynamicRibbonEmitterReplayData::FRibbonPoint& Point : WorldPoints)
+	{
+		if (Source.bUseLocalSpace)
+		{
+			Point.Location = TransformPosition(Point.Location, ComponentToWorld);
+		}
+		PositionSum = PositionSum + Point.Location;
+	}
+
+	// 2) 점 목록 → 카메라를 향한 좌우 정점
+	TArray<FParticleRibbonVertex> Vertices;
+	BuildRibbonVertices(WorldPoints, View, Vertices);
+
+	const uint32 PointCount = static_cast<uint32>(WorldPoints.Num());
+	const uint32 VertexCount = static_cast<uint32>(Vertices.Num());
+	const uint32 IndexCount = (PointCount - 1) * 6;
+	if (VertexCount != PointCount * 2)
+	{
+		return;
+	}
+
+	// 3) 모자라면 2배로 키운다. 동적 버퍼는 크기를 바꿀 수 없어서 새로 만든다
+	if (!Buffers->VertexBuffer || Buffers->VertexCapacity < VertexCount)
+	{
+		uint32 NewCapacity = std::max(Buffers->VertexCapacity * 2, 64u);
+		while (NewCapacity < VertexCount) NewCapacity *= 2;
+		Buffers->VertexBuffer = RenderCommand::CreateDynamicVertexBuffer(NewCapacity * sizeof(FParticleRibbonVertex), sizeof(FParticleRibbonVertex));
+		Buffers->VertexCapacity = NewCapacity;
+	}
+	if (!Buffers->IndexBuffer || Buffers->IndexCapacity < IndexCount)
+	{
+		uint32 NewCapacity = std::max(Buffers->IndexCapacity * 2, 96u);
+		while (NewCapacity < IndexCount) NewCapacity *= 2;
+		Buffers->IndexBuffer = RenderCommand::CreateDynamicIndexBuffer(NewCapacity);
+		Buffers->IndexCapacity = NewCapacity;
+	}
+	if (!Buffers->VertexBuffer || !Buffers->IndexBuffer)
+	{
+		return;
+	}
+
+	// 4) WRITE_DISCARD: GPU가 아직 읽는 이전 내용을 기다리지 않고 새 메모리를 받아 통째로 채운다
+	RenderCommand::UpdateBufferData(Buffers->VertexBuffer.get(), Vertices.GetData(), VertexCount * sizeof(FParticleRibbonVertex));
+
+	// 이웃한 두 점(정점 4개)마다 사각형 1개 = 삼각형 2개. PSO가 TriangleList라 스트립 대신 인덱스로 잇는다
+	TArray<uint32> Indices;
+	Indices.SetNum(static_cast<int32>(IndexCount));
+	for (uint32 Segment = 0; Segment + 1 < PointCount; ++Segment)
+	{
+		const uint32 L0 = Segment * 2, R0 = L0 + 1, L1 = L0 + 2, R1 = L0 + 3;
+		uint32* Quad = &Indices[static_cast<int32>(Segment * 6)];
+		Quad[0] = L0; Quad[1] = L1; Quad[2] = R0;
+		Quad[3] = R0; Quad[4] = L1; Quad[5] = R1;
+	}
+	RenderCommand::UpdateBufferData(Buffers->IndexBuffer.get(), Indices.GetData(), IndexCount * sizeof(uint32));
+
+	// 5) 정점이 이미 월드 공간이므로 오브젝트 행렬은 단위 행렬. 반투명 큐 정렬은 띠 중심까지 거리로 한다
+	FRenderPacket& Packet = Queue.AddDefaulted_GetRef();
+	Packet.Proxy = Proxy;
+	Packet.Model = Queue.StoreWorldMatrix(FMatrix::Identity);
+	Packet.VertexBuffer = Buffers->VertexBuffer.get();
+	Packet.IndexBuffer = Buffers->IndexBuffer.get();
+	Packet.Material = Material;
+	Packet.CameraToParticleDistance = DistanceSqToCenter(PositionSum, static_cast<int32>(PointCount), View);
+	Packet.StartIndex = 0;
+	Packet.IndexCount = IndexCount;
 }
