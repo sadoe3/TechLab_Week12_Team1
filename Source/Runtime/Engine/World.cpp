@@ -181,6 +181,35 @@ void UWorld::Tick(float RealDeltaTime)
 	}
 }
 
+void UWorld::GatherBlockingComponents(const FBox& Box, TArray<UPrimitiveComponent*>& Out, AActor* IgnoreActor)
+{
+	Scene.UpdateAllTransforms();
+	for (TObjectIterator<UPrimitiveComponent> It; It; ++It)
+	{
+		UPrimitiveComponent* C = *It;
+		AActor* Owner = C->GetOwner();
+		if (!C->IsRegistered() || C->GetWorld() != this || !C->bBlockComponent || !Owner || Owner == IgnoreActor || !Owner->GetActorEnableCollision())
+		{
+			continue;
+		}
+
+		if (!Cast<UShapeComponent>(C) && !C->GetMeshData())
+		{
+			continue;
+		}
+
+		const FBox B = C->CalcBounds();
+		if (B.Max.X < Box.Min.X || B.Min.X > Box.Max.X ||
+			B.Max.Y < Box.Min.Y || B.Min.Y > Box.Max.Y ||
+			B.Max.Z < Box.Min.Z || B.Min.Z > Box.Max.Z)
+		{
+			continue;
+		}
+
+		Out.Add(C);
+	}
+}
+
 void UWorld::GameWorldTick(float DeltaTime)
 {
 	// 새로운 Actor들의 BeginPlay 실행

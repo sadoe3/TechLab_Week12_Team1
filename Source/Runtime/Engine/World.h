@@ -131,6 +131,8 @@ public:
 	float GetCinematicTimeDilation() const { return CinematicTimeDilation; }
 	void SetCinematicTimeDilation(float InDilation) { CinematicTimeDilation = InDilation; }
 
+	void GatherBlockingComponents(const FBox& WorldBox, TArray<UPrimitiveComponent*>& Out, AActor* IgnoreActor);
+
 private:
 
 	void GameWorldTick(float DeltaTime);
