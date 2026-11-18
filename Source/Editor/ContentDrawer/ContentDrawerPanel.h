@@ -21,6 +21,8 @@ public:
 	// .widget 파일을 더블클릭하면 불린다 (UI 에디터가 연다).
 	void SetOpenWidgetCallback(std::function<void(const FString&)> InCallback) { OnOpenWidget = std::move(InCallback); }
 	void SetCreateWidgetCallback(std::function<void(const FString&)> InCallback) { OnCreateWidget = std::move(InCallback); }
+	// Called with the target .particle path when "Create Particle System" is confirmed.
+	void SetCreateParticleSystemCallback(std::function<void(const FString&)> InCallback) { OnCreateParticleSystem = std::move(InCallback); }
 	// OBJ 또는 베이크된 FBX 메시를 더블클릭하면 Viewer를 엽니다.
 	void SetOpenMeshCallback(std::function<void(const FString&)> InCallback) { OnOpenMesh = std::move(InCallback); }
 	void SetBlendSpaceCreatedCallback(std::function<void(const FString&)> InCallback)
@@ -37,8 +39,12 @@ private:
 	std::function<void(const FString&)> OnOpenWidget;
 	std::function<void(const FString&)> OnCreateWidget;
 	std::function<void(const FString&)> OnOpenMesh;
+	std::function<void(const FString&)> OnCreateParticleSystem;
+
+	enum class ECreateAssetKind { Widget, ParticleSystem };
+	ECreateAssetKind PendingCreateKind = ECreateAssetKind::Widget;
 	char NewAssetName[64] = "NewWidget";
-	bool bOpenCreateWidget = false;
+	bool bOpenCreateAsset = false;
 
 	fs::path AssetRootPath = "Assets";
 	fs::path CurrentPath = "Assets";

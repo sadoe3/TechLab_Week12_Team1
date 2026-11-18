@@ -377,6 +377,15 @@ UParticleEmitter* FParticleSystemEditor::AddSpriteEmitter()
 		return nullptr;
 	}
 
+	UParticleEmitter* Emitter = CreateDefaultSpriteEmitter();
+	ParticleSystem->AddEmitter(Emitter);
+	SelectedObject = Emitter;
+	NotifyStructureChanged();
+	return Emitter;
+}
+
+UParticleEmitter* FParticleSystemEditor::CreateDefaultSpriteEmitter()
+{
 	// Cascade의 기본 Sprite 이미터: Required, Spawn, Lifetime, Initial Size, Initial Velocity, Color Over Life.
 	// 값은 Unreal 기본값(cm)을 이 엔진의 m 규모로 옮긴 것이다.
 	UParticleLODLevel* LOD = NewObject<UParticleLODLevel>();
@@ -412,11 +421,32 @@ UParticleEmitter* FParticleSystemEditor::AddSpriteEmitter()
 	UParticleEmitter* Emitter = NewObject<UParticleEmitter>();
 	Emitter->SetEmitterName("Particle Emitter");
 	Emitter->AddLODLevel(LOD);
-
-	ParticleSystem->AddEmitter(Emitter);
-	SelectedObject = Emitter;
-	NotifyStructureChanged();
 	return Emitter;
+}
+
+bool FParticleSystemEditor::CreateDefaultAsset(const FString& InFilePath)
+{
+	// New particle assets start with one default sprite emitter so the preview shows something right away.
+	UParticleSystem* NewSystem = NewObject<UParticleSystem>();
+	NewSystem->AddEmitter(CreateDefaultSpriteEmitter());
+
+	const FString FilePath = FAssetUtils::ResolveAssetFilePath(InFilePath);
+
+	FString Error;
+	const bool bWritten = ParticleSystemFile::Write(FPaths::FromUtf8(FilePath.empty() ? InFilePath : FilePath), *NewSystem, Error);
+	if (bWritten)
+	{
+		HTR_LOG(Info, "Created ParticleSystem: {}", InFilePath);
+	}
+	else
+	{
+		HTR_LOG(Warning, "Failed to create ParticleSystem: {} ({})", InFilePath, Error);
+	}
+
+	// Only the file is needed; the editor loads its own copy through UAssetManager when it opens.
+	NewSystem->ClearEmitters();
+	delete NewSystem;
+	return bWritten;
 }
 
 UParticleEmitter* FParticleSystemEditor::DuplicateEmitter(UParticleEmitter* Emitter)

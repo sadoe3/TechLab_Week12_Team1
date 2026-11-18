@@ -38,7 +38,7 @@ public:
 private:
 	FRenderer* Renderer;
 
-	UWorld* World;
+	UWorld* World = nullptr;
 
 	FShaderProgram* LineShader;
 	FPipelineState PipelineState;

@@ -38,6 +38,7 @@
 #include "Render/RenderCommand.h"
 #include "Editor/Outliner/OutlinerPanel.h"
 #include "Editor/HitoriEd/EditorFileUtils.h"
+#include "Editor/ParticleSystemEditor/ParticleSystemEditor.h"
 #include "Editor/Viewports/EditorViewportClient.h"
 #include "UObject/UObjectIterator.h"
 
@@ -233,6 +234,13 @@ void UEditorEngine::InitPanels()
 			EditorManager->OpenEditor(Path);
 		}
 	});
+	ContentDrawerPanel->SetCreateParticleSystemCallback([this](const FString& Path)
+	{
+		if (FParticleSystemEditor::CreateDefaultAsset(Path))
+		{
+			EditorManager->OpenEditor(Path);
+		}
+	});
 	ContentDrawerPanel->SetOpenWidgetCallback([this](const FString& Path) { EditorManager->OpenEditor(Path); });
 
 	// StaticMesh / SkeletalMesh Viewer 열기
@@ -411,7 +419,14 @@ void UEditorEngine::Tick(const float DeltaTime)
 		RequestEndPlayMap();
 	// 에디터 단축키 (UE와 같은 키: Ctrl+N, Ctrl+O, Ctrl+S, Ctrl+Alt+S, Alt+P, Pause).
 	// Stop(Esc)은 PIE 입력 처리에서 따로 받으므로 여기서 빼서 두 번 실행되지 않게 한다.
-	EditorCommandUI::ProcessShortcuts({ &NewScene, &OpenSceneCommand, &Save, &SaveAs, &Play, &Pause, &Resume });
+	// Scene shortcuts (New/Open/Save/Save As) only apply while the level editor has focus.
+	// Otherwise an asset editor tab (Particle, AnimBlueprint, ...) handles its own Ctrl+S.
+	const IEditorTab* FocusedTab = EditorManager->GetFocusedTab();
+	const bool bLevelEditorFocused = FocusedTab == nullptr || FocusedTab == LevelEditorTab;
+	if (bLevelEditorFocused)
+		EditorCommandUI::ProcessShortcuts({ &NewScene, &OpenSceneCommand, &Save, &SaveAs, &Play, &Pause, &Resume });
+	else
+		EditorCommandUI::ProcessShortcuts({ &Play, &Pause, &Resume });
 
 	if (bRequestEndPlayMapQueued) { bRequestEndPlayMapQueued = false; EndPlayMap(); }
 	StartQueuedPlaySessionRequest();

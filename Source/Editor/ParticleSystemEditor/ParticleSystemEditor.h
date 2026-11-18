@@ -50,6 +50,9 @@ public:
 	// 에셋을 원래 파일에 저장합니다.
 	bool Save();
 
+	// Writes a new .particle file with one default sprite emitter (used by the Content Drawer).
+	static bool CreateDefaultAsset(const FString& FilePath);
+
 	// 카메라를 파티클 바운드에 맞춥니다.
 	void FocusParticles();
 
@@ -74,7 +77,10 @@ public:
 	void MoveModule(UParticleEmitter* SourceEmitter, UParticleModule* Module, UParticleEmitter* TargetEmitter, int32 TargetIndex);
 
 	// Cascade의 New Particle Sprite Emitter와 같은 기본 구성으로 이미터를 끝에 추가한다.
-	UParticleEmitter* AddSpriteEmitter();	// 바로 뒤에 복제본을 넣는다.
+	UParticleEmitter* AddSpriteEmitter();
+	// Builds that default sprite emitter without adding it to any system.
+	static UParticleEmitter* CreateDefaultSpriteEmitter();
+	// 바로 뒤에 복제본을 넣는다.
 	UParticleEmitter* DuplicateEmitter(UParticleEmitter* Emitter);
 	void DeleteEmitter(UParticleEmitter* Emitter);
 	void RenameEmitter(UParticleEmitter* Emitter, const FString& NewName);
