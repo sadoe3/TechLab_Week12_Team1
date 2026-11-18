@@ -9,6 +9,7 @@
 #include "Particles/ParticleModuleTypeDataMesh.h"
 #include "Particles/ParticleModuleTypeDataRibbon.h"
 #include "Particles/ParticleModuleLifetime.h"
+#include "Particles/ParticleModuleVelocity.h"
 #include "UObject/UObjectGlobals.h"
 
 AEmitter::AEmitter()
@@ -108,12 +109,18 @@ void AEmitter::SetupTestRibbonParticleSystem()
 	Lifetime->LifetimeMin = 1.0f;
 	Lifetime->LifetimeMax = 1.0f;
 
+	// PSC가 멈춰 있어도 점들이 위로 흩어져 띠 모양이 보이게 한다
+	UParticleModuleVelocity* Velocity = NewObject<UParticleModuleVelocity>();
+	Velocity->StartVelocityMin = FVector(0.0f, 0.0f, 2.0f);
+	Velocity->StartVelocityMax = FVector(0.0f, 0.0f, 2.0f);
+
 	UParticleModuleTypeDataRibbon* RibbonTypeData = NewObject<UParticleModuleTypeDataRibbon>();
 
 	LOD0->RequiredModule = Required;
 	LOD0->SpawnModule = Spawn;
 	LOD0->TypeDataModule = RibbonTypeData;
 	LOD0->AddModule(Lifetime);
+	LOD0->AddModule(Velocity);
 
 	Emitter->AddLODLevel(LOD0);
 	TestSystem->AddEmitter(Emitter);

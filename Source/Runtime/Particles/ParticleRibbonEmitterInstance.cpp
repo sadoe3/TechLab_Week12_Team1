@@ -3,6 +3,8 @@
 #include "Particles/ParticleDynamicData.h"
 #include "Particles/ParticleLODLevel.h"
 #include "Particles/ParticleModuleTypeDataRibbon.h"
+#include "Particles/ParticleModuleRequired.h"
+#include "Asset/AssetManager.h"
 
 FParticleRibbonEmitterInstance::FParticleRibbonEmitterInstance(UParticleEmitter* InEmitterParent, UParticleSystemComponent* InComponent, UParticleModuleTypeDataRibbon* InRibbonTypeData)
 	: RibbonTypeData(InRibbonTypeData)
@@ -29,6 +31,15 @@ FRibbonTypeDataPayload* FParticleRibbonEmitterInstance::GetRibbonPayload(int32 S
 FBaseParticle* FParticleRibbonEmitterInstance::GetParticleAtSlot(int32 SlotIndex) const
 {
 	return reinterpret_cast<FBaseParticle*>(ParticleData + static_cast<size_t>(SlotIndex) * ParticleStride);
+}
+
+UMaterial* FParticleRibbonEmitterInstance::GetMaterial() const
+{
+	if (CurrentLODLevel && CurrentLODLevel->RequiredModule && CurrentLODLevel->RequiredModule->Material)
+	{
+		return CurrentLODLevel->RequiredModule->Material;
+	}
+	return UAssetManager::GetAssetByPath<UMaterial>("RibbonMaterial");
 }
 
 void FParticleRibbonEmitterInstance::SpawnParticles(int32 Count, float StartTime, float Increment, const FVector& InitialLocation, const FVector& InitialVelocity)
@@ -63,7 +74,7 @@ void FParticleRibbonEmitterInstance::KillParticles()
 	for (int32 i = 0; i < ActiveParticles; ++i)
 	{
 		const int32 Slot = ParticleIndices[i];
-		FBaseParticle* Particle = reinterpret_cast<FBaseParticle*>(ParticleData + ParticleStride * Slot);
+		FBaseParticle* Particle = GetParticleAtSlot(Slot);
 		FRibbonTypeDataPayload* Dead = GetRibbonPayload(Slot);
 
 		if (Particle->RelativeTime <= 1.f)
@@ -95,6 +106,44 @@ void FParticleRibbonEmitterInstance::KillParticlesForced(bool bFireEvents)
 
 TUniquePtr<FDynamicEmitterDataBase> FParticleRibbonEmitterInstance::GetDynamicData(bool bSelected)
 {
-	// TODO: Step 3 — 생성 순서대로 정렬한 점 목록을 FDynamicRibbonEmitterData로 넘긴다
-	return nullptr;
+	// 띠는 점 2개부터 만들어진다
+	if (!bEnabled || ActiveParticles < 2 || HeadSlot == INDEX_NONE)
+	{
+		return nullptr;
+	}
+
+	UMaterial* Material = GetMaterial();
+	if (!Material)
+	{
+		return nullptr;
+	}
+
+	if (!RenderBuffers)
+	{
+		RenderBuffers = MakeShared<FRibbonRenderBuffers>();
+	}
+
+	auto Data = MakeUnique<FDynamicRibbonEmitterData>();
+	Data->bSelected = bSelected;
+	Data->Material = Material;
+	Data->Buffers = RenderBuffers;
+	Data->Source.bUseLocalSpace = IsLocalSpace();
+
+	// ParticleIndices 순서는 swap-and-pop으로 섞여 있으므로 머리부터 Next 링크를 따라간다
+	Data->Source.Points.Reserve(ActiveParticles);
+	for (int32 Slot = HeadSlot; Slot != INDEX_NONE && Data->Source.Points.Num() < ActiveParticles; Slot = GetRibbonPayload(Slot)->Next)
+	{
+		const FBaseParticle* Particle = GetParticleAtSlot(Slot);
+		FDynamicRibbonEmitterReplayData::FRibbonPoint& Point = Data->Source.Points.AddDefaulted_GetRef();
+		Point.Location = Particle->Location;
+		Point.Width = Particle->Size.X;
+		Point.Color = Particle->Color;
+	}
+
+	Data->Source.ActiveParticleCount = Data->Source.Points.Num();
+	if (Data->Source.ActiveParticleCount < 2)
+	{
+		return nullptr;
+	}
+	return Data;
 }
