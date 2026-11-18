@@ -10,6 +10,7 @@
 #include "Particles/ParticleModuleSpawn.h"
 #include "Particles/ParticleModuleTypeDataBase.h"
 #include "Particles/ParticleModuleTypeDataMesh.h"
+#include "Particles/ParticleModuleTypeDataRibbon.h"
 
 #include "UObject/UObjectHash.h"
 
@@ -47,6 +48,7 @@ namespace
 		{ "UParticleModuleSizeMultiplyLife",  "Size By Life",     "Size" },
 		{ "UParticleModuleVelocity",          "Initial Velocity", "Velocity" },
 		{ "UParticleModuleTypeDataMesh",      "Mesh Data",        "TypeData" },
+		{ "UParticleModuleTypeDataRibbon",    "Ribbon Data",      "TypeData" },
 	};
 
 	const FModuleClassInfo* FindModuleClassInfo(const UClass* Class)
@@ -577,8 +579,7 @@ void FParticleEmittersPanel::DrawContent()
 		if (ImGui::MenuItem("New Particle Sprite Emitter"))
 		{
 			PendingAction = [this] { Editor.AddSpriteEmitter(); };
-		}
-		ImGui::EndPopup();
+		}		ImGui::EndPopup();
 	}
 
 	// 빈 곳을 누르면 시스템 자체를 선택한다 (Cascade와 같다).
@@ -636,6 +637,17 @@ void FParticleDetailsPanel::DrawContent()
 		DrawRequiredMaterialHint(Required);
 	}
 
+	// Ribbon TypeData has no settings of its own yet; explain where the strip's look comes from.
+	if (Cast<UParticleModuleTypeDataRibbon>(Selected))
+	{
+		ImGui::TextWrapped("Ribbon: particles are linked in spawn order and drawn as one camera-facing strip.");
+		ImGui::BulletText("Width = particle Size X (Initial Size / Size By Life)");
+		ImGui::BulletText("Color / alpha = particle color (Initial Color / Color Over Life)");
+		ImGui::BulletText("Turn off Required > bUseLocalSpace to leave a trail when the emitter moves");
+		ImGui::BulletText("Needs at least 2 live particles to draw");
+		ImGui::Separator();
+	}
+
 	// 그룹으로 묶어 안쪽 항목 중 하나라도 바뀌었는지 확인한다. 바뀌면 편집이 끝난 뒤 시뮬레이션을 다시 시작한다.
 	// 콤보 팝업 안의 선택은 그룹의 Edited로 잡히지 않을 수 있어, 머티리얼처럼 포인터가 바뀌는 값은 따로 비교한다.
 	ImGui::PushID(Selected);
@@ -667,6 +679,7 @@ void FParticleDetailsPanel::DrawRequiredMaterialHint(const UParticleModuleRequir
 {
 	// 이 Required를 가진 LOD를 찾아 TypeData를 본다.
 	const UParticleModuleTypeDataMesh* MeshType = nullptr;
+	bool bRibbon = false;
 	if (UParticleSystem* System = Editor.GetParticleSystem())
 	{
 		for (UParticleEmitter* Emitter : System->GetEmitters())
@@ -676,9 +689,26 @@ void FParticleDetailsPanel::DrawRequiredMaterialHint(const UParticleModuleRequir
 				if (LOD && LOD->RequiredModule == Required)
 				{
 					MeshType = Cast<UParticleModuleTypeDataMesh>(LOD->TypeDataModule);
+					bRibbon = Cast<UParticleModuleTypeDataRibbon>(LOD->TypeDataModule) != nullptr;
 				}
 			}
 		}
+	}
+
+	if (bRibbon)
+	{
+		const bool bRibbonMaterial = Required->Material && Required->Material->PSOType == EPSOType::Particle_Ribbon;
+		if (bRibbonMaterial)
+		{
+			ImGui::TextDisabled("Ribbon emitter: the strip is drawn with this Material.");
+		}
+		else
+		{
+			ImGui::TextColored(ImVec4(1.0f, 0.75f, 0.3f, 1.0f), "Ribbon emitter: this Material is not a Ribbon material.");
+			ImGui::TextDisabled("RibbonMaterial is used instead. Pick a Ribbon material to change the look.");
+		}
+		ImGui::Separator();
+		return;
 	}
 
 	if (!MeshType)

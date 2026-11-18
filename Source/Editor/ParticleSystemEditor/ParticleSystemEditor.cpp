@@ -17,6 +17,7 @@
 #include "Particles/ParticleModuleSize.h"
 #include "Particles/ParticleModuleVelocity.h"
 #include "Particles/ParticleModuleColorOverLife.h"
+#include "Particles/ParticleModuleTypeDataRibbon.h"
 #include "Asset/AssetManager.h"
 #include "UObject/UObjectGlobals.h"
 #include "UObject/UObjectHash.h"
@@ -35,6 +36,29 @@ namespace
 
 	// 처음 열 때 파티클이 스폰되기를 기다렸다가 맞춘다. 이 시간이 지나도 없으면 기본 반지름으로 맞춘다.
 	constexpr float InitialFocusTimeout = 1.0f;
+
+	// Keep Required's material compatible with the emitter type: the Ribbon PSO uses a different vertex
+	// layout from sprites, so switching TypeData to/from Ribbon swaps between the default materials.
+	void SyncRequiredMaterialWithTypeData(UParticleLODLevel* LOD)
+	{
+		if (!LOD || !LOD->RequiredModule)
+		{
+			return;
+		}
+
+		UMaterial*& Material = LOD->RequiredModule->Material;
+		const bool bRibbonEmitter = Cast<UParticleModuleTypeDataRibbon>(LOD->TypeDataModule) != nullptr;
+		const bool bRibbonMaterial = Material && Material->PSOType == EPSOType::Particle_Ribbon;
+
+		if (bRibbonEmitter && !bRibbonMaterial)
+		{
+			Material = UAssetManager::GetAssetByPath<UMaterial>("RibbonMaterial");
+		}
+		else if (!bRibbonEmitter && bRibbonMaterial)
+		{
+			Material = UAssetManager::GetAssetByPath<UMaterial>("SubUVMaterial");
+		}
+	}
 }
 
 FParticleSystemEditor::FParticleSystemEditor(
@@ -240,6 +264,7 @@ UParticleModule* FParticleSystemEditor::AddModule(UParticleEmitter* Emitter, UCl
 		if (bTypeData)
 		{
 			LOD->TypeDataModule = static_cast<UParticleModuleTypeDataBase*>(Module);
+			SyncRequiredMaterialWithTypeData(LOD);
 		}
 		else
 		{
@@ -267,6 +292,7 @@ void FParticleSystemEditor::DeleteModule(UParticleEmitter* Emitter, UParticleMod
 			if (LOD)
 			{
 				LOD->TypeDataModule = nullptr;
+				SyncRequiredMaterialWithTypeData(LOD);
 			}
 		}
 	}
