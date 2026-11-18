@@ -79,6 +79,28 @@ void UParticleEmitter::CacheEmitterModuleInfo()
 			ModuleOffsetMap.FindOrAdd(Module) = TotalBytes;
 			TotalBytes += static_cast<int32>(Module->RequiredBytes(LOD0->TypeDataModule));
 		}
+
+		// LOD1 이상 모듈은 다른 객체라도 같은 인덱스의 LOD0 자리를 함께 써야 LOD 전환 후에도 Payload가 맞는다
+		for (int32 LODIndex = 1; LODIndex < LODLevels.Num(); ++LODIndex)
+		{
+			UParticleLODLevel* LOD = LODLevels[LODIndex];
+			if (!LOD)
+			{
+				continue;
+			}
+
+			const TArray<UParticleModule*>& LOD0Modules = LOD0->GetModules();
+			const TArray<UParticleModule*>& Modules = LOD->GetModules();
+			const int32 Count = std::min(LOD0Modules.Num(), Modules.Num());
+			for (int32 i = 0; i < Count; ++i)
+			{
+				const int32* Offset = ModuleOffsetMap.Find(LOD0Modules[i]);
+				if (Modules[i] && Offset)
+				{
+					ModuleOffsetMap.FindOrAdd(Modules[i]) = *Offset;
+				}
+			}
+		}
 	}
 	ParticleSize = TotalBytes;
 }

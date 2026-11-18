@@ -1176,6 +1176,61 @@ namespace
 
 	bool DrawPropertyRow(UObject* Object, void* Container, const FProperty& Property, ImFont* CustomFont);
 
+	bool DragDistributionValue(const char* Id, float& Value) { return ImGui::DragFloat(Id, &Value, 0.05f, 0.0f, 0.0f, "%.3f"); }
+	bool DragDistributionValue(const char* Id, FVector& Value) { return ImGui::DragFloat3(Id, Value.V, 0.05f, 0.0f, 0.0f, "%.3f"); }
+
+	// Distribution: type combo, then the fields that type uses. Curve keys are edited in the Curve Editor.
+	template <typename T>
+	bool DrawDistribution(TDistribution<T>& Distribution, const char* Label)
+	{
+		ImGui::PushID(Label);
+		bool bChanged = false;
+
+		ImGui::SetNextItemWidth(110.0f);
+		if (ImGui::BeginCombo("##Type", DistributionTypeToName(Distribution.Type)))
+		{
+			for (int32 TypeIndex = 0; TypeIndex <= static_cast<int32>(EDistributionType::Curve); ++TypeIndex)
+			{
+				const EDistributionType Type = static_cast<EDistributionType>(TypeIndex);
+				if (ImGui::Selectable(DistributionTypeToName(Type), Distribution.Type == Type))
+				{
+					Distribution.SetType(Type);
+					bChanged = true;
+				}
+			}
+			ImGui::EndCombo();
+		}
+		ImGui::SetItemTooltip("Constant: one value / Uniform: random in [Min, Max] per particle / Curve: value over time");
+
+		switch (Distribution.Type)
+		{
+		case EDistributionType::Constant:
+			ImGui::SameLine();
+			ImGui::SetNextItemWidth(-1.0f);
+			bChanged |= DragDistributionValue("##Constant", Distribution.Constant);
+			break;
+		case EDistributionType::Uniform:
+			ImGui::AlignTextToFramePadding();
+			ImGui::TextUnformatted("Min");
+			ImGui::SameLine(40.0f);
+			ImGui::SetNextItemWidth(-1.0f);
+			bChanged |= DragDistributionValue("##Min", Distribution.Min);
+			ImGui::AlignTextToFramePadding();
+			ImGui::TextUnformatted("Max");
+			ImGui::SameLine(40.0f);
+			ImGui::SetNextItemWidth(-1.0f);
+			bChanged |= DragDistributionValue("##Max", Distribution.Max);
+			break;
+		case EDistributionType::Curve:
+			ImGui::SameLine();
+			ImGui::TextDisabled("%d keys (edit in Curve Editor)", Distribution.Curve.Num());
+			break;
+		}
+
+		ImGui::PopID();
+		return bChanged;
+	}
+
 	// 프로퍼티 타입에 맞는 위젯 하나를 그린다. 값이 바뀌면 true
 	// UE도 FProperty는 위젯을 모르고, 에디터(PropertyEditor 모듈)가 CastField로 타입을 보고 위젯을 고른다.
 	bool DrawPropertyValue(UObject* Object, const FProperty& Property, void* ValuePtr, const char* Label, ImFont* CustomFont)
@@ -1364,6 +1419,27 @@ namespace
 			return false;
 		}
 
+		if (const FDistributionFloatProperty* DistributionProperty = CastField<FDistributionFloatProperty>(&Property))
+		{
+			return DrawDistribution(DistributionProperty->GetPropertyValue(ValuePtr), Label);
+		}
+		if (const FDistributionVectorProperty* DistributionProperty = CastField<FDistributionVectorProperty>(&Property))
+		{
+			return DrawDistribution(DistributionProperty->GetPropertyValue(ValuePtr), Label);
+		}
+
+		// Curves need a graph/key editor that knows what the X axis means, so the generic panel only shows a summary.
+		if (const FInterpCurveFloatProperty* CurveProperty = CastField<FInterpCurveFloatProperty>(&Property))
+		{
+			ImGui::TextDisabled("Curve, %d keys (edit in Curve Editor)", CurveProperty->GetPropertyValue(ValuePtr).Num());
+			return false;
+		}
+		if (const FInterpCurveVectorProperty* CurveProperty = CastField<FInterpCurveVectorProperty>(&Property))
+		{
+			ImGui::TextDisabled("Curve, %d keys (edit in Curve Editor)", CurveProperty->GetPropertyValue(ValuePtr).Num());
+			return false;
+		}
+
 		if (const FStructProperty* StructProperty = CastField<FStructProperty>(&Property))
 		{
 			// USTRUCT: 구조체의 프로퍼티를 한 단계 들여 그린다. 컨테이너가 객체가 아니라 이 멤버의 주소다.
@@ -1416,7 +1492,10 @@ namespace
 		const float AvailableWidth = ImGui::GetContentRegionAvail().x;
 		const float LabelWidth = AvailableWidth * 0.45f;
 
-		const bool bInline = !Property.IsA<FTransformProperty>() && !Property.IsA<FStructProperty>() && AvailableWidth >= 260.0f && ImGui::CalcTextSize(DisplayName).x < LabelWidth;
+		// Distributions span several lines (type + Min/Max), so they always go under their label
+		const bool bMultiLine = Property.IsA<FTransformProperty>() || Property.IsA<FStructProperty>()
+			|| Property.IsA<FDistributionFloatProperty>() || Property.IsA<FDistributionVectorProperty>();
+		const bool bInline = !bMultiLine && AvailableWidth >= 260.0f && ImGui::CalcTextSize(DisplayName).x < LabelWidth;
 
 		ImGui::AlignTextToFramePadding();
 		ImGui::TextWrapped("%s", DisplayName);

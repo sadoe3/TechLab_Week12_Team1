@@ -4,6 +4,8 @@
 #include "Editor/HitoriEd/EditorEngine.h"
 #include "Launch/LaunchEngineLoop.h"
 #include "Engine/World.h"
+#include "Camera/CameraActor.h"
+#include "Camera/CameraComponent.h"
 #include "Math/BoxSphereBounds.h"
 #include "Asset/AssetUtils.h"
 #include "Core/Misc/Paths.h"
@@ -128,6 +130,36 @@ void FParticleSystemEditor::RestartSimulation()
 	PreviewComponent->ActivateSystem();
 	AutoRestartTimer = -1.0f;
 	bRestartPending = false;
+}
+
+void FParticleSystemEditor::SetEditLODIndex(int32 InIndex)
+{
+	EditLODIndex = ParticleSystem ? std::clamp(InIndex, -1, ParticleSystem->GetNumLODs() - 1) : -1;
+	if (!PreviewComponent)
+	{
+		return;
+	}
+	// Auto가 아니면 고른 LOD로 고정해야 편집 중인 LOD의 모습을 거리와 상관없이 바로 볼 수 있다
+	PreviewComponent->bAutoLOD = EditLODIndex < 0;
+	PreviewComponent->SetLODLevel(EditLODIndex < 0 ? 0 : EditLODIndex);
+}
+
+void FParticleSystemEditor::AddLOD()
+{
+	if (!ParticleSystem)
+	{
+		return;
+	}
+
+	const TArray<float>& Distances = ParticleSystem->LODDistances;
+	const float LastDistance = Distances.IsEmpty() ? 0.0f : Distances[Distances.Num() - 1];
+	const int32 NewIndex = ParticleSystem->AddLODLevel(LastDistance + 1000.0f);
+	if (NewIndex < 0)
+	{
+		return;
+	}
+	NotifyStructureChanged();
+	SetEditLODIndex(NewIndex);
 }
 
 void FParticleSystemEditor::NotifyPropertyEdited()
@@ -378,6 +410,13 @@ UParticleEmitter* FParticleSystemEditor::AddSpriteEmitter()
 	}
 
 	UParticleEmitter* Emitter = CreateDefaultSpriteEmitter();
+	// 모든 이미터의 LOD 개수가 시스템 LOD 개수와 같아야 LOD 인덱스 하나로 함께 바꿀 수 있다
+	for (int32 LODIndex = Emitter->GetNumLODLevels(); LODIndex < ParticleSystem->GetNumLODs(); ++LODIndex)
+	{
+		UParticleLODLevel* NewLOD = ParticleSystemFile::DuplicateLODLevel(*Emitter, 0);
+		NewLOD->Level = LODIndex;
+		Emitter->AddLODLevel(NewLOD);
+	}
 	ParticleSystem->AddEmitter(Emitter);
 	SelectedObject = Emitter;
 	NotifyStructureChanged();
@@ -398,22 +437,19 @@ UParticleEmitter* FParticleSystemEditor::CreateDefaultSpriteEmitter()
 	LOD->RequiredModule = Required;
 
 	UParticleModuleSpawn* Spawn = NewObject<UParticleModuleSpawn>();
-	Spawn->Rate = 20.0f;
+	Spawn->Rate = FDistributionFloat::MakeConstant(20.0f);
 	LOD->SpawnModule = Spawn;
 
 	UParticleModuleLifetime* Lifetime = NewObject<UParticleModuleLifetime>();
-	Lifetime->LifetimeMin = 1.0f;
-	Lifetime->LifetimeMax = 1.0f;
+	Lifetime->Lifetime = FDistributionFloat::MakeConstant(1.0f);
 	LOD->AddModule(Lifetime);
 
 	UParticleModuleSize* Size = NewObject<UParticleModuleSize>();
-	Size->StartSizeMin = FVector(0.25f, 0.25f, 0.25f);
-	Size->StartSizeMax = FVector(0.25f, 0.25f, 0.25f);
+	Size->StartSize = FDistributionVector::MakeConstant(FVector(0.25f, 0.25f, 0.25f));
 	LOD->AddModule(Size);
 
 	UParticleModuleVelocity* Velocity = NewObject<UParticleModuleVelocity>();
-	Velocity->StartVelocityMin = FVector(-0.1f, -0.1f, 0.0f);
-	Velocity->StartVelocityMax = FVector(0.1f, 0.1f, 1.0f);
+	Velocity->StartVelocity = FDistributionVector::MakeUniform(FVector(-0.1f, -0.1f, 0.0f), FVector(0.1f, 0.1f, 1.0f));
 	LOD->AddModule(Velocity);
 
 	LOD->AddModule(NewObject<UParticleModuleColorOverLife>());
@@ -615,6 +651,16 @@ void FParticleSystemEditor::Tick(float DeltaTime)
 		ViewportClient->SetViewRotation(Camera.Rotation);
 	}
 	CameraInput = {};
+
+	// PSC의 LOD 판정은 월드 MainCamera를 보므로, 실제로 그리는 뷰포트 시점을 매 프레임 옮겨 둔다
+	if (ACameraActor* MainCam = ViewportClient->GetWorld()->GetMainCamera())
+	{
+		if (UCameraComponent* CamCom = MainCam->GetCameraComponent())
+		{
+			CamCom->SetRelativeLocation(ViewportClient->GetViewLocation());
+			CamCom->SetRelativeRotation(ViewportClient->GetViewRotation());
+		}
+	}
 
 	if (bInitialFocusPending)
 	{

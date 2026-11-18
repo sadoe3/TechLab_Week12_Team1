@@ -8,6 +8,8 @@
 #include "Math/EngineMath.h"
 #include "Math/Color.h"
 #include "Math/Transform.h"
+#include "Math/InterpCurve.h"
+#include "Math/Distribution.h"
 #include "Serialization/StructuredArchive.h"
 #include "Serialization/MathSerialization.h"
 #include "Serialization/TypeSerializer.h"
@@ -170,6 +172,33 @@ class FTransformProperty : public FTransformProperty_Super
     DECLARE_FIELD(FTransformProperty, FTransformProperty_Super)
 };
 
+// Keyframed curves (UE: FInterpCurveFloat / FInterpCurveVector). Stored as { "Points": [...] }.
+// The Details panel only shows a summary; keys are edited in an editor that knows the curve (e.g. the particle Curve Editor).
+using FInterpCurveFloatProperty_Super = TProperty_WithSerializer<FInterpCurveFloat, FProperty>;
+class FInterpCurveFloatProperty : public FInterpCurveFloatProperty_Super
+{
+    DECLARE_FIELD(FInterpCurveFloatProperty, FInterpCurveFloatProperty_Super)
+};
+
+using FInterpCurveVectorProperty_Super = TProperty_WithSerializer<FInterpCurveVector, FProperty>;
+class FInterpCurveVectorProperty : public FInterpCurveVectorProperty_Super
+{
+    DECLARE_FIELD(FInterpCurveVectorProperty, FInterpCurveVectorProperty_Super)
+};
+
+// Constant / Uniform / Curve value (UE: FRawDistributionFloat / FRawDistributionVector)
+using FDistributionFloatProperty_Super = TProperty_WithSerializer<FDistributionFloat, FProperty>;
+class FDistributionFloatProperty : public FDistributionFloatProperty_Super
+{
+    DECLARE_FIELD(FDistributionFloatProperty, FDistributionFloatProperty_Super)
+};
+
+using FDistributionVectorProperty_Super = TProperty_WithSerializer<FDistributionVector, FProperty>;
+class FDistributionVectorProperty : public FDistributionVectorProperty_Super
+{
+    DECLARE_FIELD(FDistributionVectorProperty, FDistributionVectorProperty_Super)
+};
+
 // 아래는 저장 형식이 C++ 타입 그대로가 아니라서 Property.cpp에서 직접 구현한다.
 
 // FColor(4바이트)는 RGBA를 묶은 uint32로 저장한다
@@ -255,6 +284,10 @@ DEFINE_PROPERTY_TYPE(FString, FStrProperty)
 DEFINE_PROPERTY_TYPE(FTransform, FTransformProperty)
 DEFINE_PROPERTY_TYPE(FColor, FColorProperty)
 DEFINE_PROPERTY_TYPE(FLinearColor, FLinearColorProperty)
+DEFINE_PROPERTY_TYPE(FInterpCurveFloat, FInterpCurveFloatProperty)
+DEFINE_PROPERTY_TYPE(FInterpCurveVector, FInterpCurveVectorProperty)
+DEFINE_PROPERTY_TYPE(FDistributionFloat, FDistributionFloatProperty)
+DEFINE_PROPERTY_TYPE(FDistributionVector, FDistributionVectorProperty)
 
 template <typename T>
     requires std::is_enum_v<T>

@@ -1,5 +1,34 @@
 #include "EnginePCH.h"
 #include "Particles/ParticleSystem.h"
+#include "Particles/ParticleLODLevel.h"
+#include "Particles/ParticleSystemFile.h"
+
+int32 UParticleSystem::AddLODLevel(float Distance)
+{
+	if (Emitters.Num() == 0)
+	{
+		return -1;
+	}
+
+	const int32 NewIndex = LODDistances.Num();
+	for (UParticleEmitter* Emitter : Emitters)
+	{
+		UParticleLODLevel* LOD0 = Emitter ? Emitter->GetLODLevel(0) : nullptr;
+		if (!LOD0)
+		{
+			continue;
+		}
+
+		// LOD0을 복제해야 모듈 순서가 같아져 LOD0 기준 Payload 오프셋을 모든 LOD가 함께 쓸 수 있다
+		UParticleLODLevel* NewLOD = ParticleSystemFile::DuplicateLODLevel(*Emitter, 0);
+		NewLOD->Level = NewIndex;
+		Emitter->AddLODLevel(NewLOD);
+		Emitter->CacheEmitterModuleInfo();
+	}
+
+	LODDistances.Add(Distance);
+	return NewIndex;
+}
 
 UParticleEmitter* UParticleSystem::GetEmitter(int32 Index) const
 {

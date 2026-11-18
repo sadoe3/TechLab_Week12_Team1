@@ -13,7 +13,7 @@ UParticleModuleRotationRateMultiplyLife::UParticleModuleRotationRateMultiplyLife
 void UParticleModuleRotationRateMultiplyLife::Apply(FBaseParticle& Particle) const
 {
 	const float T = std::clamp(Particle.RelativeTime, 0.0f, 1.0f);
-	const FVector Scale = MultiplierStart + (MultiplierEnd - MultiplierStart) * T;
+	const FVector Scale = LifeMultiplier.Eval(T, FVector::OneVector);
 
 	// RotationRate만 곱하고 BaseRotationRate는 건드리지 않는다. Base까지 바꾸면 매 프레임 배율이 누적된다.
 	Particle.RotationRate.X *= Scale.X;

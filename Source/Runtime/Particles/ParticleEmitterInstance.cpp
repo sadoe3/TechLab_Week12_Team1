@@ -37,6 +37,38 @@ void FParticleEmitterInstance::InitParameters(UParticleEmitter* InTemplate, UPar
 	CurrentLODLevel = SpriteTemplate ? SpriteTemplate->GetLODLevel(0) : nullptr;
 }
 
+void FParticleEmitterInstance::SetCurrentLODIndex(int32 InLODIndex)
+{
+	UParticleLODLevel* NewLOD = SpriteTemplate ? SpriteTemplate->GetLODLevel(InLODIndex) : nullptr;
+	if (!NewLOD)
+	{
+		return;
+	}
+	// SpawnFraction은 "덜 나온 파티클 몫"이라 LOD와 무관하므로 그대로 이어 쓴다
+	CurrentLODLevelIndex = InLODIndex;
+	CurrentLODLevel = NewLOD;
+
+	if (NewLOD->RequiredModule)
+	{
+		EmitterDuration = NewLOD->RequiredModule->EmitterDuration;
+	}
+
+	// 새 LOD의 BurstList에 맞춰 다시 짜되, 이번 루프에서 시각이 이미 지난 버스트는 터진 것으로 둬서 두 번 터지지 않게 한다
+	if (NewLOD->SpawnModule)
+	{
+		const TArray<FParticleBurst>& BurstList = NewLOD->SpawnModule->GetBurstList();
+		const float Duration = EmitterDuration > 0.0f ? EmitterDuration : 1.0f;
+		const float LocalEmitterTime = EmitterTime - CurrentDelay;
+
+		BurstFired.SetNum(BurstList.Num());
+		for (int32 i = 0; i < BurstList.Num(); ++i)
+		{
+			const float BurstTime = std::clamp(BurstList[i].Time, 0.0f, 1.0f) * Duration;
+			BurstFired[i] = (LocalEmitterTime >= BurstTime) ? 1 : 0;
+		}
+	}
+}
+
 void FParticleEmitterInstance::Init()
 {
 	ParticleSize = sizeof(FBaseParticle);
@@ -247,7 +279,7 @@ float FParticleEmitterInstance::Spawn(float DeltaTime)
 	// Unreal FParticleEmitterInstance::Spawn과 같은 계산.
 	// 이번 프레임에 나올 파티클들의 "생성 후 경과 시간"(SpawnTime)을 오래된 것부터 Increment 간격으로 배정한다.
 	float NewLeftover = SpawnFraction;
-	const float SpawnRate = SpawnModule->GetSpawnRate() * SpawnModule->RateScale;
+	const float SpawnRate = SpawnModule->GetSpawnRate(this) * SpawnModule->RateScale;
 	if (SpawnRate > 0.0f)
 	{
 		const float OldLeftover = SpawnFraction;

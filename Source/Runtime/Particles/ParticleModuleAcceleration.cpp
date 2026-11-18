@@ -25,7 +25,7 @@ uint32 UParticleModuleAcceleration::RequiredBytes(UParticleModuleTypeDataBase* T
 void UParticleModuleAcceleration::Spawn(FParticleEmitterInstance* Owner, int32 Offset, float SpawnTime, FBaseParticle* ParticleBase)
 {
 	// Unreal UParticleModuleAcceleration::SpawnEx
-	FVector Accel = RandomRange(Owner, AccelerationMin, AccelerationMax);
+	FVector Accel = GetDistributionValue(Owner, Acceleration);
 	Accel = bInWorldSpace ? WorldToSimulationVector(Owner, Accel) : EmitterToSimulationVector(Owner, Accel);
 
 	GetPayload(ParticleBase, Offset).Acceleration = Accel;

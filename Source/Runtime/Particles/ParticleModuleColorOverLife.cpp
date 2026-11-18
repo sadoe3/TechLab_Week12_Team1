@@ -13,8 +13,8 @@ UParticleModuleColorOverLife::UParticleModuleColorOverLife()
 void UParticleModuleColorOverLife::Apply(FBaseParticle& Particle) const
 {
 	const float T = std::clamp(Particle.RelativeTime, 0.0f, 1.0f);
-	const FVector Rgb = ColorStart + (ColorEnd - ColorStart) * T;
-	const float Alpha = AlphaStart + (AlphaEnd - AlphaStart) * T;
+	const FVector Rgb = ColorOverLife.Eval(T, FVector::OneVector);
+	const float Alpha = AlphaOverLife.Eval(T, 1.0f);
 	Particle.Color = FVector4(Rgb.X, Rgb.Y, Rgb.Z, Alpha);
 }
 

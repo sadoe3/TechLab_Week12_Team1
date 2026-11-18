@@ -5,7 +5,7 @@
 
 /**
  * 초기 색/알파를 정하는 Spawn 모듈 (Unreal UParticleModuleColor, Cascade의 "Initial Color")
- * StartColor(Vector)/StartAlpha(Float) Distribution을 Min~Max 균등 분포로 대신한다.
+ * Spawn-time values are distributions (Constant / Uniform / Curve over the emitter loop, see GetDistributionValue).
  */
 UCLASS()
 class UParticleModuleColor : public UParticleModule
@@ -21,14 +21,8 @@ public:
 public:
 	/** RGB (0~1) */
 	UPROPERTY(EditAnywhere)
-	FVector StartColorMin = FVector::OneVector;
+	FDistributionVector StartColor = FDistributionVector::MakeConstant(FVector::OneVector);
 
 	UPROPERTY(EditAnywhere)
-	FVector StartColorMax = FVector::OneVector;
-
-	UPROPERTY(EditAnywhere)
-	float StartAlphaMin = 1.0f;
-
-	UPROPERTY(EditAnywhere)
-	float StartAlphaMax = 1.0f;
+	FDistributionFloat StartAlpha = FDistributionFloat::MakeConstant(1.0f);
 };
