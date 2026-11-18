@@ -70,6 +70,21 @@ namespace
 		return EParticleSortMode::PSORTMODE_None;
 	}
 
+	// RenderAxis도 Trails_ 뺀 이름으로 저장한다. 배열 순서 = enum 값
+	constexpr const char* RenderAxisNames[] = { "CameraUp", "SourceUp", "WorldUp" };
+
+	ETrailsRenderAxisOption RenderAxisFromString(const std::string& Name)
+	{
+		for (int32 i = 0; i < 3; ++i)
+		{
+			if (Name == RenderAxisNames[i])
+			{
+				return static_cast<ETrailsRenderAxisOption>(i);
+			}
+		}
+		return ETrailsRenderAxisOption::Trails_CameraUp;
+	}
+
 	// .particle은 nlohmann json으로 직접 쓰지만, 엔진 타입(리플렉션 프로퍼티, 머티리얼 참조)은
 	// 엔진의 FStructuredArchive 직렬화 코드를 그대로 재사용하기 위해 json 조각 <-> 구조화 아카이브를 왕복시킨다.
 	json WriteStructured(const std::function<void(FStructuredArchive::FSlot)>& WriteFunc)
@@ -263,7 +278,13 @@ namespace
 				}
 				else if (TypeName == "Ribbon")
 				{
-					LOD->TypeDataModule = NewObject<UParticleModuleTypeDataRibbon>();
+					UParticleModuleTypeDataRibbon* RibbonType = NewObject<UParticleModuleTypeDataRibbon>();
+					RibbonType->MaxParticleInTrailCount = TypeJson.value("MaxParticleInTrailCount", 0);
+					RibbonType->TilingDistance = TypeJson.value("TilingDistance", 0.0f);
+					RibbonType->RenderAxis = RenderAxisFromString(TypeJson.value("RenderAxis", std::string("CameraUp")));
+					RibbonType->bClipSourceSegement = TypeJson.value("bClipSourceSegement", false);
+					RibbonType->bDeadTrailsOnDeactivate = TypeJson.value("bDeadTrailsOnDeactivate", false);
+					LOD->TypeDataModule = RibbonType;
 				}
 				else if (TypeName == "Sprite")
 				{
@@ -378,11 +399,15 @@ namespace
 					TypeJson["bOverrideMaterial"] = MeshType->bOverrideMaterial;
 					LODJson["TypeDataModule"] = TypeJson;
 				}
-				else if (Cast<UParticleModuleTypeDataRibbon>(LOD->TypeDataModule))
+				else if (UParticleModuleTypeDataRibbon* RibbonType = Cast<UParticleModuleTypeDataRibbon>(LOD->TypeDataModule))
 				{
-					// 지금은 설정값이 없어서 종류만 남긴다
 					json TypeJson = json::object();
 					TypeJson["Type"] = "Ribbon";
+					TypeJson["MaxParticleInTrailCount"] = RibbonType->MaxParticleInTrailCount;
+					TypeJson["TilingDistance"] = RibbonType->TilingDistance;
+					TypeJson["RenderAxis"] = RenderAxisNames[static_cast<int32>(RibbonType->RenderAxis)];
+					TypeJson["bClipSourceSegement"] = RibbonType->bClipSourceSegement;
+					TypeJson["bDeadTrailsOnDeactivate"] = RibbonType->bDeadTrailsOnDeactivate;
 					LODJson["TypeDataModule"] = TypeJson;
 				}
 			}

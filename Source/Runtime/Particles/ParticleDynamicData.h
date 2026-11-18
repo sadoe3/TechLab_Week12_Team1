@@ -9,6 +9,7 @@ class FRenderQueue;
 class UMaterial;
 class UStaticMesh;
 struct FViewContext;
+enum class ETrailsRenderAxisOption : uint8;
 
 /**
  * 이미터 동적 렌더 데이터 타입 열거형
@@ -213,6 +214,10 @@ struct FDynamicRibbonEmitterReplayData : public FDynamicEmitterReplayDataBase
 
 	/** 머리(가장 최근에 태어난 점) → 꼬리(가장 오래된 점) 순서 */
 	TArray<FRibbonPoint> Points;
+
+	/** UParticleModuleTypeDataRibbon 설정의 복사본. 렌더 쪽이 에셋을 직접 보지 않게 스냅샷에 담는다 */
+	float TilingDistance = 0.0f;
+	ETrailsRenderAxisOption RenderAxis{};
 };
 
 /**
@@ -233,10 +238,11 @@ struct FDynamicRibbonEmitterData : public FDynamicEmitterDataBase
 
 	/**
 	 * 월드 공간 점 목록 → 점마다 정점 2개(2i = 왼쪽 V=0, 2i+1 = 오른쪽 V=1).
-	 * 띠는 카메라를 향해 펼쳐지고, 폭은 Width, 색은 Color를 쓴다.
+	 * FixedWidthAxis가 0이면 카메라를 향해 펼치고, 아니면 그 방향으로 펼친다. 폭은 Width, 색은 Color를 쓴다.
+	 * TilingDistance > 0이면 U는 머리부터 누적한 거리 / TilingDistance, 아니면 점 인덱스 * 0.5.
 	 */
 	static void BuildRibbonVertices(const TArray<FDynamicRibbonEmitterReplayData::FRibbonPoint>& WorldPoints,
-		const FViewContext& View, TArray<FParticleRibbonVertex>& OutVertices);
+		const FViewContext& View, const FVector& FixedWidthAxis, float TilingDistance, TArray<FParticleRibbonVertex>& OutVertices);
 
 	FDynamicRibbonEmitterReplayData Source;
 	UMaterial* Material = nullptr;
