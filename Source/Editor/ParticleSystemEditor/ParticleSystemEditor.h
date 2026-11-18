@@ -74,8 +74,7 @@ public:
 	void MoveModule(UParticleEmitter* SourceEmitter, UParticleModule* Module, UParticleEmitter* TargetEmitter, int32 TargetIndex);
 
 	// Cascade의 New Particle Sprite Emitter와 같은 기본 구성으로 이미터를 끝에 추가한다.
-	UParticleEmitter* AddSpriteEmitter();
-	// 바로 뒤에 복제본을 넣는다.
+	UParticleEmitter* AddSpriteEmitter();	// 바로 뒤에 복제본을 넣는다.
 	UParticleEmitter* DuplicateEmitter(UParticleEmitter* Emitter);
 	void DeleteEmitter(UParticleEmitter* Emitter);
 	void RenameEmitter(UParticleEmitter* Emitter, const FString& NewName);

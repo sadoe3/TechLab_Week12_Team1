@@ -253,17 +253,6 @@ namespace
 					const FString MeshPath = TypeJson.value("MeshPath", FString(""));
 					if (!MeshPath.empty())
 					{
-			if (LODJson.contains("TypeDataModule") && LODJson["TypeDataModule"].is_object())
-			{
-				const json& TypeJson = LODJson["TypeDataModule"];
-				const FString TypeName = TypeJson.value("Type", FString(""));
-
-				if (TypeName == "Mesh")
-				{
-					UParticleModuleTypeDataMesh* MeshType = NewObject<UParticleModuleTypeDataMesh>();
-					const FString MeshPath = TypeJson.value("MeshPath", FString(""));
-					if (!MeshPath.empty())
-					{
 						MeshType->SetMesh(UAssetManager::GetAssetByPath<UStaticMesh>(MeshPath));
 					}
 					MeshType->LODSizeScale = TypeJson.value("LODSizeScale", 1.0f);
@@ -275,26 +264,6 @@ namespace
 				else if (TypeName == "Ribbon")
 				{
 					LOD->TypeDataModule = NewObject<UParticleModuleTypeDataRibbon>();
-				}
-				else if (TypeName == "Sprite")
-				{
-					// 구버전 에셋 호환: Sprite는 TypeData 없이(nullptr) 표현하고, SubUV 값은 RequiredModule로 옮긴다
-					const bool bReqHasSubUV = LODJson.contains("RequiredModule")
-						&& LODJson["RequiredModule"].is_object()
-						&& LODJson["RequiredModule"].contains("SubImages_Horizontal");
-					if (LOD->RequiredModule && !bReqHasSubUV)
-					{
-						LOD->RequiredModule->SubImages_Horizontal = TypeJson.value("SubImages_Horizontal", 1);
-						LOD->RequiredModule->SubImages_Vertical = TypeJson.value("SubImages_Vertical", 1);
-					}
-				}
-			}
-					}
-					MeshType->LODSizeScale = TypeJson.value("LODSizeScale", 1.0f);
-					MeshType->bUseStaticMeshLODs = TypeJson.value("bUseStaticMeshLODs", true);
-					MeshType->bCastShadows = TypeJson.value("bCastShadows", false);
-					MeshType->bOverrideMaterial = TypeJson.value("bOverrideMaterial", false);
-					LOD->TypeDataModule = MeshType;
 				}
 				else if (TypeName == "Sprite")
 				{

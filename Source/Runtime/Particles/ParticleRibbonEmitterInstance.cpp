@@ -35,9 +35,15 @@ FBaseParticle* FParticleRibbonEmitterInstance::GetParticleAtSlot(int32 SlotIndex
 
 UMaterial* FParticleRibbonEmitterInstance::GetMaterial() const
 {
-	if (CurrentLODLevel && CurrentLODLevel->RequiredModule && CurrentLODLevel->RequiredModule->Material)
+	// Ribbon vertices (FParticleRibbonVertex) only match the Ribbon PSO. A sprite/mesh material left in
+	// Required (e.g. after switching TypeData in the editor) would read the vertex buffer with the wrong layout.
+	if (CurrentLODLevel && CurrentLODLevel->RequiredModule)
 	{
-		return CurrentLODLevel->RequiredModule->Material;
+		UMaterial* Material = CurrentLODLevel->RequiredModule->Material;
+		if (Material && Material->PSOType == EPSOType::Particle_Ribbon)
+		{
+			return Material;
+		}
 	}
 	return UAssetManager::GetAssetByPath<UMaterial>("RibbonMaterial");
 }
