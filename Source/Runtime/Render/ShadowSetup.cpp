@@ -249,6 +249,7 @@ void FSceneRenderer::AddInteractingPrimitives(FScene& Scene, FProjectedShadowInf
 		{
 			if (!Proxy->bCastsShadow || !Proxy->IsShown(View.bGameView)) return;
 			if (Proxy->IsSkinned() && !CachedViewContext.bShowSkeletalMesh) return;
+			if (Proxy->IsParticle() && !CachedViewContext.bShowParticles) return;
 			// 동적 요소(파티클 등)는 캐시된 RenderState 없이 그림자 Build에서 패킷을 직접 만든다.
 			if (!Proxy->HasDynamicMeshElements() && (!Proxy->GetMesh() || !Proxy->GetRenderState())) return;
 

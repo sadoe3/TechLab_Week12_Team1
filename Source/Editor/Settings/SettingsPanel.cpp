@@ -121,6 +121,7 @@ void FSettingsPanel::OnRender()
 	ImGui::Checkbox("Vignette", &Settings.bShowVignette);
 	ImGui::Checkbox("Camera Fade / Letterbox", &Settings.bShowCameraOverlay);
 	ImGui::Checkbox("Skeletal Mesh", &Settings.bShowSkeletalMesh);
+	ImGui::Checkbox("Particles", &Settings.bShowParticles);
 
 	if (ImGui::TreeNode("Camera Overlay Debug"))
 	{
@@ -232,6 +233,7 @@ bool FSettingsPanel::SaveSettings() const
 	File << "ShowVignette=" << Settings.bShowVignette << "\n";
 	File << "ShowCameraOverlay=" << Settings.bShowCameraOverlay << "\n";
 	File << "ShowSkeletalMesh=" << Settings.bShowSkeletalMesh << "\n";
+	File << "ShowParticles=" << Settings.bShowParticles << "\n";
 
 	File << "LightCullingMode=" << (Settings.LightCullingMode == ELightCullingMode::Off ? "Off" : Settings.LightCullingMode == ELightCullingMode::Tiled ? "Tiled" : Settings.LightCullingMode == ELightCullingMode::Tiled25D ? "Tiled25D" : "Clustered") << "\n";
 	File << "RenderingPath=" << (Settings.RenderingPath == ERenderingPath::Forward ? "Forward" : "Deferred") << "\n";
@@ -390,6 +392,7 @@ bool FSettingsPanel::LoadSettings()
 				else if (Key == "ShowVignette")      Settings.bShowVignette = std::stoi(ValueStr);
 				else if (Key == "ShowCameraOverlay") Settings.bShowCameraOverlay = std::stoi(ValueStr);
 				else if (Key == "ShowSkeletalMesh")  Settings.bShowSkeletalMesh = std::stoi(ValueStr);
+				else if (Key == "ShowParticles")     Settings.bShowParticles = std::stoi(ValueStr);
 
 				else if (Key == "LightCullingMode")
 				{

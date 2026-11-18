@@ -77,6 +77,7 @@ FGameSettings FGameSettings::Load(const FString& Path)
 	Options.bShowVignette = Config.GetBool("Rendering", "ShowVignette", Options.bShowVignette);
 	Options.bShowCameraOverlay = Config.GetBool("Rendering", "ShowCameraOverlay", Options.bShowCameraOverlay);
 	Options.bShowSkeletalMesh = Config.GetBool("Rendering", "ShowSkeletalMesh", Options.bShowSkeletalMesh);
+	Options.bShowParticles = Config.GetBool("Rendering", "ShowParticles", Options.bShowParticles);
 	if (const FString Gamma = Config.GetString("Rendering", "DisplayGamma", ""); !Gamma.empty())
 	{
 		try { Options.DisplayGamma = FMath::Clamp(std::stof(Gamma), 1.0f, 3.0f); } catch (...) {}

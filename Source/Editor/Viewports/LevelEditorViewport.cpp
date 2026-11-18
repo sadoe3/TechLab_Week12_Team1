@@ -66,6 +66,7 @@ void FLevelEditorViewportClient::Draw(FRenderer* Renderer)
 		EngineShowFlags.bShowVignette = S.bShowVignette;
 		EngineShowFlags.bShowCameraOverlay = S.bShowCameraOverlay;
 		EngineShowFlags.bShowSkeletalMesh = S.bShowSkeletalMesh;
+		EngineShowFlags.bShowParticles = S.bShowParticles;
 		EngineShowFlags.bDrawPrimitives = S.bDrawPrimitives;
 		EngineShowFlags.bDrawDecals = S.bDrawDecals;
 		EngineShowFlags.bDecalCulling = S.bDecalCulling;
