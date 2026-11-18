@@ -1,6 +1,9 @@
 #include "EnginePCH.h"
 #include "Components/ParticleSystemComponent.h"
+#include "Camera/CameraActor.h"
+#include "Camera/CameraComponent.h"
 #include "Engine/ParticleSystemSceneProxy.h"
+#include "Engine/World.h"
 #include "Engine/Scene.h"
 #include "Particles/ParticleDynamicData.h"
 #include "Particles/ParticleEmitter.h"
@@ -52,6 +55,17 @@ void UParticleSystemComponent::TickComponent(float DeltaTime)
 		InitParticles();
 	}
 
+	// 이번 프레임 Spawn이 바뀐 LOD의 Spawn Rate를 쓰도록 인스턴스 Tick보다 먼저 정한다
+	if (bAutoLOD && Template->LODMethod == EParticleSystemLODMethod::Automatic)
+	{
+		LODTimer += DeltaTime;
+		if (LODTimer >= LODDistanceCheckTime)
+		{
+			LODTimer = 0.0f;
+			SetLODLevel(DetermineLODLevel());
+		}
+	}
+
 	for (FParticleEmitterInstance* Instance : EmitterInstances)
 	{
 		if (Instance && Instance->bEnabled)
@@ -83,6 +97,52 @@ void UParticleSystemComponent::TickComponent(float DeltaTime)
 
 	SendRenderDynamicData();
 	UpdateRenderBounds();
+}
+
+int32 UParticleSystemComponent::DetermineLODLevel() const
+{
+	// 카메라와 PSC 사이 거리로 Template->LODDistances에서 LOD 인덱스를 골라 돌려준다
+	
+	if (!GetWorld() || !GetWorld()->GetMainCamera())
+	{
+		return 0;
+	}
+	FVector CameraLocation = GetWorld()->GetMainCamera()->GetCameraComponent()->GetWorldLocation();
+	const float Distance = FVector::Distance(GetWorldLocation(), CameraLocation);
+
+	const auto& LODDistances = Template->LODDistances;
+	for (int32 i = LODDistances.Num() - 1; i >= 0; --i)
+	{
+		if (LODDistances[i] <= Distance)
+		{
+			return i;
+		}
+	}
+
+	return 0;
+}
+
+void UParticleSystemComponent::SetLODLevel(int32 InLODLevel)
+{
+	if (!Template)
+	{
+		return;
+	}
+
+	const int32 NewLOD = std::clamp(InLODLevel, 0, std::max(Template->GetNumLODs() - 1, 0));
+	if (NewLOD == LODLevel)
+	{
+		return;
+	}
+
+	LODLevel = NewLOD;
+	for (FParticleEmitterInstance* Instance : EmitterInstances)
+	{
+		if (Instance)
+		{
+			Instance->SetCurrentLODIndex(LODLevel);
+		}
+	}
 }
 
 void UParticleSystemComponent::UpdateInEditor(float DeltaTime)
@@ -303,6 +363,8 @@ void UParticleSystemComponent::InitParticles()
 		if (NewInstance)
 		{
 			NewInstance->InitParameters(Emitter, this);
+			// 인스턴스를 다시 만들어도 PSC가 고른 LOD를 이어서 쓴다
+			NewInstance->CurrentLODLevelIndex = std::clamp(LODLevel, 0, Emitter->GetNumLODLevels() - 1);
 			NewInstance->Init();
 			EmitterInstances.Add(NewInstance);
 		}

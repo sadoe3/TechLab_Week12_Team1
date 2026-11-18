@@ -61,6 +61,8 @@ public:
 	virtual float GetParticleExtent(const FBaseParticle& Particle) const;
 
 	UParticleLODLevel* GetCurrentLODLevel() const { return CurrentLODLevel; }
+	/** 사용할 LOD를 바꾼다. 살아 있는 파티클은 그대로 두고 다음 Spawn/Update부터 새 LOD 모듈을 쓴다 */
+	virtual void SetCurrentLODIndex(int32 InLODIndex);
 	FBaseParticle* GetParticleAtIndex(int32 ActiveIndex) const;
 
 public:

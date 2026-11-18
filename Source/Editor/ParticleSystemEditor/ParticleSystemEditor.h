@@ -88,6 +88,12 @@ public:
 	// Required / Spawn / TypeData 모듈인지 (켜고 끄거나 순서를 바꿀 수 없다)
 	static bool IsFixedModule(const UParticleLODLevel* LOD, const UObject* Module);
 
+	// LOD 편집. -1 = Auto(프리뷰도 카메라 거리로 고른다), 0 이상 = 그 LOD를 보여 주고 프리뷰도 그 LOD로 고정한다
+	int32 GetEditLODIndex() const { return EditLODIndex; }
+	void SetEditLODIndex(int32 InIndex);
+	// 모든 이미터에 LOD0 복제본을 붙이고 새 LOD를 선택한다
+	void AddLOD();
+
 	// 시뮬레이션 제어
 	bool IsPaused() const { return bPaused; }
 	void SetPaused(bool bInPaused) { bPaused = bInPaused; }
@@ -139,6 +145,7 @@ private:
 	bool bPaused = false;
 	bool bAutoRestart = true;
 	float SimulationSpeed = 1.0f;
+	int32 EditLODIndex = -1;
 
 	// 시스템이 끝난 뒤 다시 시작하기까지 남은 시간
 	float AutoRestartTimer = -1.0f;

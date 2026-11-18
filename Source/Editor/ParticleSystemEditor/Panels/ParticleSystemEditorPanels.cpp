@@ -2,6 +2,7 @@
 #include "ParticleSystemEditorPanels.h"
 #include "Editor/ParticleSystemEditor/ParticleSystemEditor.h"
 #include "Editor/Details/PropertyEditor.h"
+#include "Components/ParticleSystemComponent.h"
 #include "Particles/ParticleSystem.h"
 #include "Particles/ParticleEmitter.h"
 #include "Particles/ParticleLODLevel.h"
@@ -19,6 +20,7 @@
 #include <algorithm>
 #include <cmath>
 #include <cstdio>
+#include <cfloat>
 #include <cstring>
 #include <type_traits>
 #include <map>
@@ -153,7 +155,7 @@ void FParticleViewportPanel::DrawToolbar()
 			Current = Index;
 		}
 	}
-	ImGui::SetNextItemWidth(80.0f);
+	ImGui::SetNextItemWidth(ImGui::CalcTextSize("100%").x + ImGui::GetStyle().FramePadding.x * 2.0f + ImGui::GetFrameHeight());
 	if (ImGui::BeginCombo("##SimSpeed", SpeedLabels[Current]))
 	{
 		for (int32 Index = 0; Index < IM_ARRAYSIZE(Speeds); ++Index)
@@ -173,7 +175,38 @@ void FParticleViewportPanel::DrawToolbar()
 		Editor.SetAutoRestart(bAutoRestart);
 	}
 	ImGui::SameLine();
-	ImGui::TextDisabled("Particles: %d", Editor.GetActiveParticleCount());
+
+	// Cascade의 LOD 툴바: Auto면 거리로 고르고, 번호를 고르면 그 LOD를 편집·미리보기한다
+	const UParticleSystem* System = Editor.GetParticleSystem();
+	const int32 NumLODs = System ? System->GetNumLODs() : 0;
+	const int32 EditLOD = Editor.GetEditLODIndex();
+	const FString LODLabel = EditLOD < 0 ? FString("LOD: Auto") : "LOD " + std::to_string(EditLOD);
+	// 글꼴 크기가 바뀌어도 잘리지 않게 가장 긴 글자 + 화살표 버튼 폭으로 잡는다
+	ImGui::SetNextItemWidth(ImGui::CalcTextSize("LOD: Auto").x + ImGui::GetStyle().FramePadding.x * 2.0f + ImGui::GetFrameHeight());
+	if (ImGui::BeginCombo("##LOD", LODLabel.c_str()))
+	{
+		if (ImGui::Selectable("Auto", EditLOD < 0))
+		{
+			Editor.SetEditLODIndex(-1);
+		}
+		for (int32 Index = 0; Index < NumLODs; ++Index)
+		{
+			const FString Label = "LOD " + std::to_string(Index);
+			if (ImGui::Selectable(Label.c_str(), EditLOD == Index))
+			{
+				Editor.SetEditLODIndex(Index);
+			}
+		}
+		ImGui::EndCombo();
+	}
+	ImGui::SameLine();
+	if (ImGui::Button("Add LOD"))
+	{
+		Editor.AddLOD();
+	}
+	ImGui::SameLine();
+	const UParticleSystemComponent* Preview = Editor.GetPreviewComponent();
+	ImGui::TextDisabled("Particles: %d  (LOD %d)", Editor.GetActiveParticleCount(), Preview ? Preview->GetLODLevel() : 0);
 }
 
 void FParticleViewportPanel::DrawContent()
@@ -447,8 +480,8 @@ void FParticleEmittersPanel::DrawEmitterColumn(UParticleEmitter* Emitter, float 
 	}
 	ImGui::Separator();
 
-	// LOD/커브는 다음 단계에서 다룬다. 지금은 LOD 0만 표시한다.
-	UParticleLODLevel* LOD = Emitter->GetLODLevel(0);
+	// 선택한 LOD의 모듈 스택을 보여 준다. 모듈 추가·삭제·이동은 LOD0 인덱스 기준으로 모든 LOD에 함께 적용된다
+	UParticleLODLevel* LOD = Emitter->GetLODLevel(std::max(Editor.GetEditLODIndex(), 0));
 	if (LOD)
 	{
 		if (LOD->TypeDataModule)
@@ -682,6 +715,29 @@ void FParticleDetailsPanel::DrawContent()
 	if (UParticleModuleSpawn* Spawn = Cast<UParticleModuleSpawn>(Selected))
 	{
 		DrawBurstList(Spawn);
+	}
+
+	if (UParticleSystem* System = Cast<UParticleSystem>(Selected))
+	{
+		ImGui::Separator();
+		ImGui::TextUnformatted("LOD Distances");
+		TArray<float>& Distances = System->LODDistances;
+		for (int32 Index = 0; Index < Distances.Num(); ++Index)
+		{
+			const FString Label = "LOD " + std::to_string(Index);
+			// LOD0은 항상 0부터 시작해야 가까운 거리에서 고를 LOD가 비지 않는다
+			if (Index == 0)
+			{
+				ImGui::Text("%s: 0", Label.c_str());
+				continue;
+			}
+			const float MinDistance = Distances[Index - 1];
+			if (ImGui::DragFloat(Label.c_str(), &Distances[Index], 10.0f, MinDistance, FLT_MAX, "%.0f"))
+			{
+				Distances[Index] = std::max(Distances[Index], MinDistance);
+				Editor.NotifyPropertyEdited();
+			}
+		}
 	}
 	ImGui::PopID();
 }
