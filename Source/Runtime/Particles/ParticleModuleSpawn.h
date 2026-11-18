@@ -26,6 +26,8 @@ public:
 	virtual float GetSpawnRate() const { return bProcessSpawnRate ? Rate : 0.0f; }
 
 	const TArray<FParticleBurst>& GetBurstList() const { return BurstList; }
+	/** 에디터의 Burst 목록 편집용 */
+	TArray<FParticleBurst>& GetMutableBurstList() { return BurstList; }
 	void AddBurst(const FParticleBurst& InBurst) { BurstList.Add(InBurst); }
 	void ClearBurstList() { BurstList.Empty(); }
 
