@@ -37,6 +37,29 @@ void FParticleBeamEmitterInstance::Init()
 	}
 }
 
+void FParticleBeamEmitterInstance::BuildBeamPoints(TArray<FDynamicRibbonEmitterReplayData::FRibbonPoint>& OutPoints) const
+{
+	// TODO(human): Source(원점) → BeamModule_Target->TargetLocation을 Segments 구간으로 나눠 OutPoints를 채운다
+	
+	if (ActiveParticles == 0 || !BeamTypeData || !BeamModule_Target)
+	{
+		return;
+	}
+
+	const FBaseParticle* Beam = GetParticleAtIndex(0);
+	int32 Segments = FMath::Max(1, BeamTypeData->Segments);
+	int32 PointNum = Segments + 1;
+	FVector Target = BeamModule_Target->TargetLocation;
+	OutPoints.SetNum(PointNum);
+	for (int32 i = 0; i < PointNum; ++i)
+	{
+		float Alpha = static_cast<float>(i) / Segments;
+		OutPoints[i].Location = FMath::Lerp(FVector::ZeroVector, Target, Alpha);
+		OutPoints[i].Color = Beam->Color;
+		OutPoints[i].Width = Beam->Size.X;
+	}
+}
+
 UMaterial* FParticleBeamEmitterInstance::GetMaterial() const
 {
 	if (CurrentLODLevel && CurrentLODLevel->RequiredModule && CurrentLODLevel->RequiredModule->Material)
