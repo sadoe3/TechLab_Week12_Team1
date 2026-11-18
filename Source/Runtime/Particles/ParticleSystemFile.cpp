@@ -86,6 +86,23 @@ namespace
 		return ETrailsRenderAxisOption::Trails_CameraUp;
 	}
 
+	// Beam enum도 접두사 뺀 이름으로 저장한다. 배열 순서 = enum 값
+	constexpr const char* BeamMethodNames[] = { "Distance", "Target" };
+	constexpr const char* BeamTaperMethodNames[] = { "None", "Full" };
+
+	template <typename EnumType, size_t N>
+	EnumType EnumFromName(const char* const (&Names)[N], const std::string& Name, EnumType Default)
+	{
+		for (size_t i = 0; i < N; ++i)
+		{
+			if (Name == Names[i])
+			{
+				return static_cast<EnumType>(i);
+			}
+		}
+		return Default;
+	}
+
 	// .particle은 nlohmann json으로 직접 쓰지만, 엔진 타입(리플렉션 프로퍼티, 머티리얼 참조)은
 	// 엔진의 FStructuredArchive 직렬화 코드를 그대로 재사용하기 위해 json 조각 <-> 구조화 아카이브를 왕복시킨다.
 	json WriteStructured(const std::function<void(FStructuredArchive::FSlot)>& WriteFunc)
@@ -291,6 +308,11 @@ namespace
 				{
 					UParticleModuleTypeDataBeam2* BeamType = NewObject<UParticleModuleTypeDataBeam2>();
 					BeamType->Segments = TypeJson.value("Segments", 10);
+					BeamType->BeamMethod = EnumFromName(BeamMethodNames, TypeJson.value("BeamMethod", std::string("Target")), EBeam2Method::PEBM2_Target);
+					BeamType->Distance = TypeJson.value("Distance", 5.0f);
+					BeamType->TextureTileDistance = TypeJson.value("TextureTileDistance", 0.0f);
+					BeamType->TaperMethod = EnumFromName(BeamTaperMethodNames, TypeJson.value("TaperMethod", std::string("None")), EBeamTaperMethod::PEBTM_None);
+					BeamType->TaperFactor = TypeJson.value("TaperFactor", 1.0f);
 					LOD->TypeDataModule = BeamType;
 				}
 				else if (TypeName == "Sprite")
@@ -422,6 +444,11 @@ namespace
 					json TypeJson = json::object();
 					TypeJson["Type"] = "Beam2";
 					TypeJson["Segments"] = BeamType->Segments;
+					TypeJson["BeamMethod"] = BeamMethodNames[static_cast<int32>(BeamType->BeamMethod)];
+					TypeJson["Distance"] = BeamType->Distance;
+					TypeJson["TextureTileDistance"] = BeamType->TextureTileDistance;
+					TypeJson["TaperMethod"] = BeamTaperMethodNames[static_cast<int32>(BeamType->TaperMethod)];
+					TypeJson["TaperFactor"] = BeamType->TaperFactor;
 					LODJson["TypeDataModule"] = TypeJson;
 				}
 			}

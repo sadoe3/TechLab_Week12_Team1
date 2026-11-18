@@ -17,7 +17,11 @@ public:
 	virtual ~UParticleModuleBeamTarget() override = default;
 
 public:
-	/** PSC(이미터) 로컬 공간 기준 끝점 */
+	/** 끝점. 기본은 PSC(이미터) 로컬 공간 기준 */
 	UPROPERTY(EditAnywhere)
 	FVector TargetLocation = FVector(0.0f, 0.0f, 5.0f);
+
+	/** true면 TargetLocation을 월드 좌표로 본다. PSC가 움직여도 끝점은 제자리에 남는다 */
+	UPROPERTY(EditAnywhere)
+	bool bTargetAbsolute = false;
 };
