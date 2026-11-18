@@ -11,6 +11,7 @@
 #include "Particles/ParticleModuleTypeDataBase.h"
 #include "Particles/ParticleModuleTypeDataMesh.h"
 #include "Particles/ParticleModuleTypeDataRibbon.h"
+#include "Particles/ParticleModuleTypeDataBeam2.h"
 
 #include "UObject/UObjectHash.h"
 
@@ -49,6 +50,9 @@ namespace
 		{ "UParticleModuleVelocity",          "Initial Velocity", "Velocity" },
 		{ "UParticleModuleTypeDataMesh",      "Mesh Data",        "TypeData" },
 		{ "UParticleModuleTypeDataRibbon",    "Ribbon Data",      "TypeData" },
+		{ "UParticleModuleTypeDataBeam2",     "Beam Data",        "TypeData" },
+		{ "UParticleModuleBeamTarget",        "Beam Target",      "Beam" },
+		{ "UParticleModuleBeamNoise",         "Noise",            "Beam" },
 	};
 
 	const FModuleClassInfo* FindModuleClassInfo(const UClass* Class)
@@ -689,7 +693,9 @@ void FParticleDetailsPanel::DrawRequiredMaterialHint(const UParticleModuleRequir
 				if (LOD && LOD->RequiredModule == Required)
 				{
 					MeshType = Cast<UParticleModuleTypeDataMesh>(LOD->TypeDataModule);
-					bRibbon = Cast<UParticleModuleTypeDataRibbon>(LOD->TypeDataModule) != nullptr;
+					// Beam도 Ribbon 띠 경로로 그려지므로 같은 머티리얼 규칙을 따른다
+					bRibbon = Cast<UParticleModuleTypeDataRibbon>(LOD->TypeDataModule) != nullptr
+						|| Cast<UParticleModuleTypeDataBeam2>(LOD->TypeDataModule) != nullptr;
 				}
 			}
 		}

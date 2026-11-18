@@ -54,7 +54,7 @@ public:
 	};
 
 	int32 ParticleSelectedIndex = 0;
-	const char* ParticleItems[3] = { "Mesh Emitter", "Sprite Emitter", "Ribbon Emitter" };
+	const char* ParticleItems[4] = { "Mesh Emitter", "Sprite Emitter", "Ribbon Emitter", "Beam Emitter" };
 	void AddParticle(int32 Index);
 
 	FGizmo* Gizmo = nullptr;
