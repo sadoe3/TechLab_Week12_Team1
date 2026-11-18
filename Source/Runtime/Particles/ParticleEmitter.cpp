@@ -52,12 +52,24 @@ void UParticleEmitter::CacheEmitterModuleInfo()
 	}
 
 	ModuleOffsetMap.Reset();
+	TypeDataOffset = 0;
 	int32 TotalBytes = sizeof(FBaseParticle);
 
 	// LOD마다 오프셋이 다르면 LOD 전환 때 파티클 메모리를 다시 짜야 하므로 LOD0 기준으로 한 번만 배정한다
 	UParticleLODLevel* LOD0 = GetLODLevel(0);
 	if (LOD0)
 	{
+		// UE와 같이 TypeData Payload를 FBaseParticle 바로 뒤에 먼저 둔다
+		if (LOD0->TypeDataModule)
+		{
+			const int32 TypeDataBytes = static_cast<int32>(LOD0->TypeDataModule->RequiredBytes(LOD0->TypeDataModule));
+			if (TypeDataBytes > 0)
+			{
+				TypeDataOffset = TotalBytes;
+				TotalBytes += TypeDataBytes;
+			}
+		}
+
 		for (UParticleModule* Module : LOD0->GetModules())
 		{
 			if (!Module)

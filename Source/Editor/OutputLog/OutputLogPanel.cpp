@@ -2,6 +2,7 @@
 #include "Editor/OutputLog/OutputLogPanel.h"
 
 #include "Core/StatOverlay.h"
+#include "Core/Windows/CrashTest.h"
 #include "Render/SceneRenderer.h"
 
 #include "Editor/Settings/SettingsPanel.h"
@@ -320,6 +321,16 @@ void FOutputLogPanel::RegisterCommands()
 	Add("CLEAR", "CLEAR", [this](const TArray<FString>&, const FString&)
 		{
 			ClearLog();
+			return true;
+		});
+
+	Add("CauseCrash", "CauseCrash (intentional main thread crash; unsaved work is lost)", [](const TArray<FString>& Args, const FString&)
+		{
+			if (Args.Num() != 1)
+				return false;
+
+			FLog::Log(ELogVerbosity::Warning, "CauseCrash requested: intentional main thread crash on next update.");
+			CrashTest::Request();
 			return true;
 		});
 

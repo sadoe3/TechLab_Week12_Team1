@@ -1,5 +1,6 @@
 #include "EnginePCH.h"
 #include "Core/Misc/Paths.h"
+#include "Core/Misc/Guid.h"
 
 #include <fstream>
 #include <Windows.h>
@@ -110,6 +111,22 @@ FString FPaths::ResolveContentPath(const FString& Path)
 fs::path FPaths::EngineSavedDir()
 {
 	return GEngineDir / L"Saved";
+}
+
+fs::path FPaths::ProjectSavedDir()
+{
+	if (!HasProject())
+		return {};
+
+	return GProjectDir / L"Saved";
+}
+
+fs::path FPaths::NewCrashReportDirectory()
+{
+	if (!HasProject())
+		return {};
+
+	return ProjectSavedDir() / L"Crashes" / FromUtf8(FGuid::NewGuid().ToString());
 }
 
 FString FPaths::ToUtf8(const fs::path& Path)
