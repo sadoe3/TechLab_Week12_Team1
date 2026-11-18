@@ -47,6 +47,7 @@ void FParticleEmitterInstance::Init()
 		SpriteTemplate->CacheEmitterModuleInfo();
 		CurrentLODLevel = SpriteTemplate->GetLODLevel(CurrentLODLevelIndex);
 		ParticleSize = SpriteTemplate->ParticleSize;
+		TypeDataOffset = SpriteTemplate->TypeDataOffset;
 	}
 	// 슬롯마다 시작 주소가 16바이트 경계에 오도록 크기를 올림한다
 	ParticleStride = (ParticleSize + 15) & ~15;
