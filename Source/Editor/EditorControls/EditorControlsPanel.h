@@ -11,6 +11,7 @@
 #include "GameFramework/Actor/SkyLightActor.h"
 #include "GameFramework/Actor/DecalActor.h"
 #include "GameFramework/Actor/TextRenderActor.h"
+#include "GameFramework/Actor/Emitter.h"
 #include "LevelSequence/LevelSequenceActor.h"
 #include "GameFramework/Actor/ExponentialHeightFogActor.h"
 #include "GameFramework/Character.h"
@@ -49,6 +50,7 @@ public:
 	TArray<UClass*> Classes
 	{
 		AStaticMeshActor::StaticClass(),
+		AEmitter::StaticClass(),
 		ATextRenderActor::StaticClass(),
 		AExponentialHeightFogActor::StaticClass(),
 		ACharacter::StaticClass(),
