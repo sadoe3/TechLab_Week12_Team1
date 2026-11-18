@@ -102,7 +102,7 @@ void AEmitter::SetupTestRibbonParticleSystem()
 	Required->EmitterLoops = 0;
 
 	UParticleModuleSpawn* Spawn = NewObject<UParticleModuleSpawn>();
-	Spawn->Rate = 30.0f;
+	Spawn->Rate = 120.0f;
 	Spawn->RateScale = 1.0f;
 
 	UParticleModuleLifetime* Lifetime = NewObject<UParticleModuleLifetime>();
