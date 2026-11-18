@@ -8,6 +8,7 @@
 #include "Particles/ParticleModuleRequired.h"
 #include "Particles/ParticleModuleSpawn.h"
 #include "Particles/ParticleModuleTypeDataMesh.h"
+#include "Particles/ParticleModuleTypeDataRibbon.h"
 #include "Particles/ParticleSystem.h"
 #include "UObject/UObjectGlobals.h"
 #include "UObject/UObjectHash.h"
@@ -290,6 +291,10 @@ bool ParticleSystemFile::Read(const std::filesystem::path& Path, UParticleSystem
 							MeshType->bOverrideMaterial = TypeJson.value("bOverrideMaterial", false);
 							LOD->TypeDataModule = MeshType;
 						}
+						else if (TypeName == "Ribbon")
+						{
+							LOD->TypeDataModule = NewObject<UParticleModuleTypeDataRibbon>();
+						}
 						else if (TypeName == "Sprite")
 						{
 							// 구버전 에셋 호환: Sprite는 TypeData 없이(nullptr) 표현하고, SubUV 값은 RequiredModule로 옮긴다
@@ -426,6 +431,13 @@ bool ParticleSystemFile::Write(const std::filesystem::path& Path, UParticleSyste
 					TypeJson["bUseStaticMeshLODs"] = MeshType->bUseStaticMeshLODs;
 					TypeJson["bCastShadows"] = MeshType->bCastShadows;
 					TypeJson["bOverrideMaterial"] = MeshType->bOverrideMaterial;
+					LODJson["TypeDataModule"] = TypeJson;
+				}
+				else if (Cast<UParticleModuleTypeDataRibbon>(LOD->TypeDataModule))
+				{
+					// 지금은 설정값이 없어서 종류만 남긴다
+					json TypeJson = json::object();
+					TypeJson["Type"] = "Ribbon";
 					LODJson["TypeDataModule"] = TypeJson;
 				}
 			}
