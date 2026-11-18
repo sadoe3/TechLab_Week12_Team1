@@ -53,6 +53,7 @@ public:
 	void CreateDefaultMaterial();
 	void CreateBillboardMaterial();
 	void CreateParticleMaterial();
+	void CreateRibbonMaterial();
 	void CreateEditorArrowMaterial();
 
 	// 경로는 "Assets/Models/a.obj"와 "Models/a.obj"를 같은 에셋으로 본다.
@@ -75,6 +76,9 @@ public:
 	// 스캔으로 등록됐지만 아직 로드되지 않은 에셋의 타입. 그 외에는 None
 	static EAssetType GetUnloadedAssetType(const FString& Path);
 	static TArray<FString> GetUnloadedAssetPaths(EAssetType Type);
+
+	// 에셋으로 등록된 머티리얼(DefaultMaterial, SubUVMaterial 등)의 경로. 머티리얼 선택 목록에 쓴다.
+	static TArray<FString> GetMaterialAssetPaths();
 
 	void RegisterAsset(const FString& Key, URenderAsset* Asset);
 

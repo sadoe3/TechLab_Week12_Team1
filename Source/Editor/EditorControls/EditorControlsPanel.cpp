@@ -42,6 +42,21 @@ void FEditorControlsPanel::AddActor(uint32 Index)
 	World->SpawnActor(Classes[Index]);
 }
 
+// 테스트 파티클 템플릿을 꽂은 이미터를 생성한다. 에디터 월드는 BeginPlay를 부르지 않으므로 스폰 직후 직접 꽂는다.
+void FEditorControlsPanel::AddParticle(int32 Index)
+{
+	AEmitter* EmitterActor = Cast<AEmitter>(World->SpawnActor(AEmitter::StaticClass()));
+	if (!EmitterActor) return;
+
+	switch (Index)
+	{
+	case 0: EmitterActor->SetupTestMeshParticleSystem(); break;
+	case 1: EmitterActor->SetupTestSpriteParticleSystem(); break;
+	case 2: EmitterActor->SetupTestRibbonParticleSystem(); break;
+	default: break;
+	}
+}
+
 // 액터 생성·카메라 속성·기즈모·경로 추적 UI를 그린다.
 void FEditorControlsPanel::OnRender()
 {
@@ -95,33 +110,25 @@ void FEditorControlsPanel::OnRender()
 
 	ImGui::Dummy(ImVec2(0.0f, SubsectionGap));
 	ImGui::SeparatorText("Light Spawn");
-	if (ImGui::Button("Directional Light"))
-		World->SpawnActor(ADirectionalLightActor::StaticClass());
+	// Actor Spawn과 같은 배치: 드롭다운 + Spawn 버튼 (같은 라벨은 ## 뒤 ID로 구분한다)
+	const float SubComboWidth = ImGui::GetContentRegionAvail().x - SpawnButtonWidth - Spacing;
+	ImGui::SetNextItemWidth(SubComboWidth);
+	ImGui::Combo("##LightType", &LightSelectedIndex, LightItems, IM_ARRAYSIZE(LightItems));
 	ImGui::SameLine();
-	if (ImGui::Button("Spot Light"))
-		World->SpawnActor(ASpotLightActor::StaticClass());
-	ImGui::SameLine();
-	if (ImGui::Button("Point Light"))
-		World->SpawnActor(APointLightActor::StaticClass());
-	ImGui::SameLine();
-	if (ImGui::Button("Rect Light"))
-		World->SpawnActor(ARectLightActor::StaticClass());
-	ImGui::SameLine();
-	if (ImGui::Button("Sky Light"))
-		World->SpawnActor(ASkyLightActor::StaticClass());
-	ImGui::SameLine();
-	if (ImGui::Button("Decal"))
-		World->SpawnActor(ADecalActor::StaticClass());
-	ImGui::SameLine();
-	if (ImGui::Button("Mesh Emitter"))
-		World->SpawnActor(AEmitter::StaticClass());
-	ImGui::SameLine();
-	if (ImGui::Button("Sprite Emitter"))
+	if (ImGui::Button("Spawn##Light", ImVec2(SpawnButtonWidth, 0)) &&
+		LightSelectedIndex >= 0 && LightSelectedIndex < LightClasses.Num())
 	{
-		if (AEmitter* EmitterActor = Cast<AEmitter>(World->SpawnActor(AEmitter::StaticClass())))
-		{
-			EmitterActor->SetupTestSpriteParticleSystem();
-		}
+		World->SpawnActor(LightClasses[LightSelectedIndex]);
+	}
+
+	ImGui::Dummy(ImVec2(0.0f, SubsectionGap));
+	ImGui::SeparatorText("Particle Spawn");
+	ImGui::SetNextItemWidth(SubComboWidth);
+	ImGui::Combo("##ParticleType", &ParticleSelectedIndex, ParticleItems, IM_ARRAYSIZE(ParticleItems));
+	ImGui::SameLine();
+	if (ImGui::Button("Spawn##Particle", ImVec2(SpawnButtonWidth, 0)))
+	{
+		AddParticle(ParticleSelectedIndex);
 	}
 
 	ImGui::Dummy(ImVec2(0.0f, SubsectionGap));

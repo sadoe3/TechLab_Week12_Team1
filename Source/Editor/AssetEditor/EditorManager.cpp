@@ -15,6 +15,9 @@
 #include "Animation/AnimBlueprintFile.h"
 #include "Core/Misc/Paths.h"
 #include "Editor/AnimBlueprintEditor/AnimBlueprintEditor.h"
+#include "Editor/ParticleSystemEditor/ParticleSystemEditor.h"
+#include "Particles/ParticleSystem.h"
+#include "Particles/ParticleSystemFile.h"
 
 #include <filesystem>
 
@@ -90,6 +93,27 @@ void FEditorManager::CreateEditor(const FString& AssetPath)
         Editors.Add(std::move(Editor));
         return;
     }
+
+	// 파티클 시스템도 렌더 에셋이 아니므로 먼저 분기한다
+	if (ParticleSystemFile::IsParticleSystemPath(AssetPath))
+	{
+		UParticleSystem* ParticleSystem = UAssetManager::LoadParticleSystem(AssetPath);
+		if (!ParticleSystem)
+		{
+			return;     // 경고는 LoadParticleSystem이 남긴다
+		}
+
+		TUniquePtr<FAssetEditor> Editor = MakeUnique<FParticleSystemEditor>(EditorEngine, *this, AssetPath, *ParticleSystem);
+		if (!Editor->Initialize())
+		{
+			Editor->Shutdown();
+			HTR_LOG(Warning, "ParticleSystem editor initialization failed: {}", AssetPath);
+			return;
+		}
+		Editors.Add(std::move(Editor));
+		HTR_LOG(Info, "Opened asset editor: {}", AssetPath.c_str());
+		return;
+	}
 
 	// 애니메이션 시퀀스는 렌더 에셋이 아니므로 먼저 분기한다
 	if (AnimSequenceFile::IsAnimSequencePath(AssetPath))

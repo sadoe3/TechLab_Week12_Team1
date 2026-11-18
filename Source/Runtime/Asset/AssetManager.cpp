@@ -29,6 +29,7 @@
 #include "Render/ImageLoader.h"
 #include "Asset/AssetLoadProfiler.h"
 #include "Core/Misc/Paths.h"
+#include <algorithm>
 #include <cctype>
 
 
@@ -190,6 +191,7 @@ void UAssetManager::Init(const FAssetLoadProgress& OnProgress)
 	Get().CreateDefaultMeshes();
 	Get().CreateBillboardMaterial();
 	Get().CreateParticleMaterial();
+	Get().CreateRibbonMaterial();
 	Get().CreateEditorArrowMaterial();
 }
 
@@ -337,6 +339,20 @@ TArray<FString> UAssetManager::GetUnloadedAssetPaths(EAssetType Type)
 	return Paths;
 }
 
+TArray<FString> UAssetManager::GetMaterialAssetPaths()
+{
+	TArray<FString> Paths;
+	for (const auto& [Key, Asset] : Get().AssetMap)
+	{
+		if (Asset && Asset->IsA<UMaterial>() && !Asset->GetPath().empty())
+		{
+			Paths.Add(Asset->GetPath());
+		}
+	}
+	std::sort(Paths.begin(), Paths.end());
+	return Paths;
+}
+
 void UAssetManager::CreateDefaultTextures() {
 	// 텍스처가 지정되지 않은 머티리얼이 검게 나오지 않도록 하는 1x1 흰색 텍스처.
 	// 셰이더에서 곱해도 결과가 변하지 않으므로 "텍스처 없음"의 기본값으로 쓴다.
@@ -477,6 +493,18 @@ void UAssetManager::CreateParticleMaterial()
 	ParticleMat->ParamLayout = EMaterialParamLayout::ParticleSubUV;
 	ParticleMat->ParamBuffer = RenderCommand::CreateConstantBuffer(256);
 	RegisterAsset("SubUVMaterial", ParticleMat);
+}
+
+void UAssetManager::CreateRibbonMaterial()
+{
+	UMaterial* RibbonMat = NewObject<UMaterial>();
+	RibbonMat->PSOType = EPSOType::Particle_Ribbon;
+	RibbonMat->Textures.Add(GetAssetByPath<UTexture2D>("WhiteTexture"));
+	RibbonMat->BlendState = EBlendState::AlphaBlend;
+	RibbonMat->DepthStencilState = EDepthStencilState::ReadOnly;
+	// 띠 길이 방향(U)은 텍스처를 반복하고, 폭 방향(V)은 가장자리 번짐을 막는다
+	RibbonMat->SamplerState = ESamplerState::LinearWrapUClampV;
+	RegisterAsset("RibbonMaterial", RibbonMat);
 }
 
 void UAssetManager::CreateEditorArrowMaterial() {

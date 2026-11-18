@@ -45,6 +45,10 @@ public:
 
 	// 엔진 쪽 사용자 데이터(최근 프로젝트 목록 등)를 두는 폴더.
 	static std::filesystem::path EngineSavedDir();
+	// 프로젝트 확정 후 사용한다. 미확정이면 빈 path.
+	static std::filesystem::path ProjectSavedDir();
+	// 정상 실행 중 사고별 absolute path를 준비한다. directory는 writer가 만든다.
+	static std::filesystem::path NewCrashReportDirectory();
 
 	static FString ToUtf8(const std::filesystem::path& Path);
 	static std::filesystem::path FromUtf8(const FString& Utf8);

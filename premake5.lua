@@ -17,6 +17,27 @@ workspace "Hitori"
 
 outputdir = "%{cfg.buildcfg}-%{cfg.system}-%{cfg.architecture}"
 
+-- Configuration별 로컬 User Macro를 Property Manager에 연결한다.
+-- 최초에만 기본값을 복사하므로 VS에서 바꾼 ON/OFF는 Premake 재생성 후에도 유지된다.
+if _ACTION and _ACTION:match("^vs") then
+	require("vstudio")
+	premake.override(premake.vstudio.vc2010, "propertySheets", function(base, cfg)
+		base(cfg)
+		if (cfg.project.name == "HitoriEditor" or cfg.project.name == "HitoriGame") and
+			(cfg.buildcfg == "Debug" or cfg.buildcfg == "Release" or cfg.buildcfg == "Shipping") then
+			local directory = path.join(_MAIN_SCRIPT_DIR, "Build/SymbolPublishing")
+			local sheet = path.join(directory, cfg.project.name .. "." .. cfg.buildcfg .. ".props")
+			os.mkdir(directory)
+			if not os.isfile(sheet) then
+				assert(os.copyfile(path.join(_MAIN_SCRIPT_DIR, "Setup/SymbolPublishing.props"), sheet))
+			end
+			premake.push('<ImportGroup Label="PropertySheets" %s>', premake.vstudio.vc2010.condition(cfg))
+			premake.w('<Import Project="%s" />', path.translate(path.getrelative(cfg.project.location, sheet), "\\"))
+			premake.pop('</ImportGroup>')
+		end
+	end)
+end
+
 -- SlnGenerator가 저장된 사용자 환경 변수를 읽어 이 프로세스에 전달한다.
 local FbxSdkRoot = os.getenv("FBX_SDK_ROOT")
 if not FbxSdkRoot or FbxSdkRoot == "" then
@@ -171,6 +192,15 @@ project "HitoriHeaderTool"
 		"Source/Programs/HitoriHeaderTool/**.cpp",
 	}
 
+-- 외부 Dump writer. 저장 성공 시 결과 dialog만 표시하며 Runtime/renderer는 링크하지 않는다.
+project "CrashDumpWriter"
+	location "Source/Programs/CrashDumpWriter"
+	kind "ConsoleApp"
+	CommonSettings()
+	files { "Source/Programs/CrashDumpWriter/**.cpp", "Source/Runtime/Core/Windows/WindowsCrashDump.*", "Source/Runtime/Core/Windows/CrashReportChannel.*" }
+	includedirs { "Source/Runtime" }
+	links { "Dbghelp.lib", "User32.lib" }
+
 -- 런타임. 에디터를 모른다. include 경로에 Source/Editor가 없는 것이 그 방벽이다.
 -- location이 소스 루트와 같아야 "모든 파일 표시"에서 폴더가 보인다.
 project "HitoriEngine"
@@ -204,7 +234,7 @@ project "HitoriEngine"
 
 	links { "Lua" }
 
-	dependson { "HitoriHeaderTool" }
+	dependson { "HitoriHeaderTool", "CrashDumpWriter" }
 	prebuildcommands { HeaderTool .. ' Runtime "' .. GeneratedDir .. '/Runtime" "%{wks.location}/Source/Runtime"' }
 
 	-- sol2 템플릿이 섹션 수 제한을 넘긴다
@@ -220,6 +250,11 @@ project "HitoriEngine"
 		enablepch "Off"
 	filter {}
 
+	-- Writer에서도 단독 compile할 수 있도록 engine PCH에서 분리한다.
+	filter { "files:Source/Runtime/Core/Windows/WindowsCrashDump.cpp or Source/Runtime/Core/Windows/CrashReportChannel.cpp or Source/Runtime/Core/Windows/WindowsCrashReporting.cpp" }
+		enablepch "Off"
+	filter {}
+
 	filter "files:Source/Runtime/Audio/MiniaudioImpl.cpp"
 		enablepch "Off"
 	filter {}
@@ -228,6 +263,10 @@ project "HitoriEngine"
 project "HitoriEditor"
 	location "Source/Editor"
 	kind     "WindowedApp"
+	-- 기본 OFF. Property Manager의 User Macro로 게시 여부·경로를 전달한다.
+	filter "configurations:Debug or Release or Shipping"
+		postbuildcommands { 'powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%{wks.location}/Setup/PostBuildSymbols.ps1" -Configuration "%{cfg.buildcfg}" -Target HitoriEditor -Publish "$(HitoriPublishSymbols)" -Store "$(HitoriSymbolStore)"' }
+	filter {}
 	CommonSettings()
 
 	-- FBX 해석은 Editor에서 수행하고 Runtime/Game은 SDK에 의존하지 않는다.
@@ -264,9 +303,9 @@ project "HitoriEditor"
 		"Source/Runtime/Launch/HitoriApp.manifest",
 	}
 
-	removefiles { "Source/Programs/HitoriHeaderTool/**" }
+	removefiles { "Source/Programs/HitoriHeaderTool/**", "Source/Programs/CrashDumpWriter/**" }
 
-	dependson { "HitoriHeaderTool" }
+	dependson { "HitoriHeaderTool", "CrashDumpWriter" }
 	prebuildcommands { HeaderTool .. ' Editor "' .. GeneratedDir .. '/Editor" "%{wks.location}/Source/Editor" "%{wks.location}/Source/Programs/ObjViewer" "%{wks.location}/Source/Programs/Benchmark"' }
 
 	includedirs
@@ -291,6 +330,7 @@ project "HitoriEditor"
 		"dxgi.lib",
 		"dxguid.lib",
 		"d3dcompiler.lib",
+		"Dbghelp.lib",
 	}
 
 	filter "configurations:ObjViewer"
@@ -309,7 +349,11 @@ project "HitoriEditor"
 project "HitoriGame"
 	location "Source/Game"
 	kind     "WindowedApp"
+	filter "configurations:Debug or Release or Shipping"
+		postbuildcommands { 'powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%{wks.location}/Setup/PostBuildSymbols.ps1" -Configuration "%{cfg.buildcfg}" -Target HitoriGame -Publish "$(HitoriPublishSymbols)" -Store "$(HitoriSymbolStore)"' }
+	filter {}
 	CommonSettings()
+	dependson { "CrashDumpWriter" }
 	targetname "HitoriGame"
 
 	pchheader "EnginePCH.h"
@@ -345,6 +389,7 @@ project "HitoriGame"
 		"dxgi.lib",
 		"dxguid.lib",
 		"d3dcompiler.lib",
+		"Dbghelp.lib",
 	}
 
 

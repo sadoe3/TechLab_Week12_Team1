@@ -9,6 +9,7 @@
 #include "Animation/AnimSequenceFile.h"
 #include "Animation/BlendSpaceFile.h"
 #include "Animation/AnimBlueprintFile.h"
+#include "Particles/ParticleSystemFile.h"
 
 bool FContentDrawerPanel::Init()
 {
@@ -225,7 +226,8 @@ void FContentDrawerPanel::OnRender()
 						OnOpenMesh(PathString);
 					}
 
-					else if ((BlendSpaceFile::IsBlendSpacePath(PathString) || AnimBlueprintFile::IsAnimBlueprintPath(PathString)) && OnOpenMesh)
+					else if ((BlendSpaceFile::IsBlendSpacePath(PathString) || AnimBlueprintFile::IsAnimBlueprintPath(PathString)
+						|| ParticleSystemFile::IsParticleSystemPath(PathString)) && OnOpenMesh)
 					{
 						OnOpenMesh(PathString);
 					}

@@ -26,6 +26,12 @@ public:
 
 	void AddModule(UParticleModule* InModule);
 	bool RemoveModule(UParticleModule* InModule);
+	/** Index 자리에 넣는다. 범위를 벗어나면 끝에 붙인다. 모듈은 위에서 아래 순서로 실행되므로 순서가 결과를 바꿀 수 있다. */
+	void InsertModule(UParticleModule* InModule, int32 Index);
+	/** Index의 모듈을 빼서 돌려준다. 범위를 벗어나면 nullptr */
+	UParticleModule* RemoveModuleAt(int32 Index);
+	/** 없으면 -1 */
+	int32 FindModuleIndex(const UParticleModule* InModule) const;
 	void ClearModules();
 
 	const TArray<UParticleModule*>& GetModules() const { return Modules; }

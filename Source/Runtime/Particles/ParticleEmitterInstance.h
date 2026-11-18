@@ -37,7 +37,7 @@ public:
 	/** 모든 루프를 끝냈고 살아있는 파티클도 없는가 */
 	bool HasCompleted() const;
 	/** RequiredModule->bKillOnDeactivate */
-	bool ShouldKillOnDeactivate() const;
+	virtual bool ShouldKillOnDeactivate() const;
 	virtual void SpawnParticles(int32 Count, float StartTime, float Increment, const FVector& InitialLocation, const FVector& InitialVelocity);
 	virtual void KillParticles();
 	virtual void KillParticlesForced(bool bFireEvents = false);
@@ -68,6 +68,8 @@ public:
 
 	/** 모듈 Payload가 시작되는 위치 (= sizeof(FBaseParticle)) */
 	int32 PayloadOffset = 0;
+	/** TypeData Payload 시작 위치 (UParticleEmitter::TypeDataOffset 복사본). 0이면 없음 */
+	int32 TypeDataOffset = 0;
 	int32 ParticleStride = 0;
 	int32 ParticleSize = 0;
 	int32 ActiveParticles = 0;

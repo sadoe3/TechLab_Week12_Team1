@@ -26,6 +26,9 @@ public:
 	/** SpriteEmitter 테스트용 UParticleSystem 템플릿을 로드/조립해 설정한다. */
 	void SetupTestSpriteParticleSystem();
 
+	/** 코드 기반 테스트용 RibbonEmitter UParticleSystem 템플릿을 조립해 설정한다. */
+	void SetupTestRibbonParticleSystem();
+
 private:
 	UParticleSystemComponent* ParticleSystemComponent = nullptr;
 };

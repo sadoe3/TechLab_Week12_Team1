@@ -64,6 +64,8 @@ public:
 	int32 ParticleSize = 0;
 	// 모듈별 Payload 시작 위치(파티클 슬롯 시작 기준 바이트). 모듈은 공유 에셋이라 자기 자리를 여기서 찾는다
 	TMap<UParticleModule*, int32> ModuleOffsetMap;
+	// TypeData는 Modules 배열 밖에 따로 있어서 맵 대신 전용 값으로 둔다. Payload가 없으면 0
+	int32 TypeDataOffset = 0;
 
 	/** 모듈의 Payload 오프셋. 등록되지 않은 모듈이면 0 */
 	int32 GetModuleOffset(UParticleModule* Module) const;
