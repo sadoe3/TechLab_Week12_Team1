@@ -154,9 +154,75 @@ namespace
 		});
 	}
 
+	// Files saved before curves stored over-life values as a start/end pair that was lerped over the particle's life.
+	// Curve property name -> the old pair's keys.
+	struct FLegacyCurvePair
+	{
+		const char* CurveName;
+		const char* StartName;
+		const char* EndName;
+	};
+	constexpr FLegacyCurvePair LegacyCurvePairs[] = {
+		{ "ColorOverLife",  "ColorStart",      "ColorEnd" },       // UParticleModuleColorOverLife
+		{ "AlphaOverLife",  "AlphaStart",      "AlphaEnd" },       // UParticleModuleColorOverLife
+		{ "LifeMultiplier", "MultiplierStart", "MultiplierEnd" },  // UParticleModuleSizeMultiplyLife, UParticleModuleRotationRateMultiplyLife
+	};
+
+	// Zero with the same shape as Value: 0.0 for a float, { "X": 0, "Y": 0, "Z": 0 } for a vector
+	json ZeroLike(const json& Value)
+	{
+		if (!Value.is_object())
+		{
+			return 0.0f;
+		}
+		json Zero = json::object();
+		for (auto It = Value.begin(); It != Value.end(); ++It)
+		{
+			Zero[It.key()] = 0.0f;
+		}
+		return Zero;
+	}
+
+	// Turns an old start/end pair into a two-key linear curve (RelativeTime 0 -> 1), which evaluates to the same lerp.
+	void UpgradeStartEndToCurve(const FString& CurveName, json& Properties)
+	{
+		for (const FLegacyCurvePair& Pair : LegacyCurvePairs)
+		{
+			if (CurveName != Pair.CurveName)
+			{
+				continue;
+			}
+			if (Properties.contains(CurveName) || !Properties.contains(Pair.StartName) || !Properties.contains(Pair.EndName))
+			{
+				return;
+			}
+
+			const json& Start = Properties[Pair.StartName];
+			const json& End = Properties[Pair.EndName];
+			const auto MakePoint = [](float InVal, const json& OutVal)
+			{
+				json Point = json::object();
+				Point["InVal"] = InVal;
+				Point["OutVal"] = OutVal;
+				Point["ArriveTangent"] = ZeroLike(OutVal);
+				Point["LeaveTangent"] = ZeroLike(OutVal);
+				Point["InterpMode"] = "Linear";
+				return Point;
+			};
+
+			json Curve = json::object();
+			Curve["Points"] = json::array({ MakePoint(0.0f, Start), MakePoint(1.0f, End) });
+			Properties[CurveName] = Curve;
+			Properties.erase(Pair.StartName);
+			Properties.erase(Pair.EndName);
+			return;
+		}
+	}
+
 	// Files saved before distributions stored spawn-time values as "XMin" / "XMax" pairs (e.g. LifetimeMin / LifetimeMax).
 	// For each distribution property X of the module class that the file lacks, turn a matching pair into
 	// { "Type": "Constant" } (Min == Max) or { "Type": "Uniform" } so old assets keep their values.
+	// Old over-life start/end pairs become linear curves (UpgradeStartEndToCurve).
 	json UpgradeMinMaxToDistributions(const json& ModuleJson)
 	{
 		if (!ModuleJson.is_object() || !ModuleJson.contains("Class") || !ModuleJson["Class"].is_string()
@@ -176,6 +242,11 @@ namespace
 		{
 			for (const FProperty* Property : Struct->GetProperties())
 			{
+				if (Property->IsA<FInterpCurveFloatProperty>() || Property->IsA<FInterpCurveVectorProperty>())
+				{
+					UpgradeStartEndToCurve(Property->Name, Properties);
+					continue;
+				}
 				if (!Property->IsA<FDistributionFloatProperty>() && !Property->IsA<FDistributionVectorProperty>())
 				{
 					continue;
