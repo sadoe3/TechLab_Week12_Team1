@@ -1,0 +1,1271 @@
+{
+  "UpdateTime_FPS": 60.0,
+  "UpdateTime_Delta": 0.0166666675,
+  "WarmupTime": 0.0,
+  "WarmupTickRate": 0.0,
+  "bUseFixedRelativeBoundingBox": false,
+  "bOrientZAxisTowardCamera": false,
+  "Emitters": [
+    {
+      "EmitterName": "Flash",
+      "InitialAllocationCount": 2,
+      "bDisabled": false,
+      "bIsSoloing": false,
+      "LODLevels": [
+        {
+          "Level": 0,
+          "bEnabled": true,
+          "PeakActiveParticles": 2,
+          "RequiredModule": {
+            "bUseLocalSpace": true,
+            "SortMode": "None",
+            "bKillOnDeactivate": false,
+            "bKillOnCompleted": false,
+            "EmitterDuration": 0.5,
+            "EmitterDelay": 1.5,
+            "EmitterLoops": 0,
+            "MaxDrawCount": 500,
+            "SubImages_Horizontal": 4,
+            "SubImages_Vertical": 4,
+            "Material": {
+              "Base": "SubUVMaterial",
+              "Instance": {
+                "BaseColor": {
+                  "W": 1.0,
+                  "X": 1.0,
+                  "Y": 1.0,
+                  "Z": 1.0
+                },
+                "BlendState": "AlphaBlend",
+                "FlipNormalY": false,
+                "PSOType": 4,
+                "Properties": {},
+                "SamplerState": "LinearClamp",
+                "Shininess": 32.0,
+                "SpecularColor": {
+                  "X": 1.0,
+                  "Y": 1.0,
+                  "Z": 1.0
+                },
+                "Textures": [
+                  "Assets/SubUV/ParticleAtlas.png"
+                ],
+                "UVScrollSpeed": [
+                  0.0,
+                  0.0
+                ]
+              }
+            }
+          },
+          "SpawnModule": {
+            "Rate": 0.0,
+            "RateScale": 1.0,
+            "bProcessSpawnRate": false,
+            "bProcessBurstList": true,
+            "BurstList": [
+              {
+                "Count": 1,
+                "CountLow": -1,
+                "Time": 0.0
+              }
+            ]
+          },
+          "Modules": [
+            {
+              "Class": "UParticleModuleLifetime",
+              "Properties": {
+                "LifetimeMin": 0.15,
+                "LifetimeMax": 0.15
+              }
+            },
+            {
+              "Class": "UParticleModuleSize",
+              "Properties": {
+                "StartSizeMin": {
+                  "X": 3.0,
+                  "Y": 3.0,
+                  "Z": 3.0
+                },
+                "StartSizeMax": {
+                  "X": 3.0,
+                  "Y": 3.0,
+                  "Z": 3.0
+                }
+              }
+            },
+            {
+              "Class": "UParticleModuleColor",
+              "Properties": {
+                "StartColorMin": {
+                  "X": 1.0,
+                  "Y": 0.95,
+                  "Z": 0.8
+                },
+                "StartColorMax": {
+                  "X": 1.0,
+                  "Y": 0.95,
+                  "Z": 0.8
+                },
+                "StartAlphaMin": 1.0,
+                "StartAlphaMax": 1.0
+              }
+            },
+            {
+              "Class": "UParticleModuleColorOverLife",
+              "Properties": {
+                "ColorStart": {
+                  "X": 1.0,
+                  "Y": 1.0,
+                  "Z": 1.0
+                },
+                "ColorEnd": {
+                  "X": 1.0,
+                  "Y": 0.8,
+                  "Z": 0.5
+                },
+                "AlphaStart": 1.0,
+                "AlphaEnd": 0.0
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "EmitterName": "BurstSparks",
+      "InitialAllocationCount": 128,
+      "bDisabled": false,
+      "bIsSoloing": false,
+      "LODLevels": [
+        {
+          "Level": 0,
+          "bEnabled": true,
+          "PeakActiveParticles": 128,
+          "RequiredModule": {
+            "bUseLocalSpace": true,
+            "SortMode": "None",
+            "bKillOnDeactivate": false,
+            "bKillOnCompleted": false,
+            "EmitterDuration": 0.5,
+            "EmitterDelay": 1.5,
+            "EmitterLoops": 0,
+            "MaxDrawCount": 500,
+            "SubImages_Horizontal": 4,
+            "SubImages_Vertical": 4,
+            "Material": {
+              "Base": "SubUVMaterial",
+              "Instance": {
+                "BaseColor": {
+                  "W": 1.0,
+                  "X": 1.0,
+                  "Y": 1.0,
+                  "Z": 1.0
+                },
+                "BlendState": "AlphaBlend",
+                "FlipNormalY": false,
+                "PSOType": 4,
+                "Properties": {},
+                "SamplerState": "LinearClamp",
+                "Shininess": 32.0,
+                "SpecularColor": {
+                  "X": 1.0,
+                  "Y": 1.0,
+                  "Z": 1.0
+                },
+                "Textures": [
+                  "Assets/SubUV/ParticleAtlas.png"
+                ],
+                "UVScrollSpeed": [
+                  0.0,
+                  0.0
+                ]
+              }
+            }
+          },
+          "SpawnModule": {
+            "Rate": 0.0,
+            "RateScale": 1.0,
+            "bProcessSpawnRate": false,
+            "bProcessBurstList": true,
+            "BurstList": [
+              {
+                "Count": 120,
+                "CountLow": -1,
+                "Time": 0.0
+              }
+            ]
+          },
+          "Modules": [
+            {
+              "Class": "UParticleModuleLifetime",
+              "Properties": {
+                "LifetimeMin": 1.2,
+                "LifetimeMax": 1.8
+              }
+            },
+            {
+              "Class": "UParticleModuleLocation",
+              "Properties": {
+                "StartLocationMin": {
+                  "X": -0.05,
+                  "Y": -0.05,
+                  "Z": -0.05
+                },
+                "StartLocationMax": {
+                  "X": 0.05,
+                  "Y": 0.05,
+                  "Z": 0.05
+                }
+              }
+            },
+            {
+              "Class": "UParticleModuleVelocity",
+              "Properties": {
+                "StartVelocityMin": {
+                  "X": 0.0,
+                  "Y": 0.0,
+                  "Z": 0.0
+                },
+                "StartVelocityMax": {
+                  "X": 0.0,
+                  "Y": 0.0,
+                  "Z": 0.0
+                },
+                "StartVelocityRadialMin": 3.0,
+                "StartVelocityRadialMax": 5.0,
+                "bInWorldSpace": false
+              }
+            },
+            {
+              "Class": "UParticleModuleSize",
+              "Properties": {
+                "StartSizeMin": {
+                  "X": 0.1,
+                  "Y": 0.1,
+                  "Z": 0.1
+                },
+                "StartSizeMax": {
+                  "X": 0.18,
+                  "Y": 0.18,
+                  "Z": 0.18
+                }
+              }
+            },
+            {
+              "Class": "UParticleModuleColor",
+              "Properties": {
+                "StartColorMin": {
+                  "X": 1.0,
+                  "Y": 0.85,
+                  "Z": 0.4
+                },
+                "StartColorMax": {
+                  "X": 1.0,
+                  "Y": 0.85,
+                  "Z": 0.4
+                },
+                "StartAlphaMin": 1.0,
+                "StartAlphaMax": 1.0
+              }
+            },
+            {
+              "Class": "UParticleModuleSizeMultiplyLife",
+              "Properties": {
+                "MultiplierStart": {
+                  "X": 1.0,
+                  "Y": 1.0,
+                  "Z": 1.0
+                },
+                "MultiplierEnd": {
+                  "X": 0.3,
+                  "Y": 0.3,
+                  "Z": 0.3
+                },
+                "bMultiplyX": true,
+                "bMultiplyY": true,
+                "bMultiplyZ": true
+              }
+            },
+            {
+              "Class": "UParticleModuleColorOverLife",
+              "Properties": {
+                "ColorStart": {
+                  "X": 1.0,
+                  "Y": 0.85,
+                  "Z": 0.4
+                },
+                "ColorEnd": {
+                  "X": 1.0,
+                  "Y": 0.2,
+                  "Z": 0.1
+                },
+                "AlphaStart": 1.0,
+                "AlphaEnd": 0.0
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "EmitterName": "Streak0",
+      "InitialAllocationCount": 40,
+      "bDisabled": false,
+      "bIsSoloing": false,
+      "LODLevels": [
+        {
+          "Level": 0,
+          "bEnabled": true,
+          "PeakActiveParticles": 40,
+          "RequiredModule": {
+            "bUseLocalSpace": true,
+            "SortMode": "None",
+            "bKillOnDeactivate": false,
+            "bKillOnCompleted": false,
+            "EmitterDuration": 0.5,
+            "EmitterDelay": 1.5,
+            "EmitterLoops": 0,
+            "MaxDrawCount": 500,
+            "SubImages_Horizontal": 1,
+            "SubImages_Vertical": 1,
+            "Material": {
+              "Asset": "RibbonMaterial"
+            }
+          },
+          "SpawnModule": {
+            "Rate": 40,
+            "RateScale": 1.0,
+            "bProcessSpawnRate": true,
+            "bProcessBurstList": true,
+            "BurstList": []
+          },
+          "TypeDataModule": {
+            "Type": "Ribbon",
+            "MaxParticleInTrailCount": 0,
+            "TilingDistance": 0.0,
+            "RenderAxis": "CameraUp",
+            "bClipSourceSegement": true,
+            "bDeadTrailsOnDeactivate": false
+          },
+          "Modules": [
+            {
+              "Class": "UParticleModuleLifetime",
+              "Properties": {
+                "LifetimeMin": 0.8,
+                "LifetimeMax": 0.8
+              }
+            },
+            {
+              "Class": "UParticleModuleVelocity",
+              "Properties": {
+                "StartVelocityMin": {
+                  "X": 4.387912809451864,
+                  "Y": 0.0,
+                  "Z": 2.397127693021015
+                },
+                "StartVelocityMax": {
+                  "X": 4.387912809451864,
+                  "Y": 0.0,
+                  "Z": 2.397127693021015
+                },
+                "StartVelocityRadialMin": 0.0,
+                "StartVelocityRadialMax": 0.0,
+                "bInWorldSpace": false
+              }
+            },
+            {
+              "Class": "UParticleModuleSize",
+              "Properties": {
+                "StartSizeMin": {
+                  "X": 0.12,
+                  "Y": 0.12,
+                  "Z": 0.12
+                },
+                "StartSizeMax": {
+                  "X": 0.12,
+                  "Y": 0.12,
+                  "Z": 0.12
+                }
+              }
+            },
+            {
+              "Class": "UParticleModuleSizeMultiplyLife",
+              "Properties": {
+                "MultiplierStart": {
+                  "X": 1.0,
+                  "Y": 1.0,
+                  "Z": 1.0
+                },
+                "MultiplierEnd": {
+                  "X": 0.1,
+                  "Y": 0.1,
+                  "Z": 0.1
+                },
+                "bMultiplyX": true,
+                "bMultiplyY": true,
+                "bMultiplyZ": true
+              }
+            },
+            {
+              "Class": "UParticleModuleColorOverLife",
+              "Properties": {
+                "ColorStart": {
+                  "X": 1.0,
+                  "Y": 0.8,
+                  "Z": 0.3
+                },
+                "ColorEnd": {
+                  "X": 1.0,
+                  "Y": 1.0,
+                  "Z": 1.0
+                },
+                "AlphaStart": 1.0,
+                "AlphaEnd": 0.0
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "EmitterName": "Streak1",
+      "InitialAllocationCount": 40,
+      "bDisabled": false,
+      "bIsSoloing": false,
+      "LODLevels": [
+        {
+          "Level": 0,
+          "bEnabled": true,
+          "PeakActiveParticles": 40,
+          "RequiredModule": {
+            "bUseLocalSpace": true,
+            "SortMode": "None",
+            "bKillOnDeactivate": false,
+            "bKillOnCompleted": false,
+            "EmitterDuration": 0.5,
+            "EmitterDelay": 1.5,
+            "EmitterLoops": 0,
+            "MaxDrawCount": 500,
+            "SubImages_Horizontal": 1,
+            "SubImages_Vertical": 1,
+            "Material": {
+              "Asset": "RibbonMaterial"
+            }
+          },
+          "SpawnModule": {
+            "Rate": 40,
+            "RateScale": 1.0,
+            "bProcessSpawnRate": true,
+            "bProcessBurstList": true,
+            "BurstList": []
+          },
+          "TypeDataModule": {
+            "Type": "Ribbon",
+            "MaxParticleInTrailCount": 0,
+            "TilingDistance": 0.0,
+            "RenderAxis": "CameraUp",
+            "bClipSourceSegement": true,
+            "bDeadTrailsOnDeactivate": false
+          },
+          "Modules": [
+            {
+              "Class": "UParticleModuleLifetime",
+              "Properties": {
+                "LifetimeMin": 0.8,
+                "LifetimeMax": 0.8
+              }
+            },
+            {
+              "Class": "UParticleModuleVelocity",
+              "Properties": {
+                "StartVelocityMin": {
+                  "X": 3.3776245488783223,
+                  "Y": 3.3776245488783223,
+                  "Z": -1.4776010333066978
+                },
+                "StartVelocityMax": {
+                  "X": 3.3776245488783223,
+                  "Y": 3.3776245488783223,
+                  "Z": -1.4776010333066978
+                },
+                "StartVelocityRadialMin": 0.0,
+                "StartVelocityRadialMax": 0.0,
+                "bInWorldSpace": false
+              }
+            },
+            {
+              "Class": "UParticleModuleSize",
+              "Properties": {
+                "StartSizeMin": {
+                  "X": 0.12,
+                  "Y": 0.12,
+                  "Z": 0.12
+                },
+                "StartSizeMax": {
+                  "X": 0.12,
+                  "Y": 0.12,
+                  "Z": 0.12
+                }
+              }
+            },
+            {
+              "Class": "UParticleModuleSizeMultiplyLife",
+              "Properties": {
+                "MultiplierStart": {
+                  "X": 1.0,
+                  "Y": 1.0,
+                  "Z": 1.0
+                },
+                "MultiplierEnd": {
+                  "X": 0.1,
+                  "Y": 0.1,
+                  "Z": 0.1
+                },
+                "bMultiplyX": true,
+                "bMultiplyY": true,
+                "bMultiplyZ": true
+              }
+            },
+            {
+              "Class": "UParticleModuleColorOverLife",
+              "Properties": {
+                "ColorStart": {
+                  "X": 1.0,
+                  "Y": 0.4,
+                  "Z": 0.7
+                },
+                "ColorEnd": {
+                  "X": 1.0,
+                  "Y": 1.0,
+                  "Z": 1.0
+                },
+                "AlphaStart": 1.0,
+                "AlphaEnd": 0.0
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "EmitterName": "Streak2",
+      "InitialAllocationCount": 40,
+      "bDisabled": false,
+      "bIsSoloing": false,
+      "LODLevels": [
+        {
+          "Level": 0,
+          "bEnabled": true,
+          "PeakActiveParticles": 40,
+          "RequiredModule": {
+            "bUseLocalSpace": true,
+            "SortMode": "None",
+            "bKillOnDeactivate": false,
+            "bKillOnCompleted": false,
+            "EmitterDuration": 0.5,
+            "EmitterDelay": 1.5,
+            "EmitterLoops": 0,
+            "MaxDrawCount": 500,
+            "SubImages_Horizontal": 1,
+            "SubImages_Vertical": 1,
+            "Material": {
+              "Asset": "RibbonMaterial"
+            }
+          },
+          "SpawnModule": {
+            "Rate": 40,
+            "RateScale": 1.0,
+            "bProcessSpawnRate": true,
+            "bProcessBurstList": true,
+            "BurstList": []
+          },
+          "TypeDataModule": {
+            "Type": "Ribbon",
+            "MaxParticleInTrailCount": 0,
+            "TilingDistance": 0.0,
+            "RenderAxis": "CameraUp",
+            "bClipSourceSegement": true,
+            "bDeadTrailsOnDeactivate": false
+          },
+          "Modules": [
+            {
+              "Class": "UParticleModuleLifetime",
+              "Properties": {
+                "LifetimeMin": 0.8,
+                "LifetimeMax": 0.8
+              }
+            },
+            {
+              "Class": "UParticleModuleVelocity",
+              "Properties": {
+                "StartVelocityMin": {
+                  "X": 2.6868216885164474e-16,
+                  "Y": 4.387912809451864,
+                  "Z": 2.397127693021015
+                },
+                "StartVelocityMax": {
+                  "X": 2.6868216885164474e-16,
+                  "Y": 4.387912809451864,
+                  "Z": 2.397127693021015
+                },
+                "StartVelocityRadialMin": 0.0,
+                "StartVelocityRadialMax": 0.0,
+                "bInWorldSpace": false
+              }
+            },
+            {
+              "Class": "UParticleModuleSize",
+              "Properties": {
+                "StartSizeMin": {
+                  "X": 0.12,
+                  "Y": 0.12,
+                  "Z": 0.12
+                },
+                "StartSizeMax": {
+                  "X": 0.12,
+                  "Y": 0.12,
+                  "Z": 0.12
+                }
+              }
+            },
+            {
+              "Class": "UParticleModuleSizeMultiplyLife",
+              "Properties": {
+                "MultiplierStart": {
+                  "X": 1.0,
+                  "Y": 1.0,
+                  "Z": 1.0
+                },
+                "MultiplierEnd": {
+                  "X": 0.1,
+                  "Y": 0.1,
+                  "Z": 0.1
+                },
+                "bMultiplyX": true,
+                "bMultiplyY": true,
+                "bMultiplyZ": true
+              }
+            },
+            {
+              "Class": "UParticleModuleColorOverLife",
+              "Properties": {
+                "ColorStart": {
+                  "X": 0.4,
+                  "Y": 0.9,
+                  "Z": 1.0
+                },
+                "ColorEnd": {
+                  "X": 1.0,
+                  "Y": 1.0,
+                  "Z": 1.0
+                },
+                "AlphaStart": 1.0,
+                "AlphaEnd": 0.0
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "EmitterName": "Streak3",
+      "InitialAllocationCount": 40,
+      "bDisabled": false,
+      "bIsSoloing": false,
+      "LODLevels": [
+        {
+          "Level": 0,
+          "bEnabled": true,
+          "PeakActiveParticles": 40,
+          "RequiredModule": {
+            "bUseLocalSpace": true,
+            "SortMode": "None",
+            "bKillOnDeactivate": false,
+            "bKillOnCompleted": false,
+            "EmitterDuration": 0.5,
+            "EmitterDelay": 1.5,
+            "EmitterLoops": 0,
+            "MaxDrawCount": 500,
+            "SubImages_Horizontal": 1,
+            "SubImages_Vertical": 1,
+            "Material": {
+              "Asset": "RibbonMaterial"
+            }
+          },
+          "SpawnModule": {
+            "Rate": 40,
+            "RateScale": 1.0,
+            "bProcessSpawnRate": true,
+            "bProcessBurstList": true,
+            "BurstList": []
+          },
+          "TypeDataModule": {
+            "Type": "Ribbon",
+            "MaxParticleInTrailCount": 0,
+            "TilingDistance": 0.0,
+            "RenderAxis": "CameraUp",
+            "bClipSourceSegement": true,
+            "bDeadTrailsOnDeactivate": false
+          },
+          "Modules": [
+            {
+              "Class": "UParticleModuleLifetime",
+              "Properties": {
+                "LifetimeMin": 0.8,
+                "LifetimeMax": 0.8
+              }
+            },
+            {
+              "Class": "UParticleModuleVelocity",
+              "Properties": {
+                "StartVelocityMin": {
+                  "X": -3.377624548878322,
+                  "Y": 3.3776245488783223,
+                  "Z": -1.4776010333066978
+                },
+                "StartVelocityMax": {
+                  "X": -3.377624548878322,
+                  "Y": 3.3776245488783223,
+                  "Z": -1.4776010333066978
+                },
+                "StartVelocityRadialMin": 0.0,
+                "StartVelocityRadialMax": 0.0,
+                "bInWorldSpace": false
+              }
+            },
+            {
+              "Class": "UParticleModuleSize",
+              "Properties": {
+                "StartSizeMin": {
+                  "X": 0.12,
+                  "Y": 0.12,
+                  "Z": 0.12
+                },
+                "StartSizeMax": {
+                  "X": 0.12,
+                  "Y": 0.12,
+                  "Z": 0.12
+                }
+              }
+            },
+            {
+              "Class": "UParticleModuleSizeMultiplyLife",
+              "Properties": {
+                "MultiplierStart": {
+                  "X": 1.0,
+                  "Y": 1.0,
+                  "Z": 1.0
+                },
+                "MultiplierEnd": {
+                  "X": 0.1,
+                  "Y": 0.1,
+                  "Z": 0.1
+                },
+                "bMultiplyX": true,
+                "bMultiplyY": true,
+                "bMultiplyZ": true
+              }
+            },
+            {
+              "Class": "UParticleModuleColorOverLife",
+              "Properties": {
+                "ColorStart": {
+                  "X": 1.0,
+                  "Y": 0.8,
+                  "Z": 0.3
+                },
+                "ColorEnd": {
+                  "X": 1.0,
+                  "Y": 1.0,
+                  "Z": 1.0
+                },
+                "AlphaStart": 1.0,
+                "AlphaEnd": 0.0
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "EmitterName": "Streak4",
+      "InitialAllocationCount": 40,
+      "bDisabled": false,
+      "bIsSoloing": false,
+      "LODLevels": [
+        {
+          "Level": 0,
+          "bEnabled": true,
+          "PeakActiveParticles": 40,
+          "RequiredModule": {
+            "bUseLocalSpace": true,
+            "SortMode": "None",
+            "bKillOnDeactivate": false,
+            "bKillOnCompleted": false,
+            "EmitterDuration": 0.5,
+            "EmitterDelay": 1.5,
+            "EmitterLoops": 0,
+            "MaxDrawCount": 500,
+            "SubImages_Horizontal": 1,
+            "SubImages_Vertical": 1,
+            "Material": {
+              "Asset": "RibbonMaterial"
+            }
+          },
+          "SpawnModule": {
+            "Rate": 40,
+            "RateScale": 1.0,
+            "bProcessSpawnRate": true,
+            "bProcessBurstList": true,
+            "BurstList": []
+          },
+          "TypeDataModule": {
+            "Type": "Ribbon",
+            "MaxParticleInTrailCount": 0,
+            "TilingDistance": 0.0,
+            "RenderAxis": "CameraUp",
+            "bClipSourceSegement": true,
+            "bDeadTrailsOnDeactivate": false
+          },
+          "Modules": [
+            {
+              "Class": "UParticleModuleLifetime",
+              "Properties": {
+                "LifetimeMin": 0.8,
+                "LifetimeMax": 0.8
+              }
+            },
+            {
+              "Class": "UParticleModuleVelocity",
+              "Properties": {
+                "StartVelocityMin": {
+                  "X": -4.387912809451864,
+                  "Y": 5.373643377032895e-16,
+                  "Z": 2.397127693021015
+                },
+                "StartVelocityMax": {
+                  "X": -4.387912809451864,
+                  "Y": 5.373643377032895e-16,
+                  "Z": 2.397127693021015
+                },
+                "StartVelocityRadialMin": 0.0,
+                "StartVelocityRadialMax": 0.0,
+                "bInWorldSpace": false
+              }
+            },
+            {
+              "Class": "UParticleModuleSize",
+              "Properties": {
+                "StartSizeMin": {
+                  "X": 0.12,
+                  "Y": 0.12,
+                  "Z": 0.12
+                },
+                "StartSizeMax": {
+                  "X": 0.12,
+                  "Y": 0.12,
+                  "Z": 0.12
+                }
+              }
+            },
+            {
+              "Class": "UParticleModuleSizeMultiplyLife",
+              "Properties": {
+                "MultiplierStart": {
+                  "X": 1.0,
+                  "Y": 1.0,
+                  "Z": 1.0
+                },
+                "MultiplierEnd": {
+                  "X": 0.1,
+                  "Y": 0.1,
+                  "Z": 0.1
+                },
+                "bMultiplyX": true,
+                "bMultiplyY": true,
+                "bMultiplyZ": true
+              }
+            },
+            {
+              "Class": "UParticleModuleColorOverLife",
+              "Properties": {
+                "ColorStart": {
+                  "X": 1.0,
+                  "Y": 0.4,
+                  "Z": 0.7
+                },
+                "ColorEnd": {
+                  "X": 1.0,
+                  "Y": 1.0,
+                  "Z": 1.0
+                },
+                "AlphaStart": 1.0,
+                "AlphaEnd": 0.0
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "EmitterName": "Streak5",
+      "InitialAllocationCount": 40,
+      "bDisabled": false,
+      "bIsSoloing": false,
+      "LODLevels": [
+        {
+          "Level": 0,
+          "bEnabled": true,
+          "PeakActiveParticles": 40,
+          "RequiredModule": {
+            "bUseLocalSpace": true,
+            "SortMode": "None",
+            "bKillOnDeactivate": false,
+            "bKillOnCompleted": false,
+            "EmitterDuration": 0.5,
+            "EmitterDelay": 1.5,
+            "EmitterLoops": 0,
+            "MaxDrawCount": 500,
+            "SubImages_Horizontal": 1,
+            "SubImages_Vertical": 1,
+            "Material": {
+              "Asset": "RibbonMaterial"
+            }
+          },
+          "SpawnModule": {
+            "Rate": 40,
+            "RateScale": 1.0,
+            "bProcessSpawnRate": true,
+            "bProcessBurstList": true,
+            "BurstList": []
+          },
+          "TypeDataModule": {
+            "Type": "Ribbon",
+            "MaxParticleInTrailCount": 0,
+            "TilingDistance": 0.0,
+            "RenderAxis": "CameraUp",
+            "bClipSourceSegement": true,
+            "bDeadTrailsOnDeactivate": false
+          },
+          "Modules": [
+            {
+              "Class": "UParticleModuleLifetime",
+              "Properties": {
+                "LifetimeMin": 0.8,
+                "LifetimeMax": 0.8
+              }
+            },
+            {
+              "Class": "UParticleModuleVelocity",
+              "Properties": {
+                "StartVelocityMin": {
+                  "X": -3.377624548878323,
+                  "Y": -3.377624548878322,
+                  "Z": -1.4776010333066978
+                },
+                "StartVelocityMax": {
+                  "X": -3.377624548878323,
+                  "Y": -3.377624548878322,
+                  "Z": -1.4776010333066978
+                },
+                "StartVelocityRadialMin": 0.0,
+                "StartVelocityRadialMax": 0.0,
+                "bInWorldSpace": false
+              }
+            },
+            {
+              "Class": "UParticleModuleSize",
+              "Properties": {
+                "StartSizeMin": {
+                  "X": 0.12,
+                  "Y": 0.12,
+                  "Z": 0.12
+                },
+                "StartSizeMax": {
+                  "X": 0.12,
+                  "Y": 0.12,
+                  "Z": 0.12
+                }
+              }
+            },
+            {
+              "Class": "UParticleModuleSizeMultiplyLife",
+              "Properties": {
+                "MultiplierStart": {
+                  "X": 1.0,
+                  "Y": 1.0,
+                  "Z": 1.0
+                },
+                "MultiplierEnd": {
+                  "X": 0.1,
+                  "Y": 0.1,
+                  "Z": 0.1
+                },
+                "bMultiplyX": true,
+                "bMultiplyY": true,
+                "bMultiplyZ": true
+              }
+            },
+            {
+              "Class": "UParticleModuleColorOverLife",
+              "Properties": {
+                "ColorStart": {
+                  "X": 0.4,
+                  "Y": 0.9,
+                  "Z": 1.0
+                },
+                "ColorEnd": {
+                  "X": 1.0,
+                  "Y": 1.0,
+                  "Z": 1.0
+                },
+                "AlphaStart": 1.0,
+                "AlphaEnd": 0.0
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "EmitterName": "Streak6",
+      "InitialAllocationCount": 40,
+      "bDisabled": false,
+      "bIsSoloing": false,
+      "LODLevels": [
+        {
+          "Level": 0,
+          "bEnabled": true,
+          "PeakActiveParticles": 40,
+          "RequiredModule": {
+            "bUseLocalSpace": true,
+            "SortMode": "None",
+            "bKillOnDeactivate": false,
+            "bKillOnCompleted": false,
+            "EmitterDuration": 0.5,
+            "EmitterDelay": 1.5,
+            "EmitterLoops": 0,
+            "MaxDrawCount": 500,
+            "SubImages_Horizontal": 1,
+            "SubImages_Vertical": 1,
+            "Material": {
+              "Asset": "RibbonMaterial"
+            }
+          },
+          "SpawnModule": {
+            "Rate": 40,
+            "RateScale": 1.0,
+            "bProcessSpawnRate": true,
+            "bProcessBurstList": true,
+            "BurstList": []
+          },
+          "TypeDataModule": {
+            "Type": "Ribbon",
+            "MaxParticleInTrailCount": 0,
+            "TilingDistance": 0.0,
+            "RenderAxis": "CameraUp",
+            "bClipSourceSegement": true,
+            "bDeadTrailsOnDeactivate": false
+          },
+          "Modules": [
+            {
+              "Class": "UParticleModuleLifetime",
+              "Properties": {
+                "LifetimeMin": 0.8,
+                "LifetimeMax": 0.8
+              }
+            },
+            {
+              "Class": "UParticleModuleVelocity",
+              "Properties": {
+                "StartVelocityMin": {
+                  "X": -8.060465065549343e-16,
+                  "Y": -4.387912809451864,
+                  "Z": 2.397127693021015
+                },
+                "StartVelocityMax": {
+                  "X": -8.060465065549343e-16,
+                  "Y": -4.387912809451864,
+                  "Z": 2.397127693021015
+                },
+                "StartVelocityRadialMin": 0.0,
+                "StartVelocityRadialMax": 0.0,
+                "bInWorldSpace": false
+              }
+            },
+            {
+              "Class": "UParticleModuleSize",
+              "Properties": {
+                "StartSizeMin": {
+                  "X": 0.12,
+                  "Y": 0.12,
+                  "Z": 0.12
+                },
+                "StartSizeMax": {
+                  "X": 0.12,
+                  "Y": 0.12,
+                  "Z": 0.12
+                }
+              }
+            },
+            {
+              "Class": "UParticleModuleSizeMultiplyLife",
+              "Properties": {
+                "MultiplierStart": {
+                  "X": 1.0,
+                  "Y": 1.0,
+                  "Z": 1.0
+                },
+                "MultiplierEnd": {
+                  "X": 0.1,
+                  "Y": 0.1,
+                  "Z": 0.1
+                },
+                "bMultiplyX": true,
+                "bMultiplyY": true,
+                "bMultiplyZ": true
+              }
+            },
+            {
+              "Class": "UParticleModuleColorOverLife",
+              "Properties": {
+                "ColorStart": {
+                  "X": 1.0,
+                  "Y": 0.8,
+                  "Z": 0.3
+                },
+                "ColorEnd": {
+                  "X": 1.0,
+                  "Y": 1.0,
+                  "Z": 1.0
+                },
+                "AlphaStart": 1.0,
+                "AlphaEnd": 0.0
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "EmitterName": "Streak7",
+      "InitialAllocationCount": 40,
+      "bDisabled": false,
+      "bIsSoloing": false,
+      "LODLevels": [
+        {
+          "Level": 0,
+          "bEnabled": true,
+          "PeakActiveParticles": 40,
+          "RequiredModule": {
+            "bUseLocalSpace": true,
+            "SortMode": "None",
+            "bKillOnDeactivate": false,
+            "bKillOnCompleted": false,
+            "EmitterDuration": 0.5,
+            "EmitterDelay": 1.5,
+            "EmitterLoops": 0,
+            "MaxDrawCount": 500,
+            "SubImages_Horizontal": 1,
+            "SubImages_Vertical": 1,
+            "Material": {
+              "Asset": "RibbonMaterial"
+            }
+          },
+          "SpawnModule": {
+            "Rate": 40,
+            "RateScale": 1.0,
+            "bProcessSpawnRate": true,
+            "bProcessBurstList": true,
+            "BurstList": []
+          },
+          "TypeDataModule": {
+            "Type": "Ribbon",
+            "MaxParticleInTrailCount": 0,
+            "TilingDistance": 0.0,
+            "RenderAxis": "CameraUp",
+            "bClipSourceSegement": true,
+            "bDeadTrailsOnDeactivate": false
+          },
+          "Modules": [
+            {
+              "Class": "UParticleModuleLifetime",
+              "Properties": {
+                "LifetimeMin": 0.8,
+                "LifetimeMax": 0.8
+              }
+            },
+            {
+              "Class": "UParticleModuleVelocity",
+              "Properties": {
+                "StartVelocityMin": {
+                  "X": 3.3776245488783214,
+                  "Y": -3.377624548878323,
+                  "Z": -1.4776010333066978
+                },
+                "StartVelocityMax": {
+                  "X": 3.3776245488783214,
+                  "Y": -3.377624548878323,
+                  "Z": -1.4776010333066978
+                },
+                "StartVelocityRadialMin": 0.0,
+                "StartVelocityRadialMax": 0.0,
+                "bInWorldSpace": false
+              }
+            },
+            {
+              "Class": "UParticleModuleSize",
+              "Properties": {
+                "StartSizeMin": {
+                  "X": 0.12,
+                  "Y": 0.12,
+                  "Z": 0.12
+                },
+                "StartSizeMax": {
+                  "X": 0.12,
+                  "Y": 0.12,
+                  "Z": 0.12
+                }
+              }
+            },
+            {
+              "Class": "UParticleModuleSizeMultiplyLife",
+              "Properties": {
+                "MultiplierStart": {
+                  "X": 1.0,
+                  "Y": 1.0,
+                  "Z": 1.0
+                },
+                "MultiplierEnd": {
+                  "X": 0.1,
+                  "Y": 0.1,
+                  "Z": 0.1
+                },
+                "bMultiplyX": true,
+                "bMultiplyY": true,
+                "bMultiplyZ": true
+              }
+            },
+            {
+              "Class": "UParticleModuleColorOverLife",
+              "Properties": {
+                "ColorStart": {
+                  "X": 1.0,
+                  "Y": 0.4,
+                  "Z": 0.7
+                },
+                "ColorEnd": {
+                  "X": 1.0,
+                  "Y": 1.0,
+                  "Z": 1.0
+                },
+                "AlphaStart": 1.0,
+                "AlphaEnd": 0.0
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

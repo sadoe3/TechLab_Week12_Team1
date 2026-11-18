@@ -1,0 +1,637 @@
+{
+  "UpdateTime_FPS": 60.0,
+  "UpdateTime_Delta": 0.0166666675,
+  "WarmupTime": 0.0,
+  "WarmupTickRate": 0.0,
+  "bUseFixedRelativeBoundingBox": false,
+  "bOrientZAxisTowardCamera": false,
+  "Emitters": [
+    {
+      "EmitterName": "HealGlow",
+      "InitialAllocationCount": 1,
+      "bDisabled": false,
+      "bIsSoloing": false,
+      "LODLevels": [
+        {
+          "Level": 0,
+          "bEnabled": true,
+          "PeakActiveParticles": 1,
+          "RequiredModule": {
+            "bUseLocalSpace": true,
+            "SortMode": "None",
+            "bKillOnDeactivate": false,
+            "bKillOnCompleted": false,
+            "EmitterDuration": 1.0,
+            "EmitterDelay": 0.0,
+            "EmitterLoops": 1,
+            "MaxDrawCount": 500,
+            "SubImages_Horizontal": 1,
+            "SubImages_Vertical": 1,
+            "Material": {
+              "Asset": "RibbonMaterial"
+            }
+          },
+          "SpawnModule": {
+            "Rate": 0.0,
+            "RateScale": 1.0,
+            "bProcessSpawnRate": false,
+            "bProcessBurstList": true,
+            "BurstList": [
+              {
+                "Count": 1,
+                "CountLow": -1,
+                "Time": 0.0
+              }
+            ]
+          },
+          "TypeDataModule": {
+            "Type": "Beam2",
+            "Segments": 2,
+            "BeamMethod": "Target",
+            "Distance": 5.0,
+            "TextureTileDistance": 0.0,
+            "TaperMethod": "None",
+            "TaperFactor": 1.0
+          },
+          "Modules": [
+            {
+              "Class": "UParticleModuleLifetime",
+              "Properties": {
+                "LifetimeMin": 0.0,
+                "LifetimeMax": 0.0
+              }
+            },
+            {
+              "Class": "UParticleModuleSize",
+              "Properties": {
+                "StartSizeMin": {
+                  "X": 0.6,
+                  "Y": 0.6,
+                  "Z": 0.6
+                },
+                "StartSizeMax": {
+                  "X": 0.6,
+                  "Y": 0.6,
+                  "Z": 0.6
+                }
+              }
+            },
+            {
+              "Class": "UParticleModuleColor",
+              "Properties": {
+                "StartColorMin": {
+                  "X": 0.2,
+                  "Y": 1.0,
+                  "Z": 0.4
+                },
+                "StartColorMax": {
+                  "X": 0.2,
+                  "Y": 1.0,
+                  "Z": 0.4
+                },
+                "StartAlphaMin": 0.15,
+                "StartAlphaMax": 0.15
+              }
+            },
+            {
+              "Class": "UParticleModuleBeamTarget",
+              "Properties": {
+                "TargetLocation": {
+                  "X": 8.0,
+                  "Y": 0.0,
+                  "Z": 1.0
+                },
+                "bTargetAbsolute": false
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "EmitterName": "HealStrandA",
+      "InitialAllocationCount": 1,
+      "bDisabled": false,
+      "bIsSoloing": false,
+      "LODLevels": [
+        {
+          "Level": 0,
+          "bEnabled": true,
+          "PeakActiveParticles": 1,
+          "RequiredModule": {
+            "bUseLocalSpace": true,
+            "SortMode": "None",
+            "bKillOnDeactivate": false,
+            "bKillOnCompleted": false,
+            "EmitterDuration": 1.0,
+            "EmitterDelay": 0.0,
+            "EmitterLoops": 1,
+            "MaxDrawCount": 500,
+            "SubImages_Horizontal": 1,
+            "SubImages_Vertical": 1,
+            "Material": {
+              "Asset": "RibbonMaterial"
+            }
+          },
+          "SpawnModule": {
+            "Rate": 0.0,
+            "RateScale": 1.0,
+            "bProcessSpawnRate": false,
+            "bProcessBurstList": true,
+            "BurstList": [
+              {
+                "Count": 1,
+                "CountLow": -1,
+                "Time": 0.0
+              }
+            ]
+          },
+          "TypeDataModule": {
+            "Type": "Beam2",
+            "Segments": 30,
+            "BeamMethod": "Target",
+            "Distance": 5.0,
+            "TextureTileDistance": 0.0,
+            "TaperMethod": "None",
+            "TaperFactor": 1.0
+          },
+          "Modules": [
+            {
+              "Class": "UParticleModuleLifetime",
+              "Properties": {
+                "LifetimeMin": 0.0,
+                "LifetimeMax": 0.0
+              }
+            },
+            {
+              "Class": "UParticleModuleSize",
+              "Properties": {
+                "StartSizeMin": {
+                  "X": 0.25,
+                  "Y": 0.25,
+                  "Z": 0.25
+                },
+                "StartSizeMax": {
+                  "X": 0.25,
+                  "Y": 0.25,
+                  "Z": 0.25
+                }
+              }
+            },
+            {
+              "Class": "UParticleModuleColor",
+              "Properties": {
+                "StartColorMin": {
+                  "X": 0.3,
+                  "Y": 1.0,
+                  "Z": 0.5
+                },
+                "StartColorMax": {
+                  "X": 0.3,
+                  "Y": 1.0,
+                  "Z": 0.5
+                },
+                "StartAlphaMin": 0.8,
+                "StartAlphaMax": 0.8
+              }
+            },
+            {
+              "Class": "UParticleModuleBeamTarget",
+              "Properties": {
+                "TargetLocation": {
+                  "X": 8.0,
+                  "Y": 0.0,
+                  "Z": 1.0
+                },
+                "bTargetAbsolute": false
+              }
+            },
+            {
+              "Class": "UParticleModuleBeamNoise",
+              "Properties": {
+                "bLowFreq_Enabled": true,
+                "Frequency": 4,
+                "NoiseRange": {
+                  "X": 0.3,
+                  "Y": 0.3,
+                  "Z": 0.3
+                },
+                "NoiseSpeed": 1.5,
+                "NoiseLockTime": 0.4,
+                "bSmooth": true,
+                "bTargetNoise": false
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "EmitterName": "HealStrandB",
+      "InitialAllocationCount": 1,
+      "bDisabled": false,
+      "bIsSoloing": false,
+      "LODLevels": [
+        {
+          "Level": 0,
+          "bEnabled": true,
+          "PeakActiveParticles": 1,
+          "RequiredModule": {
+            "bUseLocalSpace": true,
+            "SortMode": "None",
+            "bKillOnDeactivate": false,
+            "bKillOnCompleted": false,
+            "EmitterDuration": 1.0,
+            "EmitterDelay": 0.0,
+            "EmitterLoops": 1,
+            "MaxDrawCount": 500,
+            "SubImages_Horizontal": 1,
+            "SubImages_Vertical": 1,
+            "Material": {
+              "Asset": "RibbonMaterial"
+            }
+          },
+          "SpawnModule": {
+            "Rate": 0.0,
+            "RateScale": 1.0,
+            "bProcessSpawnRate": false,
+            "bProcessBurstList": true,
+            "BurstList": [
+              {
+                "Count": 1,
+                "CountLow": -1,
+                "Time": 0.0
+              }
+            ]
+          },
+          "TypeDataModule": {
+            "Type": "Beam2",
+            "Segments": 30,
+            "BeamMethod": "Target",
+            "Distance": 5.0,
+            "TextureTileDistance": 0.0,
+            "TaperMethod": "None",
+            "TaperFactor": 1.0
+          },
+          "Modules": [
+            {
+              "Class": "UParticleModuleLifetime",
+              "Properties": {
+                "LifetimeMin": 0.0,
+                "LifetimeMax": 0.0
+              }
+            },
+            {
+              "Class": "UParticleModuleSize",
+              "Properties": {
+                "StartSizeMin": {
+                  "X": 0.1,
+                  "Y": 0.1,
+                  "Z": 0.1
+                },
+                "StartSizeMax": {
+                  "X": 0.1,
+                  "Y": 0.1,
+                  "Z": 0.1
+                }
+              }
+            },
+            {
+              "Class": "UParticleModuleColor",
+              "Properties": {
+                "StartColorMin": {
+                  "X": 0.7,
+                  "Y": 1.0,
+                  "Z": 0.8
+                },
+                "StartColorMax": {
+                  "X": 0.7,
+                  "Y": 1.0,
+                  "Z": 0.8
+                },
+                "StartAlphaMin": 1.0,
+                "StartAlphaMax": 1.0
+              }
+            },
+            {
+              "Class": "UParticleModuleBeamTarget",
+              "Properties": {
+                "TargetLocation": {
+                  "X": 8.0,
+                  "Y": 0.0,
+                  "Z": 1.0
+                },
+                "bTargetAbsolute": false
+              }
+            },
+            {
+              "Class": "UParticleModuleBeamNoise",
+              "Properties": {
+                "bLowFreq_Enabled": true,
+                "Frequency": 6,
+                "NoiseRange": {
+                  "X": 0.45,
+                  "Y": 0.45,
+                  "Z": 0.45
+                },
+                "NoiseSpeed": 2.5,
+                "NoiseLockTime": 0.25,
+                "bSmooth": true,
+                "bTargetNoise": false
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "EmitterName": "SourceGlow",
+      "InitialAllocationCount": 8,
+      "bDisabled": false,
+      "bIsSoloing": false,
+      "LODLevels": [
+        {
+          "Level": 0,
+          "bEnabled": true,
+          "PeakActiveParticles": 8,
+          "RequiredModule": {
+            "bUseLocalSpace": true,
+            "SortMode": "None",
+            "bKillOnDeactivate": false,
+            "bKillOnCompleted": false,
+            "EmitterDuration": 1.0,
+            "EmitterDelay": 0.0,
+            "EmitterLoops": 0,
+            "MaxDrawCount": 500,
+            "SubImages_Horizontal": 4,
+            "SubImages_Vertical": 4,
+            "Material": {
+              "Base": "SubUVMaterial",
+              "Instance": {
+                "BaseColor": {
+                  "W": 1.0,
+                  "X": 1.0,
+                  "Y": 1.0,
+                  "Z": 1.0
+                },
+                "BlendState": "AlphaBlend",
+                "FlipNormalY": false,
+                "PSOType": 4,
+                "Properties": {},
+                "SamplerState": "LinearClamp",
+                "Shininess": 32.0,
+                "SpecularColor": {
+                  "X": 1.0,
+                  "Y": 1.0,
+                  "Z": 1.0
+                },
+                "Textures": [
+                  "Assets/SubUV/ParticleAtlas.png"
+                ],
+                "UVScrollSpeed": [
+                  0.0,
+                  0.0
+                ]
+              }
+            }
+          },
+          "SpawnModule": {
+            "Rate": 15,
+            "RateScale": 1.0,
+            "bProcessSpawnRate": true,
+            "bProcessBurstList": true,
+            "BurstList": []
+          },
+          "Modules": [
+            {
+              "Class": "UParticleModuleLifetime",
+              "Properties": {
+                "LifetimeMin": 0.3,
+                "LifetimeMax": 0.3
+              }
+            },
+            {
+              "Class": "UParticleModuleSize",
+              "Properties": {
+                "StartSizeMin": {
+                  "X": 0.6,
+                  "Y": 0.6,
+                  "Z": 0.6
+                },
+                "StartSizeMax": {
+                  "X": 0.8,
+                  "Y": 0.8,
+                  "Z": 0.8
+                }
+              }
+            },
+            {
+              "Class": "UParticleModuleColor",
+              "Properties": {
+                "StartColorMin": {
+                  "X": 0.3,
+                  "Y": 1.0,
+                  "Z": 0.5
+                },
+                "StartColorMax": {
+                  "X": 0.3,
+                  "Y": 1.0,
+                  "Z": 0.5
+                },
+                "StartAlphaMin": 1.0,
+                "StartAlphaMax": 1.0
+              }
+            },
+            {
+              "Class": "UParticleModuleColorOverLife",
+              "Properties": {
+                "ColorStart": {
+                  "X": 0.7,
+                  "Y": 1.0,
+                  "Z": 0.8
+                },
+                "ColorEnd": {
+                  "X": 0.3,
+                  "Y": 1.0,
+                  "Z": 0.5
+                },
+                "AlphaStart": 0.8,
+                "AlphaEnd": 0.0
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "EmitterName": "HealMotes",
+      "InitialAllocationCount": 24,
+      "bDisabled": false,
+      "bIsSoloing": false,
+      "LODLevels": [
+        {
+          "Level": 0,
+          "bEnabled": true,
+          "PeakActiveParticles": 24,
+          "RequiredModule": {
+            "bUseLocalSpace": true,
+            "SortMode": "None",
+            "bKillOnDeactivate": false,
+            "bKillOnCompleted": false,
+            "EmitterDuration": 1.0,
+            "EmitterDelay": 0.0,
+            "EmitterLoops": 0,
+            "MaxDrawCount": 500,
+            "SubImages_Horizontal": 4,
+            "SubImages_Vertical": 4,
+            "Material": {
+              "Base": "SubUVMaterial",
+              "Instance": {
+                "BaseColor": {
+                  "W": 1.0,
+                  "X": 1.0,
+                  "Y": 1.0,
+                  "Z": 1.0
+                },
+                "BlendState": "AlphaBlend",
+                "FlipNormalY": false,
+                "PSOType": 4,
+                "Properties": {},
+                "SamplerState": "LinearClamp",
+                "Shininess": 32.0,
+                "SpecularColor": {
+                  "X": 1.0,
+                  "Y": 1.0,
+                  "Z": 1.0
+                },
+                "Textures": [
+                  "Assets/SubUV/ParticleAtlas.png"
+                ],
+                "UVScrollSpeed": [
+                  0.0,
+                  0.0
+                ]
+              }
+            }
+          },
+          "SpawnModule": {
+            "Rate": 12,
+            "RateScale": 1.0,
+            "bProcessSpawnRate": true,
+            "bProcessBurstList": true,
+            "BurstList": []
+          },
+          "Modules": [
+            {
+              "Class": "UParticleModuleLifetime",
+              "Properties": {
+                "LifetimeMin": 1.0,
+                "LifetimeMax": 1.5
+              }
+            },
+            {
+              "Class": "UParticleModuleLocation",
+              "Properties": {
+                "StartLocationMin": {
+                  "X": 7.4,
+                  "Y": -0.6,
+                  "Z": 0.19999999999999996
+                },
+                "StartLocationMax": {
+                  "X": 8.6,
+                  "Y": 0.6,
+                  "Z": 1.2
+                }
+              }
+            },
+            {
+              "Class": "UParticleModuleVelocity",
+              "Properties": {
+                "StartVelocityMin": {
+                  "X": 0.0,
+                  "Y": 0.0,
+                  "Z": 0.6
+                },
+                "StartVelocityMax": {
+                  "X": 0.0,
+                  "Y": 0.0,
+                  "Z": 1.2
+                },
+                "StartVelocityRadialMin": 0.0,
+                "StartVelocityRadialMax": 0.0,
+                "bInWorldSpace": false
+              }
+            },
+            {
+              "Class": "UParticleModuleSize",
+              "Properties": {
+                "StartSizeMin": {
+                  "X": 0.1,
+                  "Y": 0.1,
+                  "Z": 0.1
+                },
+                "StartSizeMax": {
+                  "X": 0.2,
+                  "Y": 0.2,
+                  "Z": 0.2
+                }
+              }
+            },
+            {
+              "Class": "UParticleModuleColor",
+              "Properties": {
+                "StartColorMin": {
+                  "X": 0.3,
+                  "Y": 1.0,
+                  "Z": 0.5
+                },
+                "StartColorMax": {
+                  "X": 0.3,
+                  "Y": 1.0,
+                  "Z": 0.5
+                },
+                "StartAlphaMin": 1.0,
+                "StartAlphaMax": 1.0
+              }
+            },
+            {
+              "Class": "UParticleModuleSizeMultiplyLife",
+              "Properties": {
+                "MultiplierStart": {
+                  "X": 1.0,
+                  "Y": 1.0,
+                  "Z": 1.0
+                },
+                "MultiplierEnd": {
+                  "X": 0.4,
+                  "Y": 0.4,
+                  "Z": 0.4
+                },
+                "bMultiplyX": true,
+                "bMultiplyY": true,
+                "bMultiplyZ": true
+              }
+            },
+            {
+              "Class": "UParticleModuleColorOverLife",
+              "Properties": {
+                "ColorStart": {
+                  "X": 0.7,
+                  "Y": 1.0,
+                  "Z": 0.8
+                },
+                "ColorEnd": {
+                  "X": 0.3,
+                  "Y": 1.0,
+                  "Z": 0.5
+                },
+                "AlphaStart": 1.0,
+                "AlphaEnd": 0.0
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
