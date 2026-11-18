@@ -382,6 +382,8 @@ void FParticleEmitterInstance::SpawnParticles(int32 Count, float StartTime, floa
 		// (UpdateBoundingBox가 이번 프레임 DeltaTime 적분을 따로 하므로 여기서는 SpawnTime만큼만)
 		Particle->OldLocation = Particle->Location;
 		Particle->Location += Particle->Velocity * SpawnTime;
+		// 회전도 같은 이유로 진행시킨다. 안 하면 한 프레임에 여러 개 나온 파티클의 각도가 같아 보인다.
+		Particle->Rotation += Particle->RotationRate * SpawnTime;
 		Particle->Flags |= STATE_Particle_JustSpawned;
 
 		++ActiveParticles;

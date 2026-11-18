@@ -157,7 +157,8 @@ void FDynamicSpriteEmitterData::GetDynamicMeshElements(
 		Instance.SubImageIndex = 0.0f; // SubUV 애니메이션 전까지 아틀라스 0번 칸
 		Instance.Size[0] = Particle.Size.X;
 		Instance.Size[1] = Particle.Size.Y;
-		Instance.Padding[0] = Instance.Padding[1] = 0.0f;
+		Instance.Rotation = Particle.Rotation * (3.14159265358979f / 180.0f);
+		Instance.Padding = 0.0f;
 		Instance.Color = Particle.Color;
 	}
 

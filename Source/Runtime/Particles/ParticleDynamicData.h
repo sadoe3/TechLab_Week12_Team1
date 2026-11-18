@@ -46,7 +46,8 @@ struct FParticleSpriteInstance
 	float Position[3];      // 월드 위치
 	float SubImageIndex;    // SubUV 칸 번호 (SubUV 모듈 전까지 0)
 	float Size[2];          // 가로, 세로
-	float Padding[2];
+	float Rotation;         // 화면 안 회전(Roll), 라디안
+	float Padding;
 	FVector4 Color;         // rgb: Tint, a: 알파
 };
 static_assert(sizeof(FParticleSpriteInstance) == 48, "ParticleSpriteCommon.hlsli FParticleSpriteInstance와 크기가 같아야 한다");
@@ -97,6 +98,8 @@ struct FDynamicSpriteEmitterReplayData : public FDynamicEmitterReplayDataBase
 		FVector4 Color = FVector4(1.0f, 1.0f, 1.0f, 1.0f);
 		/** 수명 진행도 0~1 (Age 정렬용) */
 		float RelativeTime = 0.0f;
+		/** 화면 안 회전(FBaseParticle::Rotation.Z = Roll), 도 */
+		float Rotation = 0.0f;
 	};
 
 	TArray<FSpriteParticleSnapshot> Particles;

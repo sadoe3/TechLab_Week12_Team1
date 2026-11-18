@@ -20,7 +20,8 @@ struct FOutlineSpriteInstance
     float3 Position;
     float SubImageIndex;
     float2 Size;
-    float2 Padding;
+    float Rotation;     // 화면 안 회전(Roll), 라디안
+    float Padding;
     float4 Color;
 };
 StructuredBuffer<FOutlineSpriteInstance> OutlineSpriteInstances : register(t16);
@@ -58,8 +59,12 @@ PS_INPUT mainVS(VS_INPUT input)
         // 스프라이트: World에는 카메라 축(행 0 Facing, 행 1 Right, 행 2 Up)이 들어 있다 (FDynamicSpriteEmitterData와 같은 규칙).
         // 쿼드 중심에서 꼭짓점 쪽을 법선 대신 써서, 화면에서 쿼드 바깥으로 밀어낸다.
         const FOutlineSpriteInstance Particle = OutlineSpriteInstances[input.ParticleInstanceID];
-        const float3 Offset = World[1].xyz * (input.position.y * Particle.Size.x)
-                            + World[2].xyz * (input.position.z * Particle.Size.y);
+        // ParticleSpriteRotatedOffset(ParticleSpriteCommon.hlsli)와 같은 회전: 크기를 곱한 뒤 Roll만큼 돌린다
+        const float2 Scaled = float2(input.position.y * Particle.Size.x, input.position.z * Particle.Size.y);
+        float S, C;
+        sincos(Particle.Rotation, S, C);
+        const float3 Offset = World[1].xyz * (Scaled.x * C - Scaled.y * S)
+                            + World[2].xyz * (Scaled.x * S + Scaled.y * C);
         input.position = Particle.Position + World[0].xyz * input.position.x + Offset;
         input.normal = Offset;
     }

@@ -104,7 +104,12 @@ TUniquePtr<FDynamicEmitterDataBase> FParticleSpriteEmitterInstance::GetDynamicDa
 		{
 			continue;
 		}
-		Data->Source.Particles.Add({ Particle->Location, Particle->Size, Particle->Color, Particle->RelativeTime });
+		FDynamicSpriteEmitterReplayData::FSpriteParticleSnapshot& Snapshot = Data->Source.Particles.AddDefaulted_GetRef();
+		Snapshot.Location = Particle->Location;
+		Snapshot.Size = Particle->Size;
+		Snapshot.Color = Particle->Color;
+		Snapshot.RelativeTime = Particle->RelativeTime;
+		Snapshot.Rotation = Particle->Rotation.Z; // 스프라이트는 Roll만 쓴다
 	}
 
 	Data->Source.ActiveParticleCount = Data->Source.Particles.Num();

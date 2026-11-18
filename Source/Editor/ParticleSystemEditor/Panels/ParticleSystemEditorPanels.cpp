@@ -47,6 +47,9 @@ namespace
 		{ "UParticleModuleSize",              "Initial Size",     "Size" },
 		{ "UParticleModuleSizeMultiplyLife",  "Size By Life",     "Size" },
 		{ "UParticleModuleVelocity",          "Initial Velocity", "Velocity" },
+		{ "UParticleModuleRotation",          "Initial Rotation", "Rotation" },
+		{ "UParticleModuleRotationRate",      "Initial Rotation Rate", "Rotation Rate" },
+		{ "UParticleModuleRotationRateMultiplyLife", "Rotation Rate By Life", "Rotation Rate" },
 		{ "UParticleModuleTypeDataMesh",      "Mesh Data",        "TypeData" },
 		{ "UParticleModuleTypeDataRibbon",    "Ribbon Data",      "TypeData" },
 	};
