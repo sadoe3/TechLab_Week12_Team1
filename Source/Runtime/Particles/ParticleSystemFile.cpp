@@ -154,10 +154,64 @@ namespace
 		});
 	}
 
+	// Files saved before distributions stored spawn-time values as "XMin" / "XMax" pairs (e.g. LifetimeMin / LifetimeMax).
+	// For each distribution property X of the module class that the file lacks, turn a matching pair into
+	// { "Type": "Constant" } (Min == Max) or { "Type": "Uniform" } so old assets keep their values.
+	json UpgradeMinMaxToDistributions(const json& ModuleJson)
+	{
+		if (!ModuleJson.is_object() || !ModuleJson.contains("Class") || !ModuleJson["Class"].is_string()
+			|| !ModuleJson.contains("Properties") || !ModuleJson["Properties"].is_object())
+		{
+			return ModuleJson;
+		}
+		const UClass* Class = FindClass(ModuleJson["Class"].get<std::string>());
+		if (!Class)
+		{
+			return ModuleJson;
+		}
+
+		json Upgraded = ModuleJson;
+		json& Properties = Upgraded["Properties"];
+		for (const UStruct* Struct = Class; Struct; Struct = Struct->GetSuperStruct())
+		{
+			for (const FProperty* Property : Struct->GetProperties())
+			{
+				if (!Property->IsA<FDistributionFloatProperty>() && !Property->IsA<FDistributionVectorProperty>())
+				{
+					continue;
+				}
+				const FString& Name = Property->Name;
+				const FString MinName = Name + "Min";
+				const FString MaxName = Name + "Max";
+				if (Properties.contains(Name) || !Properties.contains(MinName) || !Properties.contains(MaxName))
+				{
+					continue;
+				}
+
+				json Distribution = json::object();
+				if (Properties[MinName] == Properties[MaxName])
+				{
+					Distribution["Type"] = "Constant";
+					Distribution["Constant"] = Properties[MinName];
+				}
+				else
+				{
+					Distribution["Type"] = "Uniform";
+					Distribution["Min"] = Properties[MinName];
+					Distribution["Max"] = Properties[MaxName];
+				}
+				Properties[Name] = Distribution;
+				Properties.erase(MinName);
+				Properties.erase(MaxName);
+			}
+		}
+		return Upgraded;
+	}
+
 	UParticleModule* LoadModuleFromJson(const json& ModuleJson)
 	{
 		UParticleModule* Module = nullptr;
-		ReadStructured(ModuleJson, [&Module](FStructuredArchive::FSlot Slot)
+		ReadStructured(UpgradeMinMaxToDistributions(ModuleJson), [&Module](FStructuredArchive::FSlot Slot)
 		{
 			FStructuredArchive::FRecord Record = Slot.EnterRecord();
 			FString ClassName;
@@ -251,7 +305,15 @@ namespace
 			{
 				const json& SpawnJson = LODJson["SpawnModule"];
 				UParticleModuleSpawn* Spawn = NewObject<UParticleModuleSpawn>();
-				Spawn->Rate = SpawnJson.value("Rate", 10.0f);
+				// Rate used to be a plain number; now it is a distribution object. Read both.
+				if (SpawnJson.contains("Rate") && SpawnJson["Rate"].is_number())
+				{
+					Spawn->Rate = FDistributionFloat::MakeConstant(SpawnJson["Rate"].get<float>());
+				}
+				else if (SpawnJson.contains("Rate") && SpawnJson["Rate"].is_object())
+				{
+					ReadStructured(SpawnJson["Rate"], [Spawn](FStructuredArchive::FSlot Slot) { Slot << Spawn->Rate; });
+				}
 				Spawn->RateScale = SpawnJson.value("RateScale", 1.0f);
 				Spawn->bProcessSpawnRate = SpawnJson.value("bProcessSpawnRate", true);
 				Spawn->bProcessBurstList = SpawnJson.value("bProcessBurstList", true);
@@ -397,7 +459,8 @@ namespace
 			{
 				const UParticleModuleSpawn* Spawn = LOD->SpawnModule;
 				json SpawnJson = json::object();
-				SpawnJson["Rate"] = Spawn->Rate;
+				FDistributionFloat Rate = Spawn->Rate;
+				SpawnJson["Rate"] = WriteStructured([&Rate](FStructuredArchive::FSlot Slot) { Slot << Rate; });
 				SpawnJson["RateScale"] = Spawn->RateScale;
 				SpawnJson["bProcessSpawnRate"] = Spawn->bProcessSpawnRate;
 				SpawnJson["bProcessBurstList"] = Spawn->bProcessBurstList;

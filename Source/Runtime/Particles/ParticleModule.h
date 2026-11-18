@@ -8,6 +8,13 @@ class UParticleModuleTypeDataBase;
 struct FParticleEmitterInstance;
 struct FBaseParticle;
 
+/** X axis of a module's curve: each particle's age, or the emitter's position in its loop */
+enum class EParticleCurveInput : uint8
+{
+	RelativeTime, // particle age, 0 at spawn .. 1 at death
+	EmitterTime,  // emitter loop fraction, 0 .. 1 of EmitterDuration (same unit as Burst Time)
+};
+
 /**
  * 모든 파티클 모듈의 기반 클래스 (Unreal Cascade UParticleModule 대응)
  */
@@ -35,9 +42,22 @@ public:
 	/** 이미터 인스턴스당 추가로 필요한 Payload 바이트 크기 */
 	virtual uint32 RequiredBytesPerInstance() const { return 0; }
 
+	/**
+	 * What a curve property's X axis means, for the Curve Editor (labels, range).
+	 * The runtime meaning is whatever this module passes to Eval / GetDistributionValue; this must match it.
+	 * Default: spawn-time distributions read at the emitter's loop fraction (UE reads Owner->EmitterTime).
+	 */
+	virtual EParticleCurveInput GetCurveInput(const FProperty& CurveProperty) const { return EParticleCurveInput::EmitterTime; }
+
+	/**
+	 * Reads a distribution for a spawning particle (UE: FRawDistribution::GetValue(Owner->EmitterTime, ..., RandomStream)).
+	 * Uniform draws per component from the component's random stream; Curve is evaluated at the emitter's loop fraction (0..1).
+	 */
+	static float GetDistributionValue(FParticleEmitterInstance* Owner, const FDistributionFloat& Distribution);
+	static FVector GetDistributionValue(FParticleEmitterInstance* Owner, const FDistributionVector& Distribution);
+
 protected:
-	// 분포 헬퍼. Unreal은 FRawDistributionFloat/Vector(Constant·Uniform·Curve)를 쓰지만
-	// 이 엔진은 아직 Distribution이 없어 Min~Max 균등 분포(Uniform)로 대신한다. Min == Max면 상수.
+	// Min~Max 균등 분포. Min == Max면 상수.
 	static float RandomRange(FParticleEmitterInstance* Owner, float Min, float Max);
 	static FVector RandomRange(FParticleEmitterInstance* Owner, const FVector& Min, const FVector& Max);
 

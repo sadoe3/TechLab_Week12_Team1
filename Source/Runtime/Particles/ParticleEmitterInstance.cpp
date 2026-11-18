@@ -247,7 +247,7 @@ float FParticleEmitterInstance::Spawn(float DeltaTime)
 	// Unreal FParticleEmitterInstance::Spawn과 같은 계산.
 	// 이번 프레임에 나올 파티클들의 "생성 후 경과 시간"(SpawnTime)을 오래된 것부터 Increment 간격으로 배정한다.
 	float NewLeftover = SpawnFraction;
-	const float SpawnRate = SpawnModule->GetSpawnRate() * SpawnModule->RateScale;
+	const float SpawnRate = SpawnModule->GetSpawnRate(this) * SpawnModule->RateScale;
 	if (SpawnRate > 0.0f)
 	{
 		const float OldLeftover = SpawnFraction;

@@ -12,7 +12,7 @@ struct FParticleAccelerationPayload
 /**
  * 매 프레임 속도에 가속도를 더하는 모듈 (Unreal UParticleModuleAcceleration 대응)
  * 중력처럼 쓰려면 Acceleration = (0, 0, -9.8), bInWorldSpace = true.
- * Unreal의 Acceleration(Distribution)을 Min~Max 균등 분포로 대신한다.
+ * Spawn-time values are distributions (Constant / Uniform / Curve over the emitter loop, see GetDistributionValue).
  */
 UCLASS()
 class UParticleModuleAcceleration : public UParticleModule
@@ -29,10 +29,7 @@ public:
 
 public:
 	UPROPERTY(EditAnywhere)
-	FVector AccelerationMin = FVector(0.0f, 0.0f, -9.8f);
-
-	UPROPERTY(EditAnywhere)
-	FVector AccelerationMax = FVector(0.0f, 0.0f, -9.8f);
+	FDistributionVector Acceleration = FDistributionVector::MakeConstant(FVector(0.0f, 0.0f, -9.8f));
 
 	/** true면 Acceleration을 월드 공간 값으로 본다 (로컬 스페이스 이미터가 회전해도 중력은 아래로) */
 	UPROPERTY(EditAnywhere)

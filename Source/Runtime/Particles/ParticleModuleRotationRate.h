@@ -9,7 +9,7 @@
  * 회전은 UpdateBoundingBox의 적분(Rotation += RotationRate * DeltaTime)에서 진행된다.
  *  - Sprite: Z(Roll)만 쓴다.
  *  - Mesh:   XYZ 모두 쓴다.
- * StartRotationRate(Distribution)을 Min~Max 균등 분포로 대신한다.
+ * Spawn-time values are distributions (Constant / Uniform / Curve over the emitter loop, see GetDistributionValue).
  */
 UCLASS()
 class UParticleModuleRotationRate : public UParticleModule
@@ -25,8 +25,5 @@ public:
 public:
 	/** 도/초 단위 (X=Pitch, Y=Yaw, Z=Roll) */
 	UPROPERTY(EditAnywhere)
-	FVector StartRotationRateMin = FVector::ZeroVector;
-
-	UPROPERTY(EditAnywhere)
-	FVector StartRotationRateMax = FVector::ZeroVector;
+	FDistributionVector StartRotationRate = FDistributionVector::MakeConstant(FVector::ZeroVector);
 };
