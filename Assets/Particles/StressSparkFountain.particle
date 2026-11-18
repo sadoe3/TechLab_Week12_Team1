@@ -1,0 +1,97 @@
+{
+  "UpdateTime_FPS": 60.0,
+  "UpdateTime_Delta": 0.0166666675,
+  "WarmupTime": 0.0,
+  "WarmupTickRate": 0.0,
+  "bUseFixedRelativeBoundingBox": false,
+  "bOrientZAxisTowardCamera": false,
+  "Emitters": [
+    {
+      "EmitterName": "StressSparks",
+      "InitialAllocationCount": 1024,
+      "bDisabled": false,
+      "bIsSoloing": false,
+      "LODLevels": [
+        {
+          "Level": 0,
+          "bEnabled": true,
+          "PeakActiveParticles": 1024,
+          "RequiredModule": {
+            "bUseLocalSpace": false,
+            "SortMode": "None",
+            "bKillOnDeactivate": false,
+            "bKillOnCompleted": false,
+            "EmitterDuration": 1.0,
+            "EmitterDelay": 0.0,
+            "EmitterLoops": 0,
+            "MaxDrawCount": 4000,
+            "SubImages_Horizontal": 1,
+            "SubImages_Vertical": 1
+          },
+          "SpawnModule": {
+            "Rate": 220.0,
+            "RateScale": 1.0,
+            "bProcessSpawnRate": true,
+            "bProcessBurstList": true,
+            "BurstList": []
+          },
+          "Modules": [
+            {
+              "Class": "UParticleModuleLifetime",
+              "Properties": {
+                "LifetimeMin": 2.5,
+                "LifetimeMax": 3.5
+              }
+            },
+            {
+              "Class": "UParticleModuleVelocity",
+              "Properties": {
+                "StartVelocityMin": { "X": -3.0, "Y": -3.0, "Z": 5.0 },
+                "StartVelocityMax": { "X": 3.0, "Y": 3.0, "Z": 8.5 },
+                "StartVelocityRadialMin": 0.0,
+                "StartVelocityRadialMax": 0.0,
+                "bInWorldSpace": true
+              }
+            },
+            {
+              "Class": "UParticleModuleSize",
+              "Properties": {
+                "StartSizeMin": { "X": 0.08, "Y": 0.08, "Z": 0.08 },
+                "StartSizeMax": { "X": 0.14, "Y": 0.14, "Z": 0.14 }
+              }
+            },
+            {
+              "Class": "UParticleModuleColorOverLife",
+              "Properties": {
+                "ColorStart": { "X": 1.0, "Y": 0.85, "Z": 0.35 },
+                "ColorEnd": { "X": 1.0, "Y": 0.15, "Z": 0.05 },
+                "AlphaStart": 1.0,
+                "AlphaEnd": 0.0
+              }
+            },
+            {
+              "Class": "UParticleModuleAcceleration",
+              "Properties": {
+                "AccelerationMin": { "X": 0.0, "Y": 0.0, "Z": -9.8 },
+                "AccelerationMax": { "X": 0.0, "Y": 0.0, "Z": -9.8 },
+                "bInWorldSpace": true
+              }
+            },
+            {
+              "Class": "UParticleModuleCollision",
+              "Properties": {
+                "Response": "Bounce",
+                "Restitution": 0.5,
+                "Friction": 0.15,
+                "RadiusScale": 1.0,
+                "MaxCollisions": 4,
+                "OnMaxCollisions": "Kill",
+                "MinBounceSpeed": 0.5
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

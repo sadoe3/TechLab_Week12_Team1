@@ -180,6 +180,7 @@ void FSceneRenderer::InitViews(FRenderer* Renderer, const FSceneRenderOptions& O
 	}
 
 	CachedViewContext.bShowSkeletalMesh = Options.bShowSkeletalMesh;
+	CachedViewContext.bShowParticles = Options.bShowParticles;
 
 	// 월드 프리미티브 수집 및 절두체 컬링
 	GatherRenderPackets(World->GetScene(), RenderData, CachedViewContext, &View.Frustum, Renderer);
@@ -1233,6 +1234,9 @@ void FSceneRenderer::GatherRenderPackets(FScene& Scene, FSceneRenderData& Data,
 					continue;
 
 				if (Proxy->IsSkinned() && !View.bShowSkeletalMesh)
+					continue;
+
+				if (Proxy->IsParticle() && !View.bShowParticles)
 					continue;
 
 				const uint32 FirstNew = RenderQueue.Num();

@@ -55,6 +55,7 @@ struct FViewContext
 	bool bOrthographic = false;
 	bool bGameView = false;
 	bool bShowSkeletalMesh = true;
+	bool bShowParticles = true;
 	// 그림자 깊이 패스가 동적 요소를 모을 때 true. 카메라 정보가 없으므로 정렬하지 않고, 그림자를 드리우지 않는 요소는 빠진다.
 	bool bShadowDepthPass = false;
 	float CameraDepth = 0.0f;

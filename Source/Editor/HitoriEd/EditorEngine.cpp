@@ -669,6 +669,7 @@ void UEditorEngine::Tick(const float DeltaTime)
 					ShowFlags.bShowVignette = S.bShowVignette;
 					ShowFlags.bShowCameraOverlay = S.bShowCameraOverlay;
 					ShowFlags.bShowSkeletalMesh = S.bShowSkeletalMesh;
+					ShowFlags.bShowParticles = S.bShowParticles;
 				}
 			}
 		}
@@ -732,6 +733,7 @@ void UEditorEngine::Tick(const float DeltaTime)
 	SettingsPanel->CaptureViewportSettings();
 	// 프로파일러 반영
 	FStatRegistry::EndFrame();
+	FRenderer::EndFrameStats();
 
 	EditorManager->LateTick();
 }

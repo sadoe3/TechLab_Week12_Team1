@@ -32,6 +32,7 @@ struct FSceneRenderOptions
 	bool bShowVignette = true;
 	bool bShowCameraOverlay = true;
 	bool bShowSkeletalMesh = true;
+	bool bShowParticles = true;   // Show Flag: 파티클 시스템을 그린다 (Unreal EngineShowFlags.Particles)
 
 	ERenderingPath RenderingPath = ERenderingPath::Deferred;
 	ELightingModel LightingModel = ELightingModel::Gouraud;

@@ -11,6 +11,7 @@
 #include "GameFramework/DefaultPawn.h"
 #include "Components/StaticMeshComponent.h"
 #include "UObject/UObjectIterator.h"
+#include "Render/Renderer.h"
 
 // 종료 시 렌더·에디터·뷰포트 설정을 함께 저장한다.
 FSettingsPanel::~FSettingsPanel()
@@ -62,6 +63,8 @@ void FSettingsPanel::OnRender()
 	ImGui::Indent();
 	ImGui::Checkbox("Use OBBTree", &Settings.bDecalOBBTree);
 	ImGui::Unindent();
+	// r.Particle.GPUInstancing과 같은 값. 끄면 파티클마다 드로우콜을 따로 낸다.
+	ImGui::Checkbox("Particle GPU Instancing", &FRenderer::bParticleGPUInstancing);
 
 	const char* RenderingPaths[] = { "Forward", "Deferred" };
 	int RenderingPathIndex = static_cast<int>(Settings.RenderingPath);
@@ -121,6 +124,7 @@ void FSettingsPanel::OnRender()
 	ImGui::Checkbox("Vignette", &Settings.bShowVignette);
 	ImGui::Checkbox("Camera Fade / Letterbox", &Settings.bShowCameraOverlay);
 	ImGui::Checkbox("Skeletal Mesh", &Settings.bShowSkeletalMesh);
+	ImGui::Checkbox("Particles", &Settings.bShowParticles);
 
 	if (ImGui::TreeNode("Camera Overlay Debug"))
 	{
@@ -232,6 +236,7 @@ bool FSettingsPanel::SaveSettings() const
 	File << "ShowVignette=" << Settings.bShowVignette << "\n";
 	File << "ShowCameraOverlay=" << Settings.bShowCameraOverlay << "\n";
 	File << "ShowSkeletalMesh=" << Settings.bShowSkeletalMesh << "\n";
+	File << "ShowParticles=" << Settings.bShowParticles << "\n";
 
 	File << "LightCullingMode=" << (Settings.LightCullingMode == ELightCullingMode::Off ? "Off" : Settings.LightCullingMode == ELightCullingMode::Tiled ? "Tiled" : Settings.LightCullingMode == ELightCullingMode::Tiled25D ? "Tiled25D" : "Clustered") << "\n";
 	File << "RenderingPath=" << (Settings.RenderingPath == ERenderingPath::Forward ? "Forward" : "Deferred") << "\n";
@@ -390,6 +395,7 @@ bool FSettingsPanel::LoadSettings()
 				else if (Key == "ShowVignette")      Settings.bShowVignette = std::stoi(ValueStr);
 				else if (Key == "ShowCameraOverlay") Settings.bShowCameraOverlay = std::stoi(ValueStr);
 				else if (Key == "ShowSkeletalMesh")  Settings.bShowSkeletalMesh = std::stoi(ValueStr);
+				else if (Key == "ShowParticles")     Settings.bShowParticles = std::stoi(ValueStr);
 
 				else if (Key == "LightCullingMode")
 				{
