@@ -55,6 +55,45 @@ bool UParticleLODLevel::RemoveModule(UParticleModule* InModule)
 	return false;
 }
 
+void UParticleLODLevel::InsertModule(UParticleModule* InModule, int32 Index)
+{
+	if (!InModule)
+	{
+		return;
+	}
+
+	if (Index < 0 || Index > Modules.Num())
+	{
+		Modules.Add(InModule);
+		return;
+	}
+	Modules.Insert(InModule, static_cast<uint32>(Index));
+}
+
+UParticleModule* UParticleLODLevel::RemoveModuleAt(int32 Index)
+{
+	if (Index < 0 || Index >= Modules.Num())
+	{
+		return nullptr;
+	}
+
+	UParticleModule* Module = Modules[Index];
+	Modules.RemoveAt(static_cast<uint32>(Index));
+	return Module;
+}
+
+int32 UParticleLODLevel::FindModuleIndex(const UParticleModule* InModule) const
+{
+	for (int32 Index = 0; Index < Modules.Num(); ++Index)
+	{
+		if (Modules[Index] == InModule)
+		{
+			return Index;
+		}
+	}
+	return -1;
+}
+
 void UParticleLODLevel::ClearModules()
 {
 	Modules.Empty();

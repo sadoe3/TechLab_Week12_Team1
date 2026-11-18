@@ -18,6 +18,33 @@ void UParticleSystem::AddEmitter(UParticleEmitter* InEmitter)
 	}
 }
 
+void UParticleSystem::InsertEmitter(UParticleEmitter* InEmitter, int32 Index)
+{
+	if (!InEmitter)
+	{
+		return;
+	}
+
+	if (Index < 0 || Index > Emitters.Num())
+	{
+		Emitters.Add(InEmitter);
+		return;
+	}
+	Emitters.Insert(InEmitter, static_cast<uint32>(Index));
+}
+
+int32 UParticleSystem::FindEmitterIndex(const UParticleEmitter* InEmitter) const
+{
+	for (int32 Index = 0; Index < Emitters.Num(); ++Index)
+	{
+		if (Emitters[Index] == InEmitter)
+		{
+			return Index;
+		}
+	}
+	return -1;
+}
+
 bool UParticleSystem::RemoveEmitter(UParticleEmitter* InEmitter)
 {
 	if (!InEmitter)

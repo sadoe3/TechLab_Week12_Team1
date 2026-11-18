@@ -29,6 +29,7 @@
 #include "Render/ImageLoader.h"
 #include "Asset/AssetLoadProfiler.h"
 #include "Core/Misc/Paths.h"
+#include <algorithm>
 #include <cctype>
 
 
@@ -335,6 +336,20 @@ TArray<FString> UAssetManager::GetUnloadedAssetPaths(EAssetType Type)
 			Paths.Add(Path);
 		}
 	}
+	return Paths;
+}
+
+TArray<FString> UAssetManager::GetMaterialAssetPaths()
+{
+	TArray<FString> Paths;
+	for (const auto& [Key, Asset] : Get().AssetMap)
+	{
+		if (Asset && Asset->IsA<UMaterial>() && !Asset->GetPath().empty())
+		{
+			Paths.Add(Asset->GetPath());
+		}
+	}
+	std::sort(Paths.begin(), Paths.end());
 	return Paths;
 }
 

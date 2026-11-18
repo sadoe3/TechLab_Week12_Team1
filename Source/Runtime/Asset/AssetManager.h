@@ -77,6 +77,9 @@ public:
 	static EAssetType GetUnloadedAssetType(const FString& Path);
 	static TArray<FString> GetUnloadedAssetPaths(EAssetType Type);
 
+	// 에셋으로 등록된 머티리얼(DefaultMaterial, SubUVMaterial 등)의 경로. 머티리얼 선택 목록에 쓴다.
+	static TArray<FString> GetMaterialAssetPaths();
+
 	void RegisterAsset(const FString& Key, URenderAsset* Asset);
 
 	//UStaticMesh* GetMesh(FString InName);
