@@ -12,6 +12,8 @@
 #include "Core/EngineTimer.h"
 #include "Core/Window.h"
 #include "Core/Windows/WindowsPlatformTime.h"
+#include "Core/Windows/WindowsCrashReporting.h"
+#include "Core/Windows/CrashTest.h"
 #include "Input/InputSystem.h"
 #include "UObject/Casts.h"
 #include "UObject/Class.h"
@@ -100,6 +102,11 @@ bool FEngineLoop::PreInit(HINSTANCE hInstance, UClass* EngineClass)
 	{
 		return false;
 	}
+
+	// 프로젝트 경로가 확정된 정상 실행 중 writer와 crash 전달 자원을 준비한다.
+	const DWORD CrashSetupError = WindowsCrashReporting::Initialize(FPaths::NewCrashReportDirectory());
+	if (CrashSetupError != ERROR_SUCCESS)
+		OutputDebugStringA("Crash writer initialization failed; crash collection is unavailable.\n");
 
 	// 시작 시간 전체(Phase/Total)는 PreInit에서 재기 시작해 Init 끝에서 기록한다.
 	StartupBeginCycles = FPlatformTime::GetCycles64();
@@ -253,6 +260,7 @@ void FEngineLoop::Tick()
 	}
 
 	HandleResize();
+	CrashTest::Update();
 
 	// 최소화 중에는 그릴 대상이 없다.
 	if (MainWindow->GetWidth() == 0 || MainWindow->GetHeight() == 0)
