@@ -249,6 +249,14 @@ struct FDynamicRibbonEmitterData : public FDynamicEmitterDataBase
 	TSharedPtr<FRibbonRenderBuffers> Buffers;
 };
 
+struct FDynamicBeam2EmitterData : public FDynamicRibbonEmitterData
+{
+	FDynamicBeam2EmitterData()
+	{
+		Source.eEmitterType = EDynamicEmitterType::DET_Beam2;
+	}
+};
+
 /**
  * 한 프레임의 UParticleSystemComponent 전체 이미터 동적 렌더 데이터 컨테이너
  * (Unreal FParticleDynamicData 대응)
