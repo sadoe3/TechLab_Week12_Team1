@@ -52,6 +52,7 @@ namespace
 		{ "UParticleModuleTypeDataRibbon",    "Ribbon Data",      "TypeData" },
 		{ "UParticleModuleTypeDataBeam2",     "Beam Data",        "TypeData" },
 		{ "UParticleModuleBeamTarget",        "Beam Target",      "Beam" },
+		{ "UParticleModuleBeamNoise",         "Noise",            "Beam" },
 	};
 
 	const FModuleClassInfo* FindModuleClassInfo(const UClass* Class)
