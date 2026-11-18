@@ -6,6 +6,7 @@
 #include "Particles/ParticleModuleBeamTarget.h"
 #include "Particles/ParticleModuleRequired.h"
 #include "Asset/AssetManager.h"
+#include "Components/ParticleSystemComponent.h"
 
 FParticleBeamEmitterInstance::FParticleBeamEmitterInstance(UParticleEmitter* InEmitterParent, UParticleSystemComponent* InComponent, UParticleModuleTypeDataBeam2* InBeamTypeData)
 	: BeamTypeData(InBeamTypeData)
@@ -56,6 +57,31 @@ void FParticleBeamEmitterInstance::BuildBeamPoints(TArray<FDynamicRibbonEmitterR
 		OutPoints[i].Color = Beam->Color;
 		OutPoints[i].Width = Beam->Size.X;
 	}
+}
+
+void FParticleBeamEmitterInstance::UpdateBoundingBox(float DeltaTime)
+{
+	// 기반 버전이 파티클 적분도 하므로 먼저 호출한다
+	FParticleEmitterInstance::UpdateBoundingBox(DeltaTime);
+
+	if (ActiveParticles <= 0 || !BeamModule_Target)
+	{
+		return;
+	}
+
+	// 빔 파티클은 원점 하나뿐이라, 실제로 그려지는 Source~Target 선분을 박스에 넣어야 컬링되지 않는다
+	const FBaseParticle* Beam = GetParticleAtIndex(0);
+	const float HalfWidth = Beam->Size.X * 0.5f;
+	const FVector Pad(HalfWidth, HalfWidth, HalfWidth);
+	const FVector Target = BeamModule_Target->TargetLocation;
+	FBox BeamBox = { FMath::Min(FVector::ZeroVector, Target) - Pad, FMath::Max(FVector::ZeroVector, Target) + Pad };
+
+	// 빔 점은 항상 로컬이지만, 박스는 RequiredModule 공간(월드일 수 있음)으로 맞춰야 PSC가 올바로 합친다
+	if (!IsLocalSpace() && Component)
+	{
+		BeamBox = BeamBox.GetWorldAABB(Component->GetWorldMatrix());
+	}
+	ParticleBoundingBox.Expand(BeamBox);
 }
 
 UMaterial* FParticleBeamEmitterInstance::GetMaterial() const

@@ -19,6 +19,7 @@ public:
 	virtual ~FParticleBeamEmitterInstance() override = default;
 
 	virtual void Init() override;
+	virtual void UpdateBoundingBox(float DeltaTime) override;
 	virtual TUniquePtr<FDynamicEmitterDataBase> GetDynamicData(bool bSelected) override;
 
 	/** 로컬 공간 Source(원점) → Target을 Segments 구간으로 나눈 점 목록. 폭·색은 첫 번째 활성 파티클(빔 파티클)에서 가져온다 */
