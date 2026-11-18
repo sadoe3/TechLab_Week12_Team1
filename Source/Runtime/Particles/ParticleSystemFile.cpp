@@ -164,207 +164,183 @@ namespace
 		});
 		return Material;
 	}
-}
 
-bool ParticleSystemFile::Read(const std::filesystem::path& Path, UParticleSystem& OutSystem, FString& OutError)
-{
-	OutError.clear();
-
-	std::ifstream File(Path);
-	if (!File.is_open())
+	// 이미터 하나 <-> json. 파일 읽기/쓰기와 에디터의 이미터 복제가 같은 코드를 쓴다.
+	UParticleEmitter* EmitterFromJson(const json& EmitterJson)
 	{
-		OutError = "ParticleSystem: cannot open file";
-		return false;
-	}
+		UParticleEmitter* Emitter = NewObject<UParticleEmitter>();
+		Emitter->SetEmitterName(EmitterJson.value("EmitterName", FString("Particle Emitter")));
+		Emitter->SetInitialAllocationCount(EmitterJson.value("InitialAllocationCount", 0));
+		Emitter->SetDisabled(EmitterJson.value("bDisabled", false));
+		Emitter->bIsSoloing = EmitterJson.value("bIsSoloing", false);
 
-	json Root = json::parse(File, nullptr, false);
-	if (Root.is_discarded() || !Root.is_object())
-	{
-		OutError = "ParticleSystem: invalid JSON";
-		return false;
-	}
-
-	OutSystem.ClearEmitters();
-	OutSystem.UpdateTime_FPS = Root.value("UpdateTime_FPS", 60.0f);
-	OutSystem.UpdateTime_Delta = Root.value("UpdateTime_Delta", 1.0f / 60.0f);
-	OutSystem.WarmupTime = Root.value("WarmupTime", 0.0f);
-	OutSystem.WarmupTickRate = Root.value("WarmupTickRate", 0.0f);
-	OutSystem.bUseFixedRelativeBoundingBox = Root.value("bUseFixedRelativeBoundingBox", false);
-	OutSystem.bOrientZAxisTowardCamera = Root.value("bOrientZAxisTowardCamera", false);
-
-	if (Root.contains("Emitters") && Root["Emitters"].is_array())
-	{
-		for (const json& EmitterJson : Root["Emitters"])
+		if (!EmitterJson.contains("LODLevels") || !EmitterJson["LODLevels"].is_array())
 		{
-			if (!EmitterJson.is_object())
+			return Emitter;
+		}
+
+		for (const json& LODJson : EmitterJson["LODLevels"])
+		{
+			if (!LODJson.is_object())
 			{
 				continue;
 			}
 
-			UParticleEmitter* Emitter = NewObject<UParticleEmitter>();
-			Emitter->SetEmitterName(EmitterJson.value("EmitterName", FString("Particle Emitter")));
-			Emitter->SetInitialAllocationCount(EmitterJson.value("InitialAllocationCount", 0));
-			Emitter->SetDisabled(EmitterJson.value("bDisabled", false));
-			Emitter->bIsSoloing = EmitterJson.value("bIsSoloing", false);
+			UParticleLODLevel* LOD = NewObject<UParticleLODLevel>();
+			LOD->Level = LODJson.value("Level", 0);
+			LOD->bEnabled = LODJson.value("bEnabled", true);
+			LOD->PeakActiveParticles = LODJson.value("PeakActiveParticles", 0);
 
-			if (EmitterJson.contains("LODLevels") && EmitterJson["LODLevels"].is_array())
+			if (LODJson.contains("RequiredModule") && LODJson["RequiredModule"].is_object())
 			{
-				for (const json& LODJson : EmitterJson["LODLevels"])
+				const json& ReqJson = LODJson["RequiredModule"];
+				UParticleModuleRequired* Req = NewObject<UParticleModuleRequired>();
+				Req->bUseLocalSpace = ReqJson.value("bUseLocalSpace", false);
+				Req->SortMode = ReqJson.contains("SortMode")
+					? SortModeFromJson(ReqJson["SortMode"])
+					: EParticleSortMode::PSORTMODE_None;
+				Req->bKillOnDeactivate = ReqJson.value("bKillOnDeactivate", false);
+				Req->bKillOnCompleted = ReqJson.value("bKillOnCompleted", false);
+				Req->EmitterDuration = ReqJson.value("EmitterDuration", 1.0f);
+				Req->EmitterDelay = ReqJson.value("EmitterDelay", 0.0f);
+				Req->EmitterLoops = ReqJson.value("EmitterLoops", 0);
+				Req->MaxDrawCount = ReqJson.value("MaxDrawCount", 500);
+				Req->SubImages_Horizontal = ReqJson.value("SubImages_Horizontal", 1);
+				Req->SubImages_Vertical = ReqJson.value("SubImages_Vertical", 1);
+				if (ReqJson.contains("Material") && ReqJson["Material"].is_object())
 				{
-					if (!LODJson.is_object())
+					Req->Material = LoadMaterialFromJson(ReqJson["Material"]);
+				}
+				LOD->RequiredModule = Req;
+			}
+
+			if (LODJson.contains("SpawnModule") && LODJson["SpawnModule"].is_object())
+			{
+				const json& SpawnJson = LODJson["SpawnModule"];
+				UParticleModuleSpawn* Spawn = NewObject<UParticleModuleSpawn>();
+				Spawn->Rate = SpawnJson.value("Rate", 10.0f);
+				Spawn->RateScale = SpawnJson.value("RateScale", 1.0f);
+				Spawn->bProcessSpawnRate = SpawnJson.value("bProcessSpawnRate", true);
+				Spawn->bProcessBurstList = SpawnJson.value("bProcessBurstList", true);
+
+				if (SpawnJson.contains("BurstList") && SpawnJson["BurstList"].is_array())
+				{
+					for (const json& BurstJson : SpawnJson["BurstList"])
 					{
-						continue;
+						if (!BurstJson.is_object())
+						{
+							continue;
+						}
+						FParticleBurst Burst;
+						Burst.Count = BurstJson.value("Count", 0);
+						Burst.CountLow = BurstJson.value("CountLow", -1);
+						Burst.Time = BurstJson.value("Time", 0.0f);
+						Spawn->AddBurst(Burst);
 					}
+				}
 
-					UParticleLODLevel* LOD = NewObject<UParticleLODLevel>();
-					LOD->Level = LODJson.value("Level", 0);
-					LOD->bEnabled = LODJson.value("bEnabled", true);
-					LOD->PeakActiveParticles = LODJson.value("PeakActiveParticles", 0);
+				LOD->SpawnModule = Spawn;
+			}
 
-					if (LODJson.contains("RequiredModule") && LODJson["RequiredModule"].is_object())
+			if (LODJson.contains("TypeDataModule") && LODJson["TypeDataModule"].is_object())
+			{
+				const json& TypeJson = LODJson["TypeDataModule"];
+				const FString TypeName = TypeJson.value("Type", FString(""));
+
+				if (TypeName == "Mesh")
+				{
+					UParticleModuleTypeDataMesh* MeshType = NewObject<UParticleModuleTypeDataMesh>();
+					const FString MeshPath = TypeJson.value("MeshPath", FString(""));
+					if (!MeshPath.empty())
 					{
-						const json& ReqJson = LODJson["RequiredModule"];
-						UParticleModuleRequired* Req = NewObject<UParticleModuleRequired>();
-						Req->bUseLocalSpace = ReqJson.value("bUseLocalSpace", false);
-						Req->SortMode = ReqJson.contains("SortMode")
-							? SortModeFromJson(ReqJson["SortMode"])
-							: EParticleSortMode::PSORTMODE_None;
-						Req->bKillOnDeactivate = ReqJson.value("bKillOnDeactivate", false);
-						Req->bKillOnCompleted = ReqJson.value("bKillOnCompleted", false);
-						Req->EmitterDuration = ReqJson.value("EmitterDuration", 1.0f);
-						Req->EmitterDelay = ReqJson.value("EmitterDelay", 0.0f);
-						Req->EmitterLoops = ReqJson.value("EmitterLoops", 0);
-						Req->MaxDrawCount = ReqJson.value("MaxDrawCount", 500);
-						Req->SubImages_Horizontal = ReqJson.value("SubImages_Horizontal", 1);
-						Req->SubImages_Vertical = ReqJson.value("SubImages_Vertical", 1);
-						if (ReqJson.contains("Material") && ReqJson["Material"].is_object())
-						{
-							Req->Material = LoadMaterialFromJson(ReqJson["Material"]);
-						}
-						LOD->RequiredModule = Req;
-					}
+			if (LODJson.contains("TypeDataModule") && LODJson["TypeDataModule"].is_object())
+			{
+				const json& TypeJson = LODJson["TypeDataModule"];
+				const FString TypeName = TypeJson.value("Type", FString(""));
 
-					if (LODJson.contains("SpawnModule") && LODJson["SpawnModule"].is_object())
+				if (TypeName == "Mesh")
+				{
+					UParticleModuleTypeDataMesh* MeshType = NewObject<UParticleModuleTypeDataMesh>();
+					const FString MeshPath = TypeJson.value("MeshPath", FString(""));
+					if (!MeshPath.empty())
 					{
-						const json& SpawnJson = LODJson["SpawnModule"];
-						UParticleModuleSpawn* Spawn = NewObject<UParticleModuleSpawn>();
-						Spawn->Rate = SpawnJson.value("Rate", 10.0f);
-						Spawn->RateScale = SpawnJson.value("RateScale", 1.0f);
-						Spawn->bProcessSpawnRate = SpawnJson.value("bProcessSpawnRate", true);
-						Spawn->bProcessBurstList = SpawnJson.value("bProcessBurstList", true);
-
-						if (SpawnJson.contains("BurstList") && SpawnJson["BurstList"].is_array())
-						{
-							for (const json& BurstJson : SpawnJson["BurstList"])
-							{
-								if (!BurstJson.is_object())
-								{
-									continue;
-								}
-								FParticleBurst Burst;
-								Burst.Count = BurstJson.value("Count", 0);
-								Burst.CountLow = BurstJson.value("CountLow", -1);
-								Burst.Time = BurstJson.value("Time", 0.0f);
-								Spawn->AddBurst(Burst);
-							}
-						}
-
-						LOD->SpawnModule = Spawn;
+						MeshType->SetMesh(UAssetManager::GetAssetByPath<UStaticMesh>(MeshPath));
 					}
-
-					if (LODJson.contains("TypeDataModule") && LODJson["TypeDataModule"].is_object())
+					MeshType->LODSizeScale = TypeJson.value("LODSizeScale", 1.0f);
+					MeshType->bUseStaticMeshLODs = TypeJson.value("bUseStaticMeshLODs", true);
+					MeshType->bCastShadows = TypeJson.value("bCastShadows", false);
+					MeshType->bOverrideMaterial = TypeJson.value("bOverrideMaterial", false);
+					LOD->TypeDataModule = MeshType;
+				}
+				else if (TypeName == "Ribbon")
+				{
+					LOD->TypeDataModule = NewObject<UParticleModuleTypeDataRibbon>();
+				}
+				else if (TypeName == "Sprite")
+				{
+					// 구버전 에셋 호환: Sprite는 TypeData 없이(nullptr) 표현하고, SubUV 값은 RequiredModule로 옮긴다
+					const bool bReqHasSubUV = LODJson.contains("RequiredModule")
+						&& LODJson["RequiredModule"].is_object()
+						&& LODJson["RequiredModule"].contains("SubImages_Horizontal");
+					if (LOD->RequiredModule && !bReqHasSubUV)
 					{
-						const json& TypeJson = LODJson["TypeDataModule"];
-						const FString TypeName = TypeJson.value("Type", FString(""));
-
-						if (TypeName == "Mesh")
-						{
-							UParticleModuleTypeDataMesh* MeshType = NewObject<UParticleModuleTypeDataMesh>();
-							const FString MeshPath = TypeJson.value("MeshPath", FString(""));
-							if (!MeshPath.empty())
-							{
-								MeshType->SetMesh(UAssetManager::GetAssetByPath<UStaticMesh>(MeshPath));
-							}
-							MeshType->LODSizeScale = TypeJson.value("LODSizeScale", 1.0f);
-							MeshType->bUseStaticMeshLODs = TypeJson.value("bUseStaticMeshLODs", true);
-							MeshType->bCastShadows = TypeJson.value("bCastShadows", false);
-							MeshType->bOverrideMaterial = TypeJson.value("bOverrideMaterial", false);
-							LOD->TypeDataModule = MeshType;
-						}
-						else if (TypeName == "Ribbon")
-						{
-							LOD->TypeDataModule = NewObject<UParticleModuleTypeDataRibbon>();
-						}
-						else if (TypeName == "Sprite")
-						{
-							// 구버전 에셋 호환: Sprite는 TypeData 없이(nullptr) 표현하고, SubUV 값은 RequiredModule로 옮긴다
-							const bool bReqHasSubUV = LODJson.contains("RequiredModule")
-								&& LODJson["RequiredModule"].is_object()
-								&& LODJson["RequiredModule"].contains("SubImages_Horizontal");
-							if (LOD->RequiredModule && !bReqHasSubUV)
-							{
-								LOD->RequiredModule->SubImages_Horizontal = TypeJson.value("SubImages_Horizontal", 1);
-								LOD->RequiredModule->SubImages_Vertical = TypeJson.value("SubImages_Vertical", 1);
-							}
-						}
+						LOD->RequiredModule->SubImages_Horizontal = TypeJson.value("SubImages_Horizontal", 1);
+						LOD->RequiredModule->SubImages_Vertical = TypeJson.value("SubImages_Vertical", 1);
 					}
-
-					if (LODJson.contains("Modules") && LODJson["Modules"].is_array())
+				}
+			}
+					}
+					MeshType->LODSizeScale = TypeJson.value("LODSizeScale", 1.0f);
+					MeshType->bUseStaticMeshLODs = TypeJson.value("bUseStaticMeshLODs", true);
+					MeshType->bCastShadows = TypeJson.value("bCastShadows", false);
+					MeshType->bOverrideMaterial = TypeJson.value("bOverrideMaterial", false);
+					LOD->TypeDataModule = MeshType;
+				}
+				else if (TypeName == "Sprite")
+				{
+					// 구버전 에셋 호환: Sprite는 TypeData 없이(nullptr) 표현하고, SubUV 값은 RequiredModule로 옮긴다
+					const bool bReqHasSubUV = LODJson.contains("RequiredModule")
+						&& LODJson["RequiredModule"].is_object()
+						&& LODJson["RequiredModule"].contains("SubImages_Horizontal");
+					if (LOD->RequiredModule && !bReqHasSubUV)
 					{
-						for (const json& ModuleJson : LODJson["Modules"])
-						{
-							if (!ModuleJson.is_object())
-							{
-								continue;
-							}
-							if (UParticleModule* Module = LoadModuleFromJson(ModuleJson))
-							{
-								LOD->AddModule(Module);
-							}
-						}
+						LOD->RequiredModule->SubImages_Horizontal = TypeJson.value("SubImages_Horizontal", 1);
+						LOD->RequiredModule->SubImages_Vertical = TypeJson.value("SubImages_Vertical", 1);
 					}
-
-					Emitter->AddLODLevel(LOD);
 				}
 			}
 
-			OutSystem.AddEmitter(Emitter);
+			if (LODJson.contains("Modules") && LODJson["Modules"].is_array())
+			{
+				for (const json& ModuleJson : LODJson["Modules"])
+				{
+					if (!ModuleJson.is_object())
+					{
+						continue;
+					}
+					if (UParticleModule* Module = LoadModuleFromJson(ModuleJson))
+					{
+						LOD->AddModule(Module);
+					}
+				}
+			}
+
+			Emitter->AddLODLevel(LOD);
 		}
+
+		return Emitter;
 	}
 
-	OutSystem.UpdateAllModuleLists();
-	OutSystem.SetPath(FAssetUtils::GetAssetKey(Path.generic_string()));
-	return true;
-}
-
-bool ParticleSystemFile::Write(const std::filesystem::path& Path, UParticleSystem& System, FString& OutError)
-{
-	OutError.clear();
-
-	json Root = json::object();
-	Root["UpdateTime_FPS"] = System.UpdateTime_FPS;
-	Root["UpdateTime_Delta"] = System.UpdateTime_Delta;
-	Root["WarmupTime"] = System.WarmupTime;
-	Root["WarmupTickRate"] = System.WarmupTickRate;
-	Root["bUseFixedRelativeBoundingBox"] = System.bUseFixedRelativeBoundingBox;
-	Root["bOrientZAxisTowardCamera"] = System.bOrientZAxisTowardCamera;
-
-	json EmittersJson = json::array();
-	for (const UParticleEmitter* Emitter : System.GetEmitters())
+	json EmitterToJson(const UParticleEmitter& Emitter)
 	{
-		if (!Emitter)
-		{
-			continue;
-		}
-
 		json EmitterJson = json::object();
-		EmitterJson["EmitterName"] = Emitter->GetEmitterName();
-		EmitterJson["InitialAllocationCount"] = Emitter->GetInitialAllocationCount();
-		EmitterJson["bDisabled"] = Emitter->IsDisabled();
-		EmitterJson["bIsSoloing"] = Emitter->bIsSoloing;
+		EmitterJson["EmitterName"] = Emitter.GetEmitterName();
+		EmitterJson["InitialAllocationCount"] = Emitter.GetInitialAllocationCount();
+		EmitterJson["bDisabled"] = Emitter.IsDisabled();
+		EmitterJson["bIsSoloing"] = Emitter.bIsSoloing;
 
 		json LODsJson = json::array();
-		for (const UParticleLODLevel* LOD : Emitter->GetLODLevels())
+		for (const UParticleLODLevel* LOD : Emitter.GetLODLevels())
 		{
 			if (!LOD)
 			{
@@ -461,7 +437,71 @@ bool ParticleSystemFile::Write(const std::filesystem::path& Path, UParticleSyste
 		}
 
 		EmitterJson["LODLevels"] = LODsJson;
-		EmittersJson.push_back(EmitterJson);
+		return EmitterJson;
+	}
+}
+
+bool ParticleSystemFile::Read(const std::filesystem::path& Path, UParticleSystem& OutSystem, FString& OutError)
+{
+	OutError.clear();
+
+	std::ifstream File(Path);
+	if (!File.is_open())
+	{
+		OutError = "ParticleSystem: cannot open file";
+		return false;
+	}
+
+	json Root = json::parse(File, nullptr, false);
+	if (Root.is_discarded() || !Root.is_object())
+	{
+		OutError = "ParticleSystem: invalid JSON";
+		return false;
+	}
+
+	OutSystem.ClearEmitters();
+	OutSystem.UpdateTime_FPS = Root.value("UpdateTime_FPS", 60.0f);
+	OutSystem.UpdateTime_Delta = Root.value("UpdateTime_Delta", 1.0f / 60.0f);
+	OutSystem.WarmupTime = Root.value("WarmupTime", 0.0f);
+	OutSystem.WarmupTickRate = Root.value("WarmupTickRate", 0.0f);
+	OutSystem.bUseFixedRelativeBoundingBox = Root.value("bUseFixedRelativeBoundingBox", false);
+	OutSystem.bOrientZAxisTowardCamera = Root.value("bOrientZAxisTowardCamera", false);
+
+	if (Root.contains("Emitters") && Root["Emitters"].is_array())
+	{
+		for (const json& EmitterJson : Root["Emitters"])
+		{
+			if (EmitterJson.is_object())
+			{
+				OutSystem.AddEmitter(EmitterFromJson(EmitterJson));
+			}
+		}
+	}
+
+	OutSystem.UpdateAllModuleLists();
+	OutSystem.SetPath(FAssetUtils::GetAssetKey(Path.generic_string()));
+	return true;
+}
+
+bool ParticleSystemFile::Write(const std::filesystem::path& Path, UParticleSystem& System, FString& OutError)
+{
+	OutError.clear();
+
+	json Root = json::object();
+	Root["UpdateTime_FPS"] = System.UpdateTime_FPS;
+	Root["UpdateTime_Delta"] = System.UpdateTime_Delta;
+	Root["WarmupTime"] = System.WarmupTime;
+	Root["WarmupTickRate"] = System.WarmupTickRate;
+	Root["bUseFixedRelativeBoundingBox"] = System.bUseFixedRelativeBoundingBox;
+	Root["bOrientZAxisTowardCamera"] = System.bOrientZAxisTowardCamera;
+
+	json EmittersJson = json::array();
+	for (const UParticleEmitter* Emitter : System.GetEmitters())
+	{
+		if (Emitter)
+		{
+			EmittersJson.push_back(EmitterToJson(*Emitter));
+		}
 	}
 	Root["Emitters"] = EmittersJson;
 
@@ -489,6 +529,13 @@ bool ParticleSystemFile::Write(const std::filesystem::path& Path, UParticleSyste
 
 	System.SetPath(FAssetUtils::GetAssetKey(Path.generic_string()));
 	return true;
+}
+
+UParticleEmitter* ParticleSystemFile::DuplicateEmitter(const UParticleEmitter& Source)
+{
+	UParticleEmitter* Copy = EmitterFromJson(EmitterToJson(Source));
+	Copy->CacheEmitterModuleInfo();
+	return Copy;
 }
 
 bool ParticleSystemFile::IsParticleSystemPath(const FString& Path)

@@ -23,6 +23,10 @@ public:
 	const TArray<UParticleEmitter*>& GetEmitters() const { return Emitters; }
 
 	void AddEmitter(UParticleEmitter* InEmitter);
+	/** Index 자리에 넣는다. 범위를 벗어나면 끝에 붙인다. */
+	void InsertEmitter(UParticleEmitter* InEmitter, int32 Index);
+	/** 없으면 -1 */
+	int32 FindEmitterIndex(const UParticleEmitter* InEmitter) const;
 	bool RemoveEmitter(UParticleEmitter* InEmitter);
 	bool RemoveEmitterAt(int32 Index);
 	void ClearEmitters();

@@ -220,84 +220,6 @@ namespace
 		return isChanged;
 	}
 
-	void DrawTextureSlot(UMaterial** MaterialPtr, int32 SlotIndex)
-	{
-		const float ThumbnailSize = 64.0f;
-
-		UMaterial* Material = *MaterialPtr;
-		UTexture2D* Texture = nullptr;
-		if (Material && SlotIndex < static_cast<int32>(Material->Textures.Num()))
-		{
-			Texture = Material->Textures[SlotIndex];
-		}
-
-		ImGui::PushID(SlotIndex);
-
-		if (Texture && Texture->GetResource())
-		{
-			ImGui::Image(
-				(ImTextureID)Texture->GetResource()->GetSRV(),
-				{ ThumbnailSize, ThumbnailSize });
-		}
-		else
-		{
-			ImGui::Button("Empty", { ThumbnailSize, ThumbnailSize });
-		}
-
-		// 바로 위 위젯이 드롭을 받는다
-		if (ImGui::BeginDragDropTarget())
-		{
-			if (const ImGuiPayload* Payload = ImGui::AcceptDragDropPayload(EditorDragDrop::Texture))
-			{
-				UTexture2D* DroppedTexture = *static_cast<UTexture2D**>(Payload->Data);
-
-				// 머티리얼이 없으면 기본 머티리얼에서 시작한다
-				if (!Material)
-				{
-					Material = UMaterial::CreateInstance(UAssetManager::GetAssetByPath<UMaterial>("DefaultMaterial"));
-					*MaterialPtr = Material;
-				}
-				// 공유 에셋이면 지금 복제한다.
-				// 이 시점까지 미루면 손대지 않은 오브젝트는 계속 공유 에셋을 쓴다.
-				else if (Material->bIsInstance == false)
-				{
-					Material = UMaterial::CreateInstance(Material);
-					*MaterialPtr = Material;
-				}
-
-				if (Material)
-				{
-					// 슬롯이 배열 범위 밖이면 그 자리까지 늘려 준다
-					while (static_cast<int32>(Material->Textures.Num()) <= SlotIndex)
-					{
-						Material->Textures.Add(nullptr);
-					}
-
-					Material->Textures[SlotIndex] = DroppedTexture;
-					Texture = DroppedTexture;
-				}
-			}
-			ImGui::EndDragDropTarget();
-		}
-
-		ImGui::SameLine();
-
-		ImGui::BeginGroup();
-		ImGui::Text("Slot %d", SlotIndex);
-
-		if (Texture)
-		{
-			ImGui::TextWrapped("%s", Texture->GetPath().c_str());
-		}
-		else
-		{
-			ImGui::TextDisabled("(비어 있음)");
-		}
-		ImGui::EndGroup();
-
-		ImGui::PopID();
-	}
-
 	FString GetAssetDisplayName(const FString& Path)
 	{
 		fs::path AssetPath(Path);
@@ -891,6 +813,160 @@ namespace
 		return bChanged;
 	}
 
+	// UMaterial* UPROPERTY (지금은 파티클 Required 모듈의 Material) 편집.
+	// 기반 머티리얼을 고르면 그 인스턴스를 만들어 넣는다. 공유 에셋을 직접 고치지 않도록 값 편집 전에도 인스턴스로 바꾼다.
+	// 블렌드는 PSOType으로 정해진다: 메시 계열은 Opaque/Translucent, 파티클 스프라이트 계열은 Alpha Blend/Additive.
+	bool DrawMaterialProperty(UMaterial** MaterialPtr)
+	{
+		bool bChanged = false;
+		UMaterial* Material = *MaterialPtr;
+
+		const auto EnsureInstance = [&]() -> UMaterial*
+		{
+			if (Material && !Material->bIsInstance)
+			{
+				Material = UMaterial::CreateInstance(Material);
+				*MaterialPtr = Material;
+			}
+			return Material;
+		};
+
+		ImGui::BeginGroup();
+
+		// 1) 기반 머티리얼
+		const UMaterial* Base = Material ? Material->GetBaseAsset() : nullptr;
+		const FString BaseName = Base ? Base->GetPath() : (Material ? FString("(Custom)") : FString("None"));
+		ImGui::SetNextItemWidth(-1.0f);
+		if (ImGui::BeginCombo("##MaterialBase", BaseName.c_str()))
+		{
+			if (ImGui::Selectable("None", Material == nullptr))
+			{
+				Material = nullptr;
+				*MaterialPtr = nullptr;
+				bChanged = true;
+			}
+			for (const FString& Path : UAssetManager::GetMaterialAssetPaths())
+			{
+				// 에디터 전용 머티리얼(기즈모 등)은 숨긴다
+				if (Path.rfind("Editor", 0) == 0)
+				{
+					continue;
+				}
+				if (ImGui::Selectable(Path.c_str(), Base && Base->GetPath() == Path))
+				{
+					if (UMaterial* Picked = UAssetManager::GetAssetByPath<UMaterial>(Path))
+					{
+						Material = UMaterial::CreateInstance(Picked);
+						*MaterialPtr = Material;
+						bChanged = true;
+					}
+				}
+			}
+			ImGui::EndCombo();
+		}
+		ImGui::SetItemTooltip("Base material. Picking one creates an instance of it for this slot.");
+
+		if (!Material)
+		{
+			ImGui::EndGroup();
+			return bChanged;
+		}
+
+		// 2) 블렌드 (PSOType 계열에 맞는 선택지만 보여 준다)
+		struct FBlendChoice
+		{
+			const char* Label;
+			EPSOType PSOType;
+			EBlendState BlendState;
+		};
+		static constexpr FBlendChoice MeshChoices[] = {
+			{ "Opaque",      EPSOType::StaticMesh_Opaque,      EBlendState::Opaque },
+			{ "Translucent", EPSOType::StaticMesh_Translucent, EBlendState::AlphaBlend },
+		};
+		static constexpr FBlendChoice SpriteChoices[] = {
+			{ "Alpha Blend", EPSOType::Particle_AlphaBlend, EBlendState::AlphaBlend },
+			{ "Additive",    EPSOType::Particle_Additive,   EBlendState::Additive },
+		};
+
+		const FBlendChoice* Choices = nullptr;
+		int32 NumChoices = 0;
+		if (Material->PSOType == EPSOType::StaticMesh_Opaque || Material->PSOType == EPSOType::StaticMesh_Translucent)
+		{
+			Choices = MeshChoices;
+			NumChoices = IM_ARRAYSIZE(MeshChoices);
+		}
+		else if (Material->PSOType == EPSOType::Particle_AlphaBlend || Material->PSOType == EPSOType::Particle_Additive)
+		{
+			Choices = SpriteChoices;
+			NumChoices = IM_ARRAYSIZE(SpriteChoices);
+		}
+
+		if (Choices)
+		{
+			int32 Current = 0;
+			for (int32 Index = 0; Index < NumChoices; ++Index)
+			{
+				if (Choices[Index].PSOType == Material->PSOType)
+				{
+					Current = Index;
+				}
+			}
+
+			ImGui::AlignTextToFramePadding();
+			ImGui::TextUnformatted("Blend");
+			ImGui::SameLine();
+			ImGui::SetNextItemWidth(-1.0f);
+			if (ImGui::BeginCombo("##MaterialBlend", Choices[Current].Label))
+			{
+				for (int32 Index = 0; Index < NumChoices; ++Index)
+				{
+					if (ImGui::Selectable(Choices[Index].Label, Index == Current) && Index != Current)
+					{
+						if (UMaterial* Instance = EnsureInstance())
+						{
+							Instance->PSOType = Choices[Index].PSOType;
+							Instance->BlendState = Choices[Index].BlendState;
+							bChanged = true;
+						}
+					}
+				}
+				ImGui::EndCombo();
+			}
+		}
+
+		// 3) 텍스처 (0번 슬롯)
+		UTexture2D* Texture = Material->Textures.IsValidIndex(0) ? Material->Textures[0] : nullptr;
+		bChanged |= DrawTexturePicker(Texture, "##MaterialTexture", [&](UTexture2D* Picked)
+		{
+			if (UMaterial* Instance = EnsureInstance())
+			{
+				if (Instance->Textures.IsEmpty())
+				{
+					Instance->Textures.Add(Picked);
+				}
+				else
+				{
+					Instance->Textures[0] = Picked;
+				}
+			}
+		});
+
+		// 4) 색 (메시 머티리얼의 BaseColor. 스프라이트 셰이더는 쓰지 않으므로 메시 계열에서만 보여 준다)
+		FVector4 Color = Material->BaseColor;
+		ImGui::SetNextItemWidth(-1.0f);
+		if (Choices == MeshChoices && ImGui::ColorEdit4("##MaterialBaseColor", &Color.X))
+		{
+			if (UMaterial* Instance = EnsureInstance())
+			{
+				Instance->BaseColor = Color;
+				bChanged = true;
+			}
+		}
+
+		ImGui::EndGroup();
+		return bChanged;
+	}
+
 	void DrawMaterialTextureSlot(UMeshComponent* MeshComponent, int32 MaterialSlot, int32 TextureSlot, const char* Label, UMaterial*& Effective, UMaterial*& Override) {
 		const float ThumbnailSize{ 64.0f };
 		const float ItemThumbnailSize{ 24.0f };
@@ -1265,7 +1341,7 @@ namespace
 
 			if (PropertyClass == UMaterial::StaticClass())
 			{
-				DrawTextureSlot(reinterpret_cast<UMaterial**>(ObjPtr), 0);
+				return DrawMaterialProperty(reinterpret_cast<UMaterial**>(ObjPtr));
 			}
 			else if (PropertyClass == UFont::StaticClass())
 			{
