@@ -5,6 +5,13 @@
   "WarmupTickRate": 0.0,
   "bUseFixedRelativeBoundingBox": false,
   "bOrientZAxisTowardCamera": false,
+  "LODMethod": 0,
+  "LODDistances": [
+    0.0,
+    10.0,
+    25.0,
+    50.0
+  ],
   "Emitters": [
     {
       "EmitterName": "SizeMultiplyLifeEmitter",
@@ -46,8 +53,16 @@
             {
               "Class": "UParticleModuleVelocity",
               "Properties": {
-                "StartVelocityMin": { "X": -0.5, "Y": -0.5, "Z": 1.5 },
-                "StartVelocityMax": { "X": 0.5, "Y": 0.5, "Z": 2.5 },
+                "StartVelocityMin": {
+                  "X": -0.5,
+                  "Y": -0.5,
+                  "Z": 1.5
+                },
+                "StartVelocityMax": {
+                  "X": 0.5,
+                  "Y": 0.5,
+                  "Z": 2.5
+                },
                 "StartVelocityRadialMin": 0.0,
                 "StartVelocityRadialMax": 0.0,
                 "bInWorldSpace": false
@@ -56,8 +71,16 @@
             {
               "Class": "UParticleModuleSize",
               "Properties": {
-                "StartSizeMin": { "X": 0.4, "Y": 0.4, "Z": 0.4 },
-                "StartSizeMax": { "X": 0.6, "Y": 0.6, "Z": 0.6 }
+                "StartSizeMin": {
+                  "X": 0.4,
+                  "Y": 0.4,
+                  "Z": 0.4
+                },
+                "StartSizeMax": {
+                  "X": 0.6,
+                  "Y": 0.6,
+                  "Z": 0.6
+                }
               }
             },
             {
@@ -65,8 +88,44 @@
               "Properties": {
                 "LifeMultiplier": {
                   "Points": [
-                    { "InVal": 0.0, "OutVal": { "X": 0.5, "Y": 0.5, "Z": 0.5 }, "ArriveTangent": { "X": 0.0, "Y": 0.0, "Z": 0.0 }, "LeaveTangent": { "X": 0.0, "Y": 0.0, "Z": 0.0 }, "InterpMode": "Linear" },
-                    { "InVal": 1.0, "OutVal": { "X": 3.0, "Y": 3.0, "Z": 3.0 }, "ArriveTangent": { "X": 0.0, "Y": 0.0, "Z": 0.0 }, "LeaveTangent": { "X": 0.0, "Y": 0.0, "Z": 0.0 }, "InterpMode": "Linear" }
+                    {
+                      "InVal": 0.0,
+                      "OutVal": {
+                        "X": 0.5,
+                        "Y": 0.5,
+                        "Z": 0.5
+                      },
+                      "ArriveTangent": {
+                        "X": 0.0,
+                        "Y": 0.0,
+                        "Z": 0.0
+                      },
+                      "LeaveTangent": {
+                        "X": 0.0,
+                        "Y": 0.0,
+                        "Z": 0.0
+                      },
+                      "InterpMode": "Linear"
+                    },
+                    {
+                      "InVal": 1.0,
+                      "OutVal": {
+                        "X": 3.0,
+                        "Y": 3.0,
+                        "Z": 3.0
+                      },
+                      "ArriveTangent": {
+                        "X": 0.0,
+                        "Y": 0.0,
+                        "Z": 0.0
+                      },
+                      "LeaveTangent": {
+                        "X": 0.0,
+                        "Y": 0.0,
+                        "Z": 0.0
+                      },
+                      "InterpMode": "Linear"
+                    }
                   ]
                 },
                 "bMultiplyX": true,
@@ -79,14 +138,605 @@
               "Properties": {
                 "ColorOverLife": {
                   "Points": [
-                    { "InVal": 0.0, "OutVal": { "X": 1.0, "Y": 0.8, "Z": 0.3 }, "ArriveTangent": { "X": 0.0, "Y": 0.0, "Z": 0.0 }, "LeaveTangent": { "X": 0.0, "Y": 0.0, "Z": 0.0 }, "InterpMode": "Linear" },
-                    { "InVal": 1.0, "OutVal": { "X": 1.0, "Y": 0.2, "Z": 0.1 }, "ArriveTangent": { "X": 0.0, "Y": 0.0, "Z": 0.0 }, "LeaveTangent": { "X": 0.0, "Y": 0.0, "Z": 0.0 }, "InterpMode": "Linear" }
+                    {
+                      "InVal": 0.0,
+                      "OutVal": {
+                        "X": 1.0,
+                        "Y": 0.8,
+                        "Z": 0.3
+                      },
+                      "ArriveTangent": {
+                        "X": 0.0,
+                        "Y": 0.0,
+                        "Z": 0.0
+                      },
+                      "LeaveTangent": {
+                        "X": 0.0,
+                        "Y": 0.0,
+                        "Z": 0.0
+                      },
+                      "InterpMode": "Linear"
+                    },
+                    {
+                      "InVal": 1.0,
+                      "OutVal": {
+                        "X": 1.0,
+                        "Y": 0.2,
+                        "Z": 0.1
+                      },
+                      "ArriveTangent": {
+                        "X": 0.0,
+                        "Y": 0.0,
+                        "Z": 0.0
+                      },
+                      "LeaveTangent": {
+                        "X": 0.0,
+                        "Y": 0.0,
+                        "Z": 0.0
+                      },
+                      "InterpMode": "Linear"
+                    }
                   ]
                 },
                 "AlphaOverLife": {
                   "Points": [
-                    { "InVal": 0.0, "OutVal": 1.0, "ArriveTangent": 0.0, "LeaveTangent": 0.0, "InterpMode": "Linear" },
-                    { "InVal": 1.0, "OutVal": 0.0, "ArriveTangent": 0.0, "LeaveTangent": 0.0, "InterpMode": "Linear" }
+                    {
+                      "InVal": 0.0,
+                      "OutVal": 1.0,
+                      "ArriveTangent": 0.0,
+                      "LeaveTangent": 0.0,
+                      "InterpMode": "Linear"
+                    },
+                    {
+                      "InVal": 1.0,
+                      "OutVal": 0.0,
+                      "ArriveTangent": 0.0,
+                      "LeaveTangent": 0.0,
+                      "InterpMode": "Linear"
+                    }
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "Level": 1,
+          "bEnabled": true,
+          "PeakActiveParticles": 39,
+          "RequiredModule": {
+            "bUseLocalSpace": true,
+            "SortMode": "DistanceToView",
+            "bKillOnDeactivate": false,
+            "bKillOnCompleted": false,
+            "EmitterDuration": 1.0,
+            "EmitterDelay": 0.0,
+            "EmitterLoops": 0,
+            "MaxDrawCount": 300,
+            "SubImages_Horizontal": 1,
+            "SubImages_Vertical": 1
+          },
+          "SpawnModule": {
+            "Rate": 9.0,
+            "RateScale": 1.0,
+            "bProcessSpawnRate": true,
+            "bProcessBurstList": true,
+            "BurstList": []
+          },
+          "Modules": [
+            {
+              "Class": "UParticleModuleLifetime",
+              "Properties": {
+                "LifetimeMin": 1.5,
+                "LifetimeMax": 2.0
+              }
+            },
+            {
+              "Class": "UParticleModuleVelocity",
+              "Properties": {
+                "StartVelocityMin": {
+                  "X": -0.5,
+                  "Y": -0.5,
+                  "Z": 1.5
+                },
+                "StartVelocityMax": {
+                  "X": 0.5,
+                  "Y": 0.5,
+                  "Z": 2.5
+                },
+                "StartVelocityRadialMin": 0.0,
+                "StartVelocityRadialMax": 0.0,
+                "bInWorldSpace": false
+              }
+            },
+            {
+              "Class": "UParticleModuleSize",
+              "Properties": {
+                "StartSizeMin": {
+                  "X": 0.46,
+                  "Y": 0.46,
+                  "Z": 0.46
+                },
+                "StartSizeMax": {
+                  "X": 0.69,
+                  "Y": 0.69,
+                  "Z": 0.69
+                }
+              }
+            },
+            {
+              "Class": "UParticleModuleSizeMultiplyLife",
+              "Properties": {
+                "LifeMultiplier": {
+                  "Points": [
+                    {
+                      "InVal": 0.0,
+                      "OutVal": {
+                        "X": 0.5,
+                        "Y": 0.5,
+                        "Z": 0.5
+                      },
+                      "ArriveTangent": {
+                        "X": 0.0,
+                        "Y": 0.0,
+                        "Z": 0.0
+                      },
+                      "LeaveTangent": {
+                        "X": 0.0,
+                        "Y": 0.0,
+                        "Z": 0.0
+                      },
+                      "InterpMode": "Linear"
+                    },
+                    {
+                      "InVal": 1.0,
+                      "OutVal": {
+                        "X": 3.0,
+                        "Y": 3.0,
+                        "Z": 3.0
+                      },
+                      "ArriveTangent": {
+                        "X": 0.0,
+                        "Y": 0.0,
+                        "Z": 0.0
+                      },
+                      "LeaveTangent": {
+                        "X": 0.0,
+                        "Y": 0.0,
+                        "Z": 0.0
+                      },
+                      "InterpMode": "Linear"
+                    }
+                  ]
+                },
+                "bMultiplyX": true,
+                "bMultiplyY": true,
+                "bMultiplyZ": true
+              }
+            },
+            {
+              "Class": "UParticleModuleColorOverLife",
+              "Properties": {
+                "ColorOverLife": {
+                  "Points": [
+                    {
+                      "InVal": 0.0,
+                      "OutVal": {
+                        "X": 1.0,
+                        "Y": 0.8,
+                        "Z": 0.3
+                      },
+                      "ArriveTangent": {
+                        "X": 0.0,
+                        "Y": 0.0,
+                        "Z": 0.0
+                      },
+                      "LeaveTangent": {
+                        "X": 0.0,
+                        "Y": 0.0,
+                        "Z": 0.0
+                      },
+                      "InterpMode": "Linear"
+                    },
+                    {
+                      "InVal": 1.0,
+                      "OutVal": {
+                        "X": 1.0,
+                        "Y": 0.2,
+                        "Z": 0.1
+                      },
+                      "ArriveTangent": {
+                        "X": 0.0,
+                        "Y": 0.0,
+                        "Z": 0.0
+                      },
+                      "LeaveTangent": {
+                        "X": 0.0,
+                        "Y": 0.0,
+                        "Z": 0.0
+                      },
+                      "InterpMode": "Linear"
+                    }
+                  ]
+                },
+                "AlphaOverLife": {
+                  "Points": [
+                    {
+                      "InVal": 0.0,
+                      "OutVal": 1.0,
+                      "ArriveTangent": 0.0,
+                      "LeaveTangent": 0.0,
+                      "InterpMode": "Linear"
+                    },
+                    {
+                      "InVal": 1.0,
+                      "OutVal": 0.0,
+                      "ArriveTangent": 0.0,
+                      "LeaveTangent": 0.0,
+                      "InterpMode": "Linear"
+                    }
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "Level": 2,
+          "bEnabled": true,
+          "PeakActiveParticles": 23,
+          "RequiredModule": {
+            "bUseLocalSpace": true,
+            "SortMode": "DistanceToView",
+            "bKillOnDeactivate": false,
+            "bKillOnCompleted": false,
+            "EmitterDuration": 1.0,
+            "EmitterDelay": 0.0,
+            "EmitterLoops": 0,
+            "MaxDrawCount": 175,
+            "SubImages_Horizontal": 1,
+            "SubImages_Vertical": 1
+          },
+          "SpawnModule": {
+            "Rate": 5.25,
+            "RateScale": 1.0,
+            "bProcessSpawnRate": true,
+            "bProcessBurstList": true,
+            "BurstList": []
+          },
+          "Modules": [
+            {
+              "Class": "UParticleModuleLifetime",
+              "Properties": {
+                "LifetimeMin": 1.5,
+                "LifetimeMax": 2.0
+              }
+            },
+            {
+              "Class": "UParticleModuleVelocity",
+              "Properties": {
+                "StartVelocityMin": {
+                  "X": -0.5,
+                  "Y": -0.5,
+                  "Z": 1.5
+                },
+                "StartVelocityMax": {
+                  "X": 0.5,
+                  "Y": 0.5,
+                  "Z": 2.5
+                },
+                "StartVelocityRadialMin": 0.0,
+                "StartVelocityRadialMax": 0.0,
+                "bInWorldSpace": false
+              }
+            },
+            {
+              "Class": "UParticleModuleSize",
+              "Properties": {
+                "StartSizeMin": {
+                  "X": 0.52,
+                  "Y": 0.52,
+                  "Z": 0.52
+                },
+                "StartSizeMax": {
+                  "X": 0.78,
+                  "Y": 0.78,
+                  "Z": 0.78
+                }
+              }
+            },
+            {
+              "Class": "UParticleModuleSizeMultiplyLife",
+              "Properties": {
+                "LifeMultiplier": {
+                  "Points": [
+                    {
+                      "InVal": 0.0,
+                      "OutVal": {
+                        "X": 0.5,
+                        "Y": 0.5,
+                        "Z": 0.5
+                      },
+                      "ArriveTangent": {
+                        "X": 0.0,
+                        "Y": 0.0,
+                        "Z": 0.0
+                      },
+                      "LeaveTangent": {
+                        "X": 0.0,
+                        "Y": 0.0,
+                        "Z": 0.0
+                      },
+                      "InterpMode": "Linear"
+                    },
+                    {
+                      "InVal": 1.0,
+                      "OutVal": {
+                        "X": 3.0,
+                        "Y": 3.0,
+                        "Z": 3.0
+                      },
+                      "ArriveTangent": {
+                        "X": 0.0,
+                        "Y": 0.0,
+                        "Z": 0.0
+                      },
+                      "LeaveTangent": {
+                        "X": 0.0,
+                        "Y": 0.0,
+                        "Z": 0.0
+                      },
+                      "InterpMode": "Linear"
+                    }
+                  ]
+                },
+                "bMultiplyX": true,
+                "bMultiplyY": true,
+                "bMultiplyZ": true
+              }
+            },
+            {
+              "Class": "UParticleModuleColorOverLife",
+              "Properties": {
+                "ColorOverLife": {
+                  "Points": [
+                    {
+                      "InVal": 0.0,
+                      "OutVal": {
+                        "X": 1.0,
+                        "Y": 0.8,
+                        "Z": 0.3
+                      },
+                      "ArriveTangent": {
+                        "X": 0.0,
+                        "Y": 0.0,
+                        "Z": 0.0
+                      },
+                      "LeaveTangent": {
+                        "X": 0.0,
+                        "Y": 0.0,
+                        "Z": 0.0
+                      },
+                      "InterpMode": "Linear"
+                    },
+                    {
+                      "InVal": 1.0,
+                      "OutVal": {
+                        "X": 1.0,
+                        "Y": 0.2,
+                        "Z": 0.1
+                      },
+                      "ArriveTangent": {
+                        "X": 0.0,
+                        "Y": 0.0,
+                        "Z": 0.0
+                      },
+                      "LeaveTangent": {
+                        "X": 0.0,
+                        "Y": 0.0,
+                        "Z": 0.0
+                      },
+                      "InterpMode": "Linear"
+                    }
+                  ]
+                },
+                "AlphaOverLife": {
+                  "Points": [
+                    {
+                      "InVal": 0.0,
+                      "OutVal": 1.0,
+                      "ArriveTangent": 0.0,
+                      "LeaveTangent": 0.0,
+                      "InterpMode": "Linear"
+                    },
+                    {
+                      "InVal": 1.0,
+                      "OutVal": 0.0,
+                      "ArriveTangent": 0.0,
+                      "LeaveTangent": 0.0,
+                      "InterpMode": "Linear"
+                    }
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "Level": 3,
+          "bEnabled": true,
+          "PeakActiveParticles": 10,
+          "RequiredModule": {
+            "bUseLocalSpace": true,
+            "SortMode": "DistanceToView",
+            "bKillOnDeactivate": false,
+            "bKillOnCompleted": false,
+            "EmitterDuration": 1.0,
+            "EmitterDelay": 0.0,
+            "EmitterLoops": 0,
+            "MaxDrawCount": 75,
+            "SubImages_Horizontal": 1,
+            "SubImages_Vertical": 1
+          },
+          "SpawnModule": {
+            "Rate": 2.25,
+            "RateScale": 1.0,
+            "bProcessSpawnRate": true,
+            "bProcessBurstList": true,
+            "BurstList": []
+          },
+          "Modules": [
+            {
+              "Class": "UParticleModuleLifetime",
+              "Properties": {
+                "LifetimeMin": 1.5,
+                "LifetimeMax": 2.0
+              }
+            },
+            {
+              "Class": "UParticleModuleVelocity",
+              "Properties": {
+                "StartVelocityMin": {
+                  "X": -0.5,
+                  "Y": -0.5,
+                  "Z": 1.5
+                },
+                "StartVelocityMax": {
+                  "X": 0.5,
+                  "Y": 0.5,
+                  "Z": 2.5
+                },
+                "StartVelocityRadialMin": 0.0,
+                "StartVelocityRadialMax": 0.0,
+                "bInWorldSpace": false
+              }
+            },
+            {
+              "Class": "UParticleModuleSize",
+              "Properties": {
+                "StartSizeMin": {
+                  "X": 0.6,
+                  "Y": 0.6,
+                  "Z": 0.6
+                },
+                "StartSizeMax": {
+                  "X": 0.9,
+                  "Y": 0.9,
+                  "Z": 0.9
+                }
+              }
+            },
+            {
+              "Class": "UParticleModuleSizeMultiplyLife",
+              "Properties": {
+                "LifeMultiplier": {
+                  "Points": [
+                    {
+                      "InVal": 0.0,
+                      "OutVal": {
+                        "X": 0.5,
+                        "Y": 0.5,
+                        "Z": 0.5
+                      },
+                      "ArriveTangent": {
+                        "X": 0.0,
+                        "Y": 0.0,
+                        "Z": 0.0
+                      },
+                      "LeaveTangent": {
+                        "X": 0.0,
+                        "Y": 0.0,
+                        "Z": 0.0
+                      },
+                      "InterpMode": "Linear"
+                    },
+                    {
+                      "InVal": 1.0,
+                      "OutVal": {
+                        "X": 3.0,
+                        "Y": 3.0,
+                        "Z": 3.0
+                      },
+                      "ArriveTangent": {
+                        "X": 0.0,
+                        "Y": 0.0,
+                        "Z": 0.0
+                      },
+                      "LeaveTangent": {
+                        "X": 0.0,
+                        "Y": 0.0,
+                        "Z": 0.0
+                      },
+                      "InterpMode": "Linear"
+                    }
+                  ]
+                },
+                "bMultiplyX": true,
+                "bMultiplyY": true,
+                "bMultiplyZ": true
+              }
+            },
+            {
+              "Class": "UParticleModuleColorOverLife",
+              "Properties": {
+                "ColorOverLife": {
+                  "Points": [
+                    {
+                      "InVal": 0.0,
+                      "OutVal": {
+                        "X": 1.0,
+                        "Y": 0.8,
+                        "Z": 0.3
+                      },
+                      "ArriveTangent": {
+                        "X": 0.0,
+                        "Y": 0.0,
+                        "Z": 0.0
+                      },
+                      "LeaveTangent": {
+                        "X": 0.0,
+                        "Y": 0.0,
+                        "Z": 0.0
+                      },
+                      "InterpMode": "Linear"
+                    },
+                    {
+                      "InVal": 1.0,
+                      "OutVal": {
+                        "X": 1.0,
+                        "Y": 0.2,
+                        "Z": 0.1
+                      },
+                      "ArriveTangent": {
+                        "X": 0.0,
+                        "Y": 0.0,
+                        "Z": 0.0
+                      },
+                      "LeaveTangent": {
+                        "X": 0.0,
+                        "Y": 0.0,
+                        "Z": 0.0
+                      },
+                      "InterpMode": "Linear"
+                    }
+                  ]
+                },
+                "AlphaOverLife": {
+                  "Points": [
+                    {
+                      "InVal": 0.0,
+                      "OutVal": 1.0,
+                      "ArriveTangent": 0.0,
+                      "LeaveTangent": 0.0,
+                      "InterpMode": "Linear"
+                    },
+                    {
+                      "InVal": 1.0,
+                      "OutVal": 0.0,
+                      "ArriveTangent": 0.0,
+                      "LeaveTangent": 0.0,
+                      "InterpMode": "Linear"
+                    }
                   ]
                 }
               }

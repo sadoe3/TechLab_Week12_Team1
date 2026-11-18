@@ -5,6 +5,13 @@
   "WarmupTickRate": 0.0,
   "bUseFixedRelativeBoundingBox": false,
   "bOrientZAxisTowardCamera": false,
+  "LODMethod": 0,
+  "LODDistances": [
+    0.0,
+    10.0,
+    25.0,
+    50.0
+  ],
   "Emitters": [
     {
       "EmitterName": "TestMeshEmitter",
@@ -27,6 +34,93 @@
           },
           "SpawnModule": {
             "Rate": 5.0,
+            "RateScale": 1.0,
+            "bProcessSpawnRate": true,
+            "bProcessBurstList": true,
+            "BurstList": []
+          },
+          "TypeDataModule": {
+            "Type": "Mesh",
+            "MeshPath": "Sphere",
+            "LODSizeScale": 1.0,
+            "bUseStaticMeshLODs": true,
+            "bCastShadows": true,
+            "bOverrideMaterial": false
+          }
+        },
+        {
+          "Level": 1,
+          "bEnabled": true,
+          "PeakActiveParticles": 20,
+          "RequiredModule": {
+            "bUseLocalSpace": true,
+            "bKillOnDeactivate": false,
+            "bKillOnCompleted": false,
+            "EmitterDuration": 1.0,
+            "EmitterDelay": 0.0,
+            "EmitterLoops": 0,
+            "MaxDrawCount": 300
+          },
+          "SpawnModule": {
+            "Rate": 3.0,
+            "RateScale": 1.0,
+            "bProcessSpawnRate": true,
+            "bProcessBurstList": true,
+            "BurstList": []
+          },
+          "TypeDataModule": {
+            "Type": "Mesh",
+            "MeshPath": "Sphere",
+            "LODSizeScale": 1.0,
+            "bUseStaticMeshLODs": true,
+            "bCastShadows": true,
+            "bOverrideMaterial": false
+          }
+        },
+        {
+          "Level": 2,
+          "bEnabled": true,
+          "PeakActiveParticles": 12,
+          "RequiredModule": {
+            "bUseLocalSpace": true,
+            "bKillOnDeactivate": false,
+            "bKillOnCompleted": false,
+            "EmitterDuration": 1.0,
+            "EmitterDelay": 0.0,
+            "EmitterLoops": 0,
+            "MaxDrawCount": 175
+          },
+          "SpawnModule": {
+            "Rate": 1.75,
+            "RateScale": 1.0,
+            "bProcessSpawnRate": true,
+            "bProcessBurstList": true,
+            "BurstList": []
+          },
+          "TypeDataModule": {
+            "Type": "Mesh",
+            "MeshPath": "Sphere",
+            "LODSizeScale": 1.0,
+            "bUseStaticMeshLODs": true,
+            "bCastShadows": true,
+            "bOverrideMaterial": false
+          }
+        },
+        {
+          "Level": 3,
+          "bEnabled": true,
+          "PeakActiveParticles": 5,
+          "RequiredModule": {
+            "bUseLocalSpace": true,
+            "bKillOnDeactivate": false,
+            "bKillOnCompleted": false,
+            "EmitterDuration": 1.0,
+            "EmitterDelay": 0.0,
+            "EmitterLoops": 0,
+            "MaxDrawCount": 75
+          },
+          "SpawnModule": {
+            "Rate": 1.0,
             "RateScale": 1.0,
             "bProcessSpawnRate": true,
             "bProcessBurstList": true,

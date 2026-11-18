@@ -5,6 +5,13 @@
   "WarmupTickRate": 0.0,
   "bUseFixedRelativeBoundingBox": false,
   "bOrientZAxisTowardCamera": false,
+  "LODMethod": 0,
+  "LODDistances": [
+    0.0,
+    10.0,
+    25.0,
+    50.0
+  ],
   "Emitters": [
     {
       "EmitterName": "TestSpriteEmitter",
@@ -30,6 +37,78 @@
           },
           "SpawnModule": {
             "Rate": 10.0,
+            "RateScale": 1.0,
+            "bProcessSpawnRate": true,
+            "bProcessBurstList": true,
+            "BurstList": []
+          }
+        },
+        {
+          "Level": 1,
+          "bEnabled": true,
+          "PeakActiveParticles": 20,
+          "RequiredModule": {
+            "bUseLocalSpace": true,
+            "SortMode": "DistanceToView",
+            "bKillOnDeactivate": false,
+            "bKillOnCompleted": false,
+            "EmitterDuration": 1.0,
+            "EmitterDelay": 0.0,
+            "EmitterLoops": 0,
+            "MaxDrawCount": 300,
+            "SubImages_Horizontal": 4,
+            "SubImages_Vertical": 4
+          },
+          "SpawnModule": {
+            "Rate": 6.0,
+            "RateScale": 1.0,
+            "bProcessSpawnRate": true,
+            "bProcessBurstList": true,
+            "BurstList": []
+          }
+        },
+        {
+          "Level": 2,
+          "bEnabled": true,
+          "PeakActiveParticles": 12,
+          "RequiredModule": {
+            "bUseLocalSpace": true,
+            "SortMode": "DistanceToView",
+            "bKillOnDeactivate": false,
+            "bKillOnCompleted": false,
+            "EmitterDuration": 1.0,
+            "EmitterDelay": 0.0,
+            "EmitterLoops": 0,
+            "MaxDrawCount": 175,
+            "SubImages_Horizontal": 4,
+            "SubImages_Vertical": 4
+          },
+          "SpawnModule": {
+            "Rate": 3.5,
+            "RateScale": 1.0,
+            "bProcessSpawnRate": true,
+            "bProcessBurstList": true,
+            "BurstList": []
+          }
+        },
+        {
+          "Level": 3,
+          "bEnabled": true,
+          "PeakActiveParticles": 5,
+          "RequiredModule": {
+            "bUseLocalSpace": true,
+            "SortMode": "DistanceToView",
+            "bKillOnDeactivate": false,
+            "bKillOnCompleted": false,
+            "EmitterDuration": 1.0,
+            "EmitterDelay": 0.0,
+            "EmitterLoops": 0,
+            "MaxDrawCount": 75,
+            "SubImages_Horizontal": 4,
+            "SubImages_Vertical": 4
+          },
+          "SpawnModule": {
+            "Rate": 1.5,
             "RateScale": 1.0,
             "bProcessSpawnRate": true,
             "bProcessBurstList": true,
