@@ -4,6 +4,8 @@
 #include "Editor/HitoriEd/EditorEngine.h"
 #include "Launch/LaunchEngineLoop.h"
 #include "Engine/World.h"
+#include "Camera/CameraActor.h"
+#include "Camera/CameraComponent.h"
 #include "Math/BoxSphereBounds.h"
 #include "Asset/AssetUtils.h"
 #include "Core/Misc/Paths.h"
@@ -652,6 +654,16 @@ void FParticleSystemEditor::Tick(float DeltaTime)
 		ViewportClient->SetViewRotation(Camera.Rotation);
 	}
 	CameraInput = {};
+
+	// PSC의 LOD 판정은 월드 MainCamera를 보므로, 실제로 그리는 뷰포트 시점을 매 프레임 옮겨 둔다
+	if (ACameraActor* MainCam = ViewportClient->GetWorld()->GetMainCamera())
+	{
+		if (UCameraComponent* CamCom = MainCam->GetCameraComponent())
+		{
+			CamCom->SetRelativeLocation(ViewportClient->GetViewLocation());
+			CamCom->SetRelativeRotation(ViewportClient->GetViewRotation());
+		}
+	}
 
 	if (bInitialFocusPending)
 	{
