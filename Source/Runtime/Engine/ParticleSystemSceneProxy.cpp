@@ -2,6 +2,8 @@
 #include "Engine/ParticleSystemSceneProxy.h"
 #include "Components/ParticleSystemComponent.h"
 #include "Particles/ParticleDynamicData.h"
+#include "Particles/ParticleStats.h"
+
 
 FParticleSystemSceneProxy::FParticleSystemSceneProxy(UParticleSystemComponent* InComponent)
 	: FPrimitiveSceneProxy(InComponent)
@@ -19,6 +21,8 @@ void FParticleSystemSceneProxy::UpdateData(TUniquePtr<FParticleDynamicData> NewD
 
 void FParticleSystemSceneProxy::GetDynamicMeshElements(FRenderQueue& Queue, const FViewContext& View)
 {
+	SCOPE_CYCLE_COUNTER(ParticleStats::STAT_ParticleRenderGather);
+	
 	if (!DynamicData)
 	{
 		return;

@@ -17,6 +17,11 @@
 #include "Render/SkinningStats.h"
 #include "Render/SkeletalMeshObject.h"
 #include "Components/SkinnedMeshComponent.h"
+#include "Components/ParticleSystemComponent.h"
+#include "Particles/ParticleStats.h"
+#include "Particles/ParticleMeshEmitterInstance.h"
+#include "Particles/ParticleRibbonEmitterInstance.h"
+#include "Particles/ParticleBeamEmitterInstance.h"
 
 
 namespace {
@@ -538,6 +543,64 @@ const FRenderStats& Stats = RenderData.RenderStats;
 			{ GPUStats::STAT_GPU_ShadowDepths, GPUStats::STAT_GPU_DepthPrepass, GPUStats::STAT_GPU_ForwardOpaque },
 			[](TStatId Id) { return FStatRegistry::FindGPU(Id); });
 		Lines.Add({ std::format("  GPU dropped frames {}", FRealtimeGPUProfiler::GetDroppedFrames()), ValueColor });
+	}
+
+	if (FStatOverlay::IsEnabled(EStatFlags::Particle)) {
+		// 이미터 종류별 [Sprite, Mesh, Ribbon, Beam] 집계
+		enum { Sprite, Mesh, Ribbon, Beam, TypeCount };
+		static const char* TypeNames[TypeCount] = { "Sprite", "Mesh", "Ribbon", "Beam" };
+		uint32 EmitterCounts[TypeCount] = {};
+		uint64 ParticleCounts[TypeCount] = {};
+
+		uint32 NumComponents = 0, NumActiveComponents = 0, NumEmitters = 0;
+		uint64 ActiveParticles = 0, MaxParticles = 0, PoolBytes = 0;
+		for (TObjectIterator<UParticleSystemComponent> It; It; ++It) {
+			if (!It->IsRegistered()) continue;
+			++NumComponents;
+			if (It->IsActive()) ++NumActiveComponents;
+
+			for (const FParticleEmitterInstance* Instance : It->GetEmitterInstances()) {
+				if (!Instance || !Instance->bEnabled) continue;
+				++NumEmitters;
+				ActiveParticles += Instance->ActiveParticles;
+				MaxParticles += Instance->MaxActiveParticles;
+				// 파티클 버퍼 + 인덱스 버퍼 (ParticleEmitterInstance::Resize와 같은 계산)
+				PoolBytes += static_cast<uint64>(Instance->MaxActiveParticles) * (Instance->ParticleStride + sizeof(uint16));
+
+				int32 Type = Sprite;
+				if (dynamic_cast<const FParticleMeshEmitterInstance*>(Instance))        Type = Mesh;
+				else if (dynamic_cast<const FParticleRibbonEmitterInstance*>(Instance)) Type = Ribbon;
+				else if (dynamic_cast<const FParticleBeamEmitterInstance*>(Instance))   Type = Beam;
+				++EmitterCounts[Type];
+				ParticleCounts[Type] += Instance->ActiveParticles;
+			}
+		}
+
+		Lines.Add({ "Particle", TitleColor });
+		Lines.Add({ std::format("  Systems {} (active {})", NumComponents, NumActiveComponents), ValueColor });
+		Lines.Add({ std::format("  Emitters {}", NumEmitters), ValueColor });
+		Lines.Add({ std::format("  Active Particles {} / {}", ActiveParticles, MaxParticles), ValueColor });
+		for (int32 Type = 0; Type < TypeCount; ++Type) {
+			if (EmitterCounts[Type] == 0) continue;
+			Lines.Add({ std::format("    {:<6} emitters {}  particles {}", TypeNames[Type], EmitterCounts[Type], ParticleCounts[Type]), ValueColor });
+		}
+		Lines.Add({ std::format("  Particle Memory {:.1f} KB", static_cast<double>(PoolBytes) / 1024.0), ValueColor });
+
+		// Tick 구간은 Collision과 Dynamic Data를 포함한다 (중첩 스코프)
+		ProfileLines.Add({ "Particle CPU (ms)", TitleColor, { "Last", "Avg", "Max" } });
+		for (TStatId Id : { ParticleStats::STAT_ParticleTick, ParticleStats::STAT_ParticleCollision,
+							ParticleStats::STAT_ParticleDynamicData, ParticleStats::STAT_ParticleRenderGather }) {
+			FProfileStatLine Line{ "  " + FString(Id.GetName()), ValueColor };
+			if (const FCycleStatData* D = FStatRegistry::Find(Id)) {
+				Line.Values[0] = std::format("{:.2f}", D->GetLastMs());
+				Line.Values[1] = std::format("{:.2f}", D->GetRecentAverageMs());
+				Line.Values[2] = std::format("{:.2f}", D->GetMaxMs());
+			}
+			else {
+				Line.Values[0] = Line.Values[1] = Line.Values[2] = "-";
+			}
+			ProfileLines.Add(Line);
+		}
 	}
 
 	if (Lines.Num() == 0 && ProfileLines.Num() == 0)

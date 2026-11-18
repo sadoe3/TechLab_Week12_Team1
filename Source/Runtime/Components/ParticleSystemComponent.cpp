@@ -10,6 +10,7 @@
 #include "Particles/ParticleSpriteEmitterInstance.h"
 #include <algorithm>
 #include <cfloat>
+#include "Particles/ParticleStats.h"
 
 UParticleSystemComponent::UParticleSystemComponent()
 {
@@ -40,6 +41,7 @@ void UParticleSystemComponent::BeginPlay()
 
 void UParticleSystemComponent::TickComponent(float DeltaTime)
 {
+	SCOPE_CYCLE_COUNTER(ParticleStats::STAT_ParticleTick);
 	Super::TickComponent(DeltaTime);
 
 	if (!bIsActive || !Template)
@@ -348,6 +350,7 @@ bool UParticleSystemComponent::HasAnyActiveParticles() const
 
 TUniquePtr<FParticleDynamicData> UParticleSystemComponent::CreateDynamicData()
 {
+	SCOPE_CYCLE_COUNTER(ParticleStats::STAT_ParticleDynamicData);
 	auto DynamicData = MakeUnique<FParticleDynamicData>();
 
 	for (int32 Index = 0; Index < EmitterInstances.Num(); ++Index)

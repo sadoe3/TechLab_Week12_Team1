@@ -11,6 +11,7 @@
 #include "ParticleModuleTypeDataRibbon.h"
 #include "ParticleRibbonEmitterInstance.h"
 #include "ParticleLODLevel.h"
+#include "ParticleStats.h"
 
 namespace
 {
@@ -54,6 +55,7 @@ void UParticleModuleCollision::Spawn(FParticleEmitterInstance* Owner, int32 Offs
 
 void UParticleModuleCollision::FinalUpdate(FParticleEmitterInstance* Owner, int32 Offset, float DeltaTime)
 {
+	SCOPE_CYCLE_COUNTER(ParticleStats::STAT_ParticleCollision);
 	if (!Owner || !Owner->Component)
 	{
 		return;

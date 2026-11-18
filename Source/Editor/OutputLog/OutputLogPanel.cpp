@@ -342,7 +342,7 @@ void FOutputLogPanel::RegisterCommands()
 			return true;
 		});
 
-	Add("STAT", "STAT <fps|memory|profile|light|decal|all|none>", [](const TArray<FString>&, const FString& Line)
+	Add("STAT", "STAT <fps|memory|profile|light|decal|skinning|particle|all|none>", [](const TArray<FString>&, const FString& Line)
 		{
 			FString Message;
 			FStatOverlay::ExecCommand(Line, Message);   // 해석은 엔진 쪽에 맡긴다
