@@ -501,6 +501,16 @@ bool ParticleSystemFile::Read(const std::filesystem::path& Path, UParticleSystem
 	OutSystem.WarmupTickRate = Root.value("WarmupTickRate", 0.0f);
 	OutSystem.bUseFixedRelativeBoundingBox = Root.value("bUseFixedRelativeBoundingBox", false);
 	OutSystem.bOrientZAxisTowardCamera = Root.value("bOrientZAxisTowardCamera", false);
+	OutSystem.LODMethod = static_cast<EParticleSystemLODMethod>(Root.value("LODMethod", 0));
+	OutSystem.LODDistances = { 0.0f };
+	if (Root.contains("LODDistances") && Root["LODDistances"].is_array())
+	{
+		OutSystem.LODDistances.Empty();
+		for (const json& Distance : Root["LODDistances"])
+		{
+			OutSystem.LODDistances.Add(Distance.get<float>());
+		}
+	}
 
 	if (Root.contains("Emitters") && Root["Emitters"].is_array())
 	{
@@ -529,6 +539,13 @@ bool ParticleSystemFile::Write(const std::filesystem::path& Path, UParticleSyste
 	Root["WarmupTickRate"] = System.WarmupTickRate;
 	Root["bUseFixedRelativeBoundingBox"] = System.bUseFixedRelativeBoundingBox;
 	Root["bOrientZAxisTowardCamera"] = System.bOrientZAxisTowardCamera;
+	Root["LODMethod"] = static_cast<int32>(System.LODMethod);
+	json DistancesJson = json::array();
+	for (float Distance : System.LODDistances)
+	{
+		DistancesJson.push_back(Distance);
+	}
+	Root["LODDistances"] = DistancesJson;
 
 	json EmittersJson = json::array();
 	for (const UParticleEmitter* Emitter : System.GetEmitters())
@@ -571,6 +588,17 @@ UParticleEmitter* ParticleSystemFile::DuplicateEmitter(const UParticleEmitter& S
 	UParticleEmitter* Copy = EmitterFromJson(EmitterToJson(Source));
 	Copy->CacheEmitterModuleInfo();
 	return Copy;
+}
+
+UParticleLODLevel* ParticleSystemFile::DuplicateLODLevel(const UParticleEmitter& Source, int32 LODIndex)
+{
+	// LOD 하나만 담은 이미터 json을 만들어 읽으면, 이미터 읽기 코드를 그대로 써서 LOD만 꺼낼 수 있다
+	json EmitterJson = EmitterToJson(Source);
+	json OnlyLOD = json::object();
+	OnlyLOD["LODLevels"] = json::array({ EmitterJson["LODLevels"][LODIndex] });
+
+	UParticleEmitter* Temp = EmitterFromJson(OnlyLOD);
+	return Temp->GetLODLevel(0);
 }
 
 bool ParticleSystemFile::IsParticleSystemPath(const FString& Path)
