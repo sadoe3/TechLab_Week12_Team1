@@ -85,6 +85,22 @@ void UParticleSystemComponent::TickComponent(float DeltaTime)
 	UpdateRenderBounds();
 }
 
+void UParticleSystemComponent::UpdateInEditor(float DeltaTime)
+{
+	if (!Template)
+	{
+		return;
+	}
+
+	if (bAutoActivate && !bEditorAutoActivated)
+	{
+		bEditorAutoActivated = true;
+		ActivateSystem();
+	}
+
+	TickComponent(DeltaTime);
+}
+
 FBox UParticleSystemComponent::CalcLocalBounds() const
 {
 	if (Template && Template->bUseFixedRelativeBoundingBox)

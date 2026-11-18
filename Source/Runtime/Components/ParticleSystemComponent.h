@@ -34,6 +34,8 @@ public:
 	void DeactivateSystem();
 	bool IsActive() const { return bIsActive; }
 
+	void UpdateInEditor(float DeltaTime);
+
 	void InitParticles();
 	void ResetParticles(bool bEmptyInstances = false);
 
@@ -67,4 +69,6 @@ protected:
 	std::uniform_real_distribution<float> RandomDistribution{ 0.0f, 1.0f };
 	bool bIsActive = false;
 	bool bWasDeactivated = false;
+
+	bool bEditorAutoActivated = false;
 };
