@@ -36,16 +36,22 @@ try {
         }
     }
     if (-not $symbolStore) {
-        $symbolStore = (Read-Host 'Symbol Store 경로 (예: \\서버PC\symbols)').Trim().TrimEnd('\')
+        $symbolStore = (Read-Host 'Symbol Store 경로 (예: \\서버PC\symbols 또는 C:\SymbolStore)').Trim().TrimEnd('\')
     }
-    if ($symbolStore -notmatch '^\\\\([^\\/:*?"<>|;\s]+)\\([^\\/:*?"<>|;]+)(\\[^/:*?"<>|;]*)?$') {
-        throw 'Symbol Store는 \\서버\공유폴더 형태로 입력해 주세요.'
+    $sharePath = $null
+    if ($symbolStore -match '^\\\\([^\\/:*?"<>|;\s]+)\\([^\\/:*?"<>|;]+)(\\[^/:*?"<>|;]*)?$') {
+        $sharePath = '\\' + $Matches[1] + '\' + $Matches[2]
     }
-    $sharePath = '\\' + $Matches[1] + '\' + $Matches[2]
+    elseif ($symbolStore -notmatch '^[A-Za-z]:\\[^:*?"<>|;]*$') {
+        throw 'Symbol Store는 \\서버\공유폴더 또는 로컬 절대 경로로 입력해 주세요.'
+    }
     Write-Host "사용할 Symbol Store: $symbolStore"
 
     # 2. 이미 연결되어 있으면 그대로 사용합니다. 필요할 때만 Windows에 계정 인증을 맡깁니다.
     if (-not (Test-Path -LiteralPath $symbolStore -PathType Container -ErrorAction SilentlyContinue)) {
+        if (-not $sharePath) {
+            throw '지정한 로컬 Symbol Store 폴더가 없습니다.'
+        }
         $account = (Read-Host '공유 폴더 계정 (예: 서버PC\SymbolReader)').Trim()
         if (-not $account -or $account -match '["\r\n]') {
             throw '공유 폴더 계정을 입력해 주세요.'
@@ -70,7 +76,7 @@ try {
     [xml]$settings = @'
 <UserSettings>
   <ApplicationIdentity version="18.0" />
-  <Debugger name="Debugger" Category="{EEDBF29A-5C8B-4E01-827C-263382C18CFE}" Package="{C9DD4A57-47FB-11D2-83E7-00C04F9902C1}" RegisteredName="Debugger" PackageName="CVSDebugPackage" />
+  <Category name="Debugger" Category="{EEDBF29A-5C8B-4E01-827C-263382C18CFE}" Package="{C9DD4A57-47FB-11D2-83E7-00C04F9902C1}" RegisteredName="Debugger" PackageName="CVSDebugPackage" />
 </UserSettings>
 '@
     $debuggerOptions = [ordered]@{
@@ -85,11 +91,35 @@ try {
         $property = $settings.CreateElement('PropertyValue')
         $property.SetAttribute('name', $option.Key)
         $property.InnerText = $option.Value
-        $settings.UserSettings.Debugger.AppendChild($property) | Out-Null
+        $settings.UserSettings.Category.AppendChild($property) | Out-Null
     }
     $settings.UserSettings.ApplicationIdentity.SetAttribute('version', [string]([Diagnostics.FileVersionInfo]::GetVersionInfo($VisualStudioPath).FileMajorPart) + '.0')
     $settingsPath = Join-Path ([IO.Path]::GetTempPath()) ('HitoriCrash-' + [guid]::NewGuid().ToString('N') + '.vssettings')
     $settings.Save($settingsPath)
+
+    # VS 2026의 서버 목록은 unified settings가 관리합니다. Legacy import만으로는
+    # 이 목록이 갱신되지 않으므로 선택한 VS의 기존 JSON에서 해당 항목만 교체합니다.
+    $vsMajorVersion = [Diagnostics.FileVersionInfo]::GetVersionInfo($VisualStudioPath).FileMajorPart
+    if ($vsMajorVersion -ge 18) {
+        $vsWhere = Join-Path ${env:ProgramFiles(x86)} 'Microsoft Visual Studio\Installer\vswhere.exe'
+        $installations = & $vsWhere -all -prerelease -format json -utf8 | ConvertFrom-Json
+        $installation = $installations | Where-Object { (Join-Path $_.installationPath 'Common7\IDE\devenv.exe') -ieq $VisualStudioPath } | Select-Object -First 1
+        if (-not $installation) {
+            throw '선택한 Visual Studio의 설정 위치를 찾지 못했습니다.'
+        }
+        $vsSettingsDirectory = Join-Path $env:LOCALAPPDATA "Microsoft\VisualStudio\$vsMajorVersion.0_$($installation.instanceId)"
+        $vsSettingsPath = Join-Path $vsSettingsDirectory 'settings.json'
+        # VS에 포함된 JSON parser로 주석과 trailing comma도 읽고 기존 옵션 값을 보존합니다.
+        Add-Type -Path (Join-Path (Split-Path -Parent $VisualStudioPath) 'CommonExtensions\Microsoft\NuGet\Newtonsoft.Json.dll')
+        $vsSettings = [Newtonsoft.Json.Linq.JObject]::new()
+        if (Test-Path -LiteralPath $vsSettingsPath) {
+            $vsSettings = [Newtonsoft.Json.Linq.JObject]::Parse([IO.File]::ReadAllText($vsSettingsPath))
+        }
+        $searchPaths = ConvertTo-Json -InputObject @(@{ enabled = $true; location = $symbolStore }) -Compress
+        $vsSettings['debugging.symbols.location.searchPaths'] = [Newtonsoft.Json.Linq.JArray]::Parse($searchPaths)
+        New-Item -ItemType Directory -Path $vsSettingsDirectory -Force | Out-Null
+        [IO.File]::WriteAllText($vsSettingsPath, $vsSettings.ToString(), [Text.UTF8Encoding]::new($false))
+    }
 
     # 4. 현재 process의 symbol 경로도 맞춰 기존 환경변수의 cache override를 피합니다.
     # Git helper 환경변수는 호출한 batch에서 상속합니다. Windows 사용자 환경변수는 변경하지 않습니다.
