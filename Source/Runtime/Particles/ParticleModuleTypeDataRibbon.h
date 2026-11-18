@@ -62,4 +62,8 @@ public:
 	/** Deactivate 하면 남은 띠를 수명을 기다리지 않고 바로 지운다 */
 	UPROPERTY(EditAnywhere)
 	bool bDeadTrailsOnDeactivate = false;
+
+	// 콜리전으로 중간 점이 죽으면 그 점부터 끝까지 끊도록 함.
+	UPROPERTY(EditAnywhere)
+	bool bCutTrailOnCollision = true;
 };
