@@ -38,6 +38,7 @@
 #include "Render/RenderCommand.h"
 #include "Editor/Outliner/OutlinerPanel.h"
 #include "Editor/HitoriEd/EditorFileUtils.h"
+#include "Editor/ParticleSystemEditor/ParticleSystemEditor.h"
 #include "Editor/Viewports/EditorViewportClient.h"
 #include "UObject/UObjectIterator.h"
 
@@ -229,6 +230,13 @@ void UEditorEngine::InitPanels()
 	ContentDrawerPanel->SetCreateWidgetCallback([this](const FString& Path)
 	{
 		if (FUIEditor::CreateDefaultAsset(Path))
+		{
+			EditorManager->OpenEditor(Path);
+		}
+	});
+	ContentDrawerPanel->SetCreateParticleSystemCallback([this](const FString& Path)
+	{
+		if (FParticleSystemEditor::CreateDefaultAsset(Path))
 		{
 			EditorManager->OpenEditor(Path);
 		}

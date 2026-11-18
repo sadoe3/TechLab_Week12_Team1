@@ -66,23 +66,35 @@ void FContentDrawerPanel::OnRender()
 			if (ImGui::MenuItem("Create Widget"))
 			{
 				strcpy_s(NewAssetName, "NewWidget");
-				bOpenCreateWidget = true;   // 메뉴 팝업 안에서 바로 다른 팝업을 열 수 없어 다음 줄에서 연다
+				PendingCreateKind = ECreateAssetKind::Widget;
+				bOpenCreateAsset = true;   // 메뉴 팝업 안에서 바로 다른 팝업을 열 수 없어 다음 줄에서 연다
+			}
+			if (ImGui::MenuItem("Create Particle System"))
+			{
+				strcpy_s(NewAssetName, "NewParticleSystem");
+				PendingCreateKind = ECreateAssetKind::ParticleSystem;
+				bOpenCreateAsset = true;
 			}
 			ImGui::EndPopup();
 		}
-		if (bOpenCreateWidget) { ImGui::OpenPopup("Create Widget"); bOpenCreateWidget = false; }
+		if (bOpenCreateAsset) { ImGui::OpenPopup("Create Asset"); bOpenCreateAsset = false; }
 
-		if (ImGui::BeginPopupModal("Create Widget", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+		if (ImGui::BeginPopupModal("Create Asset", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
 		{
+			const bool bParticle = PendingCreateKind == ECreateAssetKind::ParticleSystem;
+			const char* Extension = bParticle ? ".particle" : ".widget";
+			const std::function<void(const FString&)>& OnCreate = bParticle ? OnCreateParticleSystem : OnCreateWidget;
+
+			ImGui::Text(bParticle ? "New Particle System" : "New Widget");
 			ImGui::InputText("Name", NewAssetName, sizeof(NewAssetName));
-			const fs::path Target = CurrentPath / (FString(NewAssetName) + ".widget");
+			const fs::path Target = CurrentPath / (FString(NewAssetName) + Extension);
 			const bool bExists = fs::exists(Target);
 			if (bExists) ImGui::TextColored(ImVec4(1, 0.4f, 0.4f, 1), "A file with this name already exists.");
 
 			ImGui::BeginDisabled(bExists || NewAssetName[0] == '\0');
-			if (ImGui::Button("Create") && OnCreateWidget)
+			if (ImGui::Button("Create") && OnCreate)
 			{
-				OnCreateWidget(Target.generic_string());   // "Assets/UI/GameOver.widget" 형식
+				OnCreate(Target.generic_string());   // "Assets/UI/GameOver.widget" 형식
 				ImGui::CloseCurrentPopup();
 			}
 			ImGui::EndDisabled();
