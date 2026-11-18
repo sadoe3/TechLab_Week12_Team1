@@ -11,6 +11,7 @@
 #include "GameFramework/DefaultPawn.h"
 #include "Components/StaticMeshComponent.h"
 #include "UObject/UObjectIterator.h"
+#include "Render/Renderer.h"
 
 // 종료 시 렌더·에디터·뷰포트 설정을 함께 저장한다.
 FSettingsPanel::~FSettingsPanel()
@@ -62,6 +63,8 @@ void FSettingsPanel::OnRender()
 	ImGui::Indent();
 	ImGui::Checkbox("Use OBBTree", &Settings.bDecalOBBTree);
 	ImGui::Unindent();
+	// r.Particle.GPUInstancing과 같은 값. 끄면 파티클마다 드로우콜을 따로 낸다.
+	ImGui::Checkbox("Particle GPU Instancing", &FRenderer::bParticleGPUInstancing);
 
 	const char* RenderingPaths[] = { "Forward", "Deferred" };
 	int RenderingPathIndex = static_cast<int>(Settings.RenderingPath);

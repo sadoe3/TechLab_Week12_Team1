@@ -114,6 +114,7 @@ void UGameEngine::Tick(float DeltaTime)
 	Viewport.TickUI(DeltaTime);
 	RedrawViewports(Viewport);
 	FStatRegistry::EndFrame();
+	FRenderer::EndFrameStats();
 }
 
 bool UGameEngine::OpenStartupMap(const FString& MapPath)

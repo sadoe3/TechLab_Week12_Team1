@@ -19,6 +19,7 @@
 #include "Components/SkinnedMeshComponent.h"
 #include "Components/ParticleSystemComponent.h"
 #include "Particles/ParticleStats.h"
+#include "Render/Renderer.h"
 #include "Particles/ParticleMeshEmitterInstance.h"
 #include "Particles/ParticleRibbonEmitterInstance.h"
 #include "Particles/ParticleBeamEmitterInstance.h"
@@ -576,7 +577,8 @@ const FRenderStats& Stats = RenderData.RenderStats;
 			}
 		}
 
-		Lines.Add({ "Particle", TitleColor });
+		Lines.Add({ std::format("Particle [{}]", FRenderer::bParticleGPUInstancing ? "GPU Instancing" : "Per-Particle Draw"), TitleColor });
+		Lines.Add({ std::format("  Draw Calls {} (all passes)", FRenderer::GetParticleDrawCallsLastFrame()), ValueColor });
 		Lines.Add({ std::format("  Systems {} (active {})", NumComponents, NumActiveComponents), ValueColor });
 		Lines.Add({ std::format("  Emitters {}", NumEmitters), ValueColor });
 		Lines.Add({ std::format("  Active Particles {} / {}", ActiveParticles, MaxParticles), ValueColor });

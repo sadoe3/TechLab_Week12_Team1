@@ -93,14 +93,34 @@ void FRenderer::DrawMeshes(std::span<const FMeshDrawBatch> Batches)
 		
 		PreviousTextureCount = static_cast<uint32>(Batch.Textures.Num());
 
-		// 인스턴스 배치: 인스턴스 데이터를 올린 뒤 Item(섹션)마다 DrawIndexedInstanced 한 번으로 InstanceCount개를 그린다.
 		if (Batch.InstanceCount > 0)
 		{
-			if (!BindInstances(Batch)) continue;
-			for (const FMeshDrawBatch::FItem& Item : Batch.Items)
+			if (bParticleGPUInstancing)
 			{
-				BindObject(Batch, Item);
-				RenderCommand::DrawIndexedInstanced(Item.IndexCount, Batch.InstanceCount, Item.StartIndex);
+				// 인스턴싱: 인스턴스 데이터를 한 번 올린 뒤 Item(섹션)마다 DrawIndexedInstanced 한 번으로 InstanceCount개를 그린다.
+				if (!BindInstances(Batch, 0, Batch.InstanceCount)) continue;
+				for (const FMeshDrawBatch::FItem& Item : Batch.Items)
+				{
+					BindObject(Batch, Item);
+					RenderCommand::DrawIndexedInstanced(Item.IndexCount, Batch.InstanceCount, Item.StartIndex);
+					++ParticleDrawCallsThisFrame;
+				}
+			}
+			else
+			{
+				// 인스턴싱 끔: 파티클마다 자기 데이터 1개만 올리고 따로 그린다.
+				// 셰이더는 그대로(SV_InstanceID = 0)라 화면은 같고, 드로우콜과 버퍼 업로드만 파티클 수만큼 늘어난다.
+				// 정렬된 인스턴스 순서대로 그리므로 반투명 파티클의 뒤→앞 순서도 유지된다.
+				for (uint32 Instance = 0; Instance < Batch.InstanceCount; ++Instance)
+				{
+					if (!BindInstances(Batch, Instance, 1)) break;
+					for (const FMeshDrawBatch::FItem& Item : Batch.Items)
+					{
+						BindObject(Batch, Item);
+						RenderCommand::DrawIndexedInstanced(Item.IndexCount, 1, Item.StartIndex);
+						++ParticleDrawCallsThisFrame;
+					}
+				}
 			}
 			continue;
 		}
@@ -113,10 +133,12 @@ void FRenderer::DrawMeshes(std::span<const FMeshDrawBatch> Batches)
 	}
 }
 
-bool FRenderer::BindInstances(const FMeshDrawBatch& Batch)
+bool FRenderer::BindInstances(const FMeshDrawBatch& Batch, uint32 FirstInstance, uint32 Count)
 {
-	const void* InstanceData = Batch.GetInstanceData();
-	if (!InstanceData || Batch.InstanceStride == 0) return false;
+	const void* BatchData = Batch.GetInstanceData();
+	if (!BatchData || Batch.InstanceStride == 0 || Count == 0) return false;
+	if (FirstInstance + Count > Batch.InstanceCount) return false;
+	const uint8* InstanceData = static_cast<const uint8*>(BatchData) + static_cast<size_t>(FirstInstance) * Batch.InstanceStride;
 
 	FInstanceBufferSlot* Slot = nullptr;
 	for (FInstanceBufferSlot& Candidate : InstanceBuffers)
@@ -128,15 +150,15 @@ bool FRenderer::BindInstances(const FMeshDrawBatch& Batch)
 	}
 
 	// 모자라면 2배씩 키운다 (최소 256개)
-	if (!Slot->Buffer || Slot->Buffer->GetCapacity() < Batch.InstanceCount)
+	if (!Slot->Buffer || Slot->Buffer->GetCapacity() < Count)
 	{
 		uint32 NewCapacity = Slot->Buffer ? Slot->Buffer->GetCapacity() : 256u;
-		while (NewCapacity < Batch.InstanceCount) NewCapacity *= 2;
+		while (NewCapacity < Count) NewCapacity *= 2;
 		Slot->Buffer = RenderCommand::CreateDynamicStructuredBuffer(NewCapacity, Batch.InstanceStride);
 		if (!Slot->Buffer) return false;
 	}
 
-	RenderCommand::UpdateBufferData(Slot->Buffer.get(), InstanceData, Batch.InstanceCount * Batch.InstanceStride);
+	RenderCommand::UpdateBufferData(Slot->Buffer.get(), InstanceData, Count * Batch.InstanceStride);
 	RenderCommand::BindShaderResource(ParticleInstanceBufferSlot, Slot->Buffer.get(), EShaderBindFlagBits::Vertex);
 	return true;
 }

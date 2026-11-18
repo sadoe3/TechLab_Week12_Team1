@@ -4,6 +4,7 @@
 #include "Core/StatOverlay.h"
 #include "Core/Windows/CrashTest.h"
 #include "Render/SceneRenderer.h"
+#include "Render/Renderer.h"
 
 #include "Editor/Settings/SettingsPanel.h"
 
@@ -391,6 +392,15 @@ void FOutputLogPanel::RegisterCommands()
 			if (!ParseToggle(Args, USkinnedMeshComponent::bUseGPUSkinning, bOn)) return false;
 			USkinnedMeshComponent::SetGPUSkinningEnabled(bOn);
 			FLog::Log(ELogVerbosity::Info, "r.GPUSkinning = {}", bOn ? 1 : 0);
+			return true;
+		});
+
+	Add("r.Particle.GPUInstancing", "r.Particle.GPUInstancing [0|1]", [](const TArray<FString>& Args, const FString&)
+		{
+			bool bOn = false;
+			if (!ParseToggle(Args, FRenderer::bParticleGPUInstancing, bOn)) return false;
+			FRenderer::bParticleGPUInstancing = bOn;
+			FLog::Log(ELogVerbosity::Info, "r.Particle.GPUInstancing = {}", bOn ? 1 : 0);
 			return true;
 		});
 
