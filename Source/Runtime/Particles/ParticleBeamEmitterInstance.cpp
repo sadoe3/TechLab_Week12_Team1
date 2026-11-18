@@ -39,8 +39,6 @@ void FParticleBeamEmitterInstance::Init()
 
 void FParticleBeamEmitterInstance::BuildBeamPoints(TArray<FDynamicRibbonEmitterReplayData::FRibbonPoint>& OutPoints) const
 {
-	// TODO(human): Source(원점) → BeamModule_Target->TargetLocation을 Segments 구간으로 나눠 OutPoints를 채운다
-	
 	if (ActiveParticles == 0 || !BeamTypeData || !BeamModule_Target)
 	{
 		return;
@@ -71,6 +69,29 @@ UMaterial* FParticleBeamEmitterInstance::GetMaterial() const
 
 TUniquePtr<FDynamicEmitterDataBase> FParticleBeamEmitterInstance::GetDynamicData(bool bSelected)
 {
-	// TODO: Step 2~4 — Source(PSC)→Target 분할 점을 만들어 FDynamicBeam2EmitterData 스냅샷으로 넘긴다
-	return nullptr;
+	// BuildBeamPoints로 점을 만들어 FDynamicBeam2EmitterData 스냅샷으로 넘긴다 
+
+	if (!bEnabled || ActiveParticles == 0)
+	{
+		return nullptr;
+	}
+	if (!RenderBuffers)
+	{
+		RenderBuffers = MakeShared<FRibbonRenderBuffers>();
+	}
+
+	auto Data = MakeUnique<FDynamicBeam2EmitterData>();
+	Data->bSelected = bSelected;
+	Data->Material = GetMaterial();
+	Data->Source.bUseLocalSpace = true;
+	Data->Buffers = RenderBuffers;
+
+	BuildBeamPoints(Data->Source.Points);
+
+	Data->Source.ActiveParticleCount = Data->Source.Points.Num();
+	if (Data->Source.ActiveParticleCount < 2)
+	{
+		return nullptr;
+	}
+	return Data;
 }
