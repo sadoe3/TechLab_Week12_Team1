@@ -44,9 +44,29 @@ void FParticleEmitterInstance::SetCurrentLODIndex(int32 InLODIndex)
 	{
 		return;
 	}
-	// Step 3에서 Spawn 누적값, Burst 상태, 모듈 Payload 오프셋 처리를 여기에 더한다
+	// SpawnFraction은 "덜 나온 파티클 몫"이라 LOD와 무관하므로 그대로 이어 쓴다
 	CurrentLODLevelIndex = InLODIndex;
 	CurrentLODLevel = NewLOD;
+
+	if (NewLOD->RequiredModule)
+	{
+		EmitterDuration = NewLOD->RequiredModule->EmitterDuration;
+	}
+
+	// 새 LOD의 BurstList에 맞춰 다시 짜되, 이번 루프에서 시각이 이미 지난 버스트는 터진 것으로 둬서 두 번 터지지 않게 한다
+	if (NewLOD->SpawnModule)
+	{
+		const TArray<FParticleBurst>& BurstList = NewLOD->SpawnModule->GetBurstList();
+		const float Duration = EmitterDuration > 0.0f ? EmitterDuration : 1.0f;
+		const float LocalEmitterTime = EmitterTime - CurrentDelay;
+
+		BurstFired.SetNum(BurstList.Num());
+		for (int32 i = 0; i < BurstList.Num(); ++i)
+		{
+			const float BurstTime = std::clamp(BurstList[i].Time, 0.0f, 1.0f) * Duration;
+			BurstFired[i] = (LocalEmitterTime >= BurstTime) ? 1 : 0;
+		}
+	}
 }
 
 void FParticleEmitterInstance::Init()
