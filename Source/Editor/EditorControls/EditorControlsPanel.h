@@ -40,6 +40,23 @@ public:
 
 	const char* Items[5] = {"StaticMesh", "Particle", "Text", "HeightFog", "Character" };
 
+	// LightItems와 LightClasses는 인덱스가 1:1로 맞아야 한다
+	int32 LightSelectedIndex = 0;
+	const char* LightItems[6] = { "Directional Light", "Spot Light", "Point Light", "Rect Light", "Sky Light", "Decal" };
+	TArray<UClass*> LightClasses
+	{
+		ADirectionalLightActor::StaticClass(),
+		ASpotLightActor::StaticClass(),
+		APointLightActor::StaticClass(),
+		ARectLightActor::StaticClass(),
+		ASkyLightActor::StaticClass(),
+		ADecalActor::StaticClass(),
+	};
+
+	int32 ParticleSelectedIndex = 0;
+	const char* ParticleItems[3] = { "Mesh Emitter", "Sprite Emitter", "Ribbon Emitter" };
+	void AddParticle(int32 Index);
+
 	FGizmo* Gizmo = nullptr;
 	int32 GizmoSelectedIndex = 0;
 	const char* GizmoItems[3] ={"Location","Rotation","Scale"};
