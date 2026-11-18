@@ -21,6 +21,29 @@ FVector UParticleModule::RandomRange(FParticleEmitterInstance* Owner, const FVec
 		RandomRange(Owner, Min.Z, Max.Z));
 }
 
+namespace
+{
+	float GetCurveTime(const FParticleEmitterInstance* Owner)
+	{
+		return Owner ? Owner->GetEmitterTimeFraction() : 0.0f;
+	}
+
+	float GetRandom01(const FParticleEmitterInstance* Owner)
+	{
+		return (Owner && Owner->Component) ? Owner->Component->GetRandomFraction() : 0.0f;
+	}
+}
+
+float UParticleModule::GetDistributionValue(FParticleEmitterInstance* Owner, const FDistributionFloat& Distribution)
+{
+	return Distribution.GetValue(GetCurveTime(Owner), [Owner]() { return GetRandom01(Owner); });
+}
+
+FVector UParticleModule::GetDistributionValue(FParticleEmitterInstance* Owner, const FDistributionVector& Distribution)
+{
+	return Distribution.GetValue(GetCurveTime(Owner), [Owner]() { return GetRandom01(Owner); });
+}
+
 FVector UParticleModule::EmitterToSimulationVector(const FParticleEmitterInstance* Owner, const FVector& Vector)
 {
 	// 로컬 공간 시뮬레이션이면 이미터 공간 = 시뮬레이션 공간

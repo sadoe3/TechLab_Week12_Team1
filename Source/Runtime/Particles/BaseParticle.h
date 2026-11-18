@@ -7,6 +7,9 @@ enum EParticleStates : int32
 {
 	/** 이번 프레임에 스폰됨. PostSpawn에서 SpawnTime만큼 진행했으므로 UpdateBoundingBox의 적분을 1회 건너뛴다. */
 	STATE_Particle_JustSpawned = 0x02000000,
+
+	// 충돌로 인해 죽었음을 표시하는 플래그
+	STATE_Particle_KilledByCollision = 0x04000000,
 };
 
 /** ParticleIndices가 uint16이므로 이미터당 최대 파티클 수 */

@@ -56,7 +56,7 @@ void AEmitter::SetupTestMeshParticleSystem()
 	Required->EmitterLoops = 0;
 
 	UParticleModuleSpawn* Spawn = NewObject<UParticleModuleSpawn>();
-	Spawn->Rate = 2.0f;
+	Spawn->Rate = FDistributionFloat::MakeConstant(2.0f);
 	Spawn->RateScale = 1.0f;
 
 	UParticleModuleTypeDataMesh* MeshTypeData = NewObject<UParticleModuleTypeDataMesh>();
@@ -105,12 +105,11 @@ void AEmitter::SetupTestRibbonParticleSystem()
 	Required->EmitterLoops = 0;
 
 	UParticleModuleSpawn* Spawn = NewObject<UParticleModuleSpawn>();
-	Spawn->Rate = 120.0f;
+	Spawn->Rate = FDistributionFloat::MakeConstant(120.0f);
 	Spawn->RateScale = 1.0f;
 
 	UParticleModuleLifetime* Lifetime = NewObject<UParticleModuleLifetime>();
-	Lifetime->LifetimeMin = 1.0f;
-	Lifetime->LifetimeMax = 1.0f;
+	Lifetime->Lifetime = FDistributionFloat::MakeConstant(1.0f);
 
 	UParticleModuleTypeDataRibbon* RibbonTypeData = NewObject<UParticleModuleTypeDataRibbon>();
 
@@ -147,7 +146,7 @@ void AEmitter::SetupTestBeamParticleSystem()
 
 	// 빔 파티클 1개만 처음에 만든다
 	UParticleModuleSpawn* Spawn = NewObject<UParticleModuleSpawn>();
-	Spawn->Rate = 0.0f;
+	Spawn->Rate = FDistributionFloat::MakeConstant(0.0f);
 	Spawn->bProcessSpawnRate = false;
 	FParticleBurst Burst;
 	Burst.Count = 1;
@@ -156,13 +155,11 @@ void AEmitter::SetupTestBeamParticleSystem()
 
 	// 수명 0 = OneOverMaxLifetime 0 = 죽지 않음
 	UParticleModuleLifetime* Lifetime = NewObject<UParticleModuleLifetime>();
-	Lifetime->LifetimeMin = 0.0f;
-	Lifetime->LifetimeMax = 0.0f;
+	Lifetime->Lifetime = FDistributionFloat::MakeConstant(0.0f);
 
 	// Size.X가 빔 폭이 된다
 	UParticleModuleSize* Size = NewObject<UParticleModuleSize>();
-	Size->StartSizeMin = FVector(0.3f, 0.3f, 0.3f);
-	Size->StartSizeMax = FVector(0.3f, 0.3f, 0.3f);
+	Size->StartSize = FDistributionVector::MakeConstant(FVector(0.3f, 0.3f, 0.3f));
 
 	UParticleModuleTypeDataBeam2* BeamTypeData = NewObject<UParticleModuleTypeDataBeam2>();
 	BeamTypeData->Segments = 10;

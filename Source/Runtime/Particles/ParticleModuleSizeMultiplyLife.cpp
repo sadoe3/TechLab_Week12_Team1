@@ -13,7 +13,7 @@ UParticleModuleSizeMultiplyLife::UParticleModuleSizeMultiplyLife()
 void UParticleModuleSizeMultiplyLife::Apply(FBaseParticle& Particle) const
 {
 	const float T = std::clamp(Particle.RelativeTime, 0.0f, 1.0f);
-	const FVector Scale = MultiplierStart + (MultiplierEnd - MultiplierStart) * T;
+	const FVector Scale = LifeMultiplier.Eval(T, FVector::OneVector);
 
 	// Size만 곱하고 BaseSize는 건드리지 않는다. BaseSize까지 바꾸면 매 프레임 배율이 누적된다.
 	if (bMultiplyX) { Particle.Size.X *= Scale.X; }

@@ -9,7 +9,7 @@
  * 오일러 각(Pitch, Yaw, Roll, 도)이므로 하나로 합쳤다.
  *  - Sprite: Z(Roll)만 쓴다. 화면 안에서 쿼드가 도는 각도.
  *  - Mesh:   XYZ 모두 쓴다.
- * StartRotation(Distribution)을 Min~Max 균등 분포로 대신한다.
+ * Spawn-time values are distributions (Constant / Uniform / Curve over the emitter loop, see GetDistributionValue).
  */
 UCLASS()
 class UParticleModuleRotation : public UParticleModule
@@ -25,8 +25,5 @@ public:
 public:
 	/** 도 단위 (X=Pitch, Y=Yaw, Z=Roll) */
 	UPROPERTY(EditAnywhere)
-	FVector StartRotationMin = FVector::ZeroVector;
-
-	UPROPERTY(EditAnywhere)
-	FVector StartRotationMax = FVector::ZeroVector;
+	FDistributionVector StartRotation = FDistributionVector::MakeConstant(FVector::ZeroVector);
 };

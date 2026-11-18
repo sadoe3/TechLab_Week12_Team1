@@ -437,22 +437,19 @@ UParticleEmitter* FParticleSystemEditor::CreateDefaultSpriteEmitter()
 	LOD->RequiredModule = Required;
 
 	UParticleModuleSpawn* Spawn = NewObject<UParticleModuleSpawn>();
-	Spawn->Rate = 20.0f;
+	Spawn->Rate = FDistributionFloat::MakeConstant(20.0f);
 	LOD->SpawnModule = Spawn;
 
 	UParticleModuleLifetime* Lifetime = NewObject<UParticleModuleLifetime>();
-	Lifetime->LifetimeMin = 1.0f;
-	Lifetime->LifetimeMax = 1.0f;
+	Lifetime->Lifetime = FDistributionFloat::MakeConstant(1.0f);
 	LOD->AddModule(Lifetime);
 
 	UParticleModuleSize* Size = NewObject<UParticleModuleSize>();
-	Size->StartSizeMin = FVector(0.25f, 0.25f, 0.25f);
-	Size->StartSizeMax = FVector(0.25f, 0.25f, 0.25f);
+	Size->StartSize = FDistributionVector::MakeConstant(FVector(0.25f, 0.25f, 0.25f));
 	LOD->AddModule(Size);
 
 	UParticleModuleVelocity* Velocity = NewObject<UParticleModuleVelocity>();
-	Velocity->StartVelocityMin = FVector(-0.1f, -0.1f, 0.0f);
-	Velocity->StartVelocityMax = FVector(0.1f, 0.1f, 1.0f);
+	Velocity->StartVelocity = FDistributionVector::MakeUniform(FVector(-0.1f, -0.1f, 0.0f), FVector(0.1f, 0.1f, 1.0f));
 	LOD->AddModule(Velocity);
 
 	LOD->AddModule(NewObject<UParticleModuleColorOverLife>());

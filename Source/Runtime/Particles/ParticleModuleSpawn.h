@@ -22,8 +22,8 @@ public:
 	UParticleModuleSpawn() = default;
 	virtual ~UParticleModuleSpawn() override = default;
 
-	/** 현재 프레임에서 스폰할 개수를 계산한다 (Rate 기반). */
-	virtual float GetSpawnRate() const { return bProcessSpawnRate ? Rate : 0.0f; }
+	/** Particles per second right now. Rate is read at the emitter's loop fraction (UE: Rate.GetValue(EmitterTime)). */
+	virtual float GetSpawnRate(FParticleEmitterInstance* Owner) const { return bProcessSpawnRate ? GetDistributionValue(Owner, Rate) : 0.0f; }
 
 	const TArray<FParticleBurst>& GetBurstList() const { return BurstList; }
 	/** 에디터의 Burst 목록 편집용 */
@@ -33,7 +33,7 @@ public:
 
 public:
 	UPROPERTY(EditAnywhere)
-	float Rate = 10.0f;
+	FDistributionFloat Rate = FDistributionFloat::MakeConstant(10.0f);
 
 	UPROPERTY(EditAnywhere)
 	float RateScale = 1.0f;

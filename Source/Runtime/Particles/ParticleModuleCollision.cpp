@@ -129,9 +129,6 @@ void UParticleModuleCollision::FinalUpdate(FParticleEmitterInstance* Owner, int3
 		return;
 	}
 
-	// 리본 Kill 체크 위해
-	FParticleRibbonEmitterInstance* Ribbon = AsRibbon(Owner);
-
 	// 실제 충돌 파티클 루프
 	for (int32 i = 0; i < Owner->ActiveParticles; ++i)
 	{
@@ -205,14 +202,8 @@ void UParticleModuleCollision::FinalUpdate(FParticleEmitterInstance* Owner, int3
 
 		if (ThisResponse == EParticleCollisionResponse::Kill)
 		{
-			if (Ribbon)
-			{
-				KillRibbonFrom(Ribbon, Owner->ParticleIndices[i]);
-			}
-			else
-			{
-				Particle->RelativeTime = 1.1f;
-			}
+			Particle->Flags |= STATE_Particle_KilledByCollision;
+			Particle->RelativeTime = 1.1f;
 			continue;
 		}
 
