@@ -46,6 +46,7 @@ struct PS_INPUT
     float4 color : COLOR;
     float2 uv : TEXCOORD0;
     float3 worldPosition : TEXCOORD1;
+    float4 particleColor : TEXCOORD2; // 메시 파티클 인스턴스 색 (일반 메시는 1)
 };
 
 Texture2D g_txColor : register(t0);
@@ -97,12 +98,13 @@ PS_INPUT mainVS(VS_INPUT input)
     output.uv = input.t;
     output.normal = input.n;
     output.worldPosition = WorldPosition.xyz;
+    output.particleColor = PARTICLE_INSTANCE_COLOR(input);
     return output;
 }
 
 float4 mainPS(PS_INPUT input) : SV_TARGET
 {
-    float4 texColor = g_txColor.Sample(g_Sample, input.uv + UVOffset);
+    float4 texColor = g_txColor.Sample(g_Sample, input.uv + UVOffset) * input.particleColor;
     texColor.a *= FogTransmittance(input.worldPosition);
     return texColor;
 }

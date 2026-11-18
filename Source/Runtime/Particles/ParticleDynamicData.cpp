@@ -243,7 +243,11 @@ void FDynamicMeshEmitterData::GetDynamicMeshElements(
 	FParticleMeshInstance* Instances = Queue.AllocateInstances<FParticleMeshInstance>(static_cast<uint32>(Count));
 	for (int32 DrawIndex = 0; DrawIndex < Count; ++DrawIndex)
 	{
-		Instances[DrawIndex].World = WorldMatrices[Order[DrawIndex]];
+		const int32 SourceIndex = Order[DrawIndex];
+		Instances[DrawIndex].World = WorldMatrices[SourceIndex];
+		Instances[DrawIndex].Color = SourceIndex < Source.Colors.Num()
+			? Source.Colors[SourceIndex]
+			: FVector4(1.0f, 1.0f, 1.0f, 1.0f);
 	}
 
 	// 인스턴스마다 월드 행렬이 있으므로 오브젝트 상수(World)는 단위 행렬. 그림자 Build는 여기에 PreTranslation만 더한다.

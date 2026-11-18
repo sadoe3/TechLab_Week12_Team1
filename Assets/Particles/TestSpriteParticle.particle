@@ -24,7 +24,9 @@
             "EmitterDuration": 1.0,
             "EmitterDelay": 0.0,
             "EmitterLoops": 0,
-            "MaxDrawCount": 500
+            "MaxDrawCount": 500,
+            "SubImages_Horizontal": 4,
+            "SubImages_Vertical": 4
           },
           "SpawnModule": {
             "Rate": 10.0,
@@ -32,12 +34,6 @@
             "bProcessSpawnRate": true,
             "bProcessBurstList": true,
             "BurstList": []
-          },
-          "TypeDataModule": {
-            "Type": "Sprite",
-            "SubImages_Horizontal": 4,
-            "SubImages_Vertical": 4,
-            "bFaceCamera": true
           }
         }
       ]

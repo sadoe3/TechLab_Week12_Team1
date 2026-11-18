@@ -8,7 +8,6 @@
 #include "Particles/ParticleModuleRequired.h"
 #include "Particles/ParticleModuleSpawn.h"
 #include "Particles/ParticleModuleTypeDataMesh.h"
-#include "Particles/ParticleModuleTypeDataSprite.h"
 #include "Particles/ParticleSystem.h"
 #include "UObject/UObjectGlobals.h"
 #include "UObject/UObjectHash.h"
@@ -235,6 +234,8 @@ bool ParticleSystemFile::Read(const std::filesystem::path& Path, UParticleSystem
 						Req->EmitterDelay = ReqJson.value("EmitterDelay", 0.0f);
 						Req->EmitterLoops = ReqJson.value("EmitterLoops", 0);
 						Req->MaxDrawCount = ReqJson.value("MaxDrawCount", 500);
+						Req->SubImages_Horizontal = ReqJson.value("SubImages_Horizontal", 1);
+						Req->SubImages_Vertical = ReqJson.value("SubImages_Vertical", 1);
 						if (ReqJson.contains("Material") && ReqJson["Material"].is_object())
 						{
 							Req->Material = LoadMaterialFromJson(ReqJson["Material"]);
@@ -291,11 +292,15 @@ bool ParticleSystemFile::Read(const std::filesystem::path& Path, UParticleSystem
 						}
 						else if (TypeName == "Sprite")
 						{
-							UParticleModuleTypeDataSprite* SpriteType = NewObject<UParticleModuleTypeDataSprite>();
-							SpriteType->SubImages_Horizontal = TypeJson.value("SubImages_Horizontal", 1);
-							SpriteType->SubImages_Vertical = TypeJson.value("SubImages_Vertical", 1);
-							SpriteType->bFaceCamera = TypeJson.value("bFaceCamera", true);
-							LOD->TypeDataModule = SpriteType;
+							// 구버전 에셋 호환: Sprite는 TypeData 없이(nullptr) 표현하고, SubUV 값은 RequiredModule로 옮긴다
+							const bool bReqHasSubUV = LODJson.contains("RequiredModule")
+								&& LODJson["RequiredModule"].is_object()
+								&& LODJson["RequiredModule"].contains("SubImages_Horizontal");
+							if (LOD->RequiredModule && !bReqHasSubUV)
+							{
+								LOD->RequiredModule->SubImages_Horizontal = TypeJson.value("SubImages_Horizontal", 1);
+								LOD->RequiredModule->SubImages_Vertical = TypeJson.value("SubImages_Vertical", 1);
+							}
 						}
 					}
 
@@ -378,6 +383,8 @@ bool ParticleSystemFile::Write(const std::filesystem::path& Path, UParticleSyste
 				ReqJson["EmitterDelay"] = Req->EmitterDelay;
 				ReqJson["EmitterLoops"] = Req->EmitterLoops;
 				ReqJson["MaxDrawCount"] = Req->MaxDrawCount;
+				ReqJson["SubImages_Horizontal"] = Req->SubImages_Horizontal;
+				ReqJson["SubImages_Vertical"] = Req->SubImages_Vertical;
 				const json MaterialJson = SaveMaterialToJson(Req->Material);
 				if (!MaterialJson.is_discarded())
 				{
@@ -419,15 +426,6 @@ bool ParticleSystemFile::Write(const std::filesystem::path& Path, UParticleSyste
 					TypeJson["bUseStaticMeshLODs"] = MeshType->bUseStaticMeshLODs;
 					TypeJson["bCastShadows"] = MeshType->bCastShadows;
 					TypeJson["bOverrideMaterial"] = MeshType->bOverrideMaterial;
-					LODJson["TypeDataModule"] = TypeJson;
-				}
-				else if (const UParticleModuleTypeDataSprite* SpriteType = Cast<UParticleModuleTypeDataSprite>(LOD->TypeDataModule))
-				{
-					json TypeJson = json::object();
-					TypeJson["Type"] = "Sprite";
-					TypeJson["SubImages_Horizontal"] = SpriteType->SubImages_Horizontal;
-					TypeJson["SubImages_Vertical"] = SpriteType->SubImages_Vertical;
-					TypeJson["bFaceCamera"] = SpriteType->bFaceCamera;
 					LODJson["TypeDataModule"] = TypeJson;
 				}
 			}
