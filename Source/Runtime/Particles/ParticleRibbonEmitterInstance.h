@@ -22,6 +22,7 @@ public:
 	virtual void SpawnParticles(int32 Count, float StartTime, float Increment, const FVector& InitialLocation, const FVector& InitialVelocity) override;
 	virtual void KillParticles() override;
 	virtual void KillParticlesForced(bool bFireEvents = false) override;
+	virtual bool ShouldKillOnDeactivate() const override;
 	virtual TUniquePtr<FDynamicEmitterDataBase> GetDynamicData(bool bSelected) override;
 
 	/** 슬롯 번호로 그 파티클의 리본 Payload를 꺼낸다 */

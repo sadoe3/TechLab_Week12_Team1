@@ -1,6 +1,7 @@
 #include "EnginePCH.h"
 #include "Particles/ParticleDynamicData.h"
 #include "Particles/ParticleModuleRequired.h"
+#include "Particles/ParticleModuleTypeDataRibbon.h"
 #include "Engine/ParticleSystemSceneProxy.h"
 #include "Render/Mesh.h"
 #include "Render/RenderPacket.h"
@@ -295,15 +296,22 @@ void FDynamicMeshEmitterData::GetDynamicMeshElements(
 }
 
 void FDynamicRibbonEmitterData::BuildRibbonVertices(const TArray<FDynamicRibbonEmitterReplayData::FRibbonPoint>& WorldPoints,
-	const FViewContext& View, TArray<FParticleRibbonVertex>& OutVertices)
+	const FViewContext& View, const FVector& FixedWidthAxis, float TilingDistance, TArray<FParticleRibbonVertex>& OutVertices)
 {
 	OutVertices.SetNum(WorldPoints.Num() * 2);
 
-	// 점 i마다 카메라를 향한 좌우 정점 2개(OutVertices[2i], OutVertices[2i+1])를 채운다
-	FVector WidthDirection{};
+	const bool bFaceCamera = FixedWidthAxis.SizeSquared() < 1e-8f;
+	FVector WidthDirection = bFaceCamera ? FVector{} : FixedWidthAxis.Normalized();
+	float DistanceFromHead = 0.0f;
+
+	// 점 i마다 좌우 정점 2개(OutVertices[2i], OutVertices[2i+1])를 채운다
 	for (int32 i = 0; i < WorldPoints.Num(); ++i)
 	{
-		if (i + 1 < WorldPoints.Num())
+		if (i > 0)
+		{
+			DistanceFromHead += (WorldPoints[i].Location - WorldPoints[i - 1].Location).Size();
+		}
+		if (bFaceCamera && i + 1 < WorldPoints.Num())
 		{
 			const FVector RibbonDirection = WorldPoints[i + 1].Location - WorldPoints[i].Location;
 			const FVector Cross = RibbonDirection.Cross(View.CameraForward);
@@ -312,14 +320,17 @@ void FDynamicRibbonEmitterData::BuildRibbonVertices(const TArray<FDynamicRibbonE
 				WidthDirection = Cross.Normalized();
 			}
 		}
-		
+
+		// 거리 기준이면 점 간격이 달라도 텍스처가 늘어나지 않는다
+		const float U = TilingDistance > 0.0f ? DistanceFromHead / TilingDistance : i * 0.5f;
+
 		OutVertices[2 * i].Position = WorldPoints[i].Location + WidthDirection * (WorldPoints[i].Width / 2.f);
-		OutVertices[2 * i].UV.X = i * 0.5f;
+		OutVertices[2 * i].UV.X = U;
 		OutVertices[2 * i].UV.Y = 0.f;
 		OutVertices[2 * i].Color = WorldPoints[i].Color;
 
 		OutVertices[2 * i + 1].Position = WorldPoints[i].Location - WidthDirection * (WorldPoints[i].Width / 2.f);
-		OutVertices[2 * i + 1].UV.X = i * 0.5f;
+		OutVertices[2 * i + 1].UV.X = U;
 		OutVertices[2 * i + 1].UV.Y = 1.f;
 		OutVertices[2 * i + 1].Color = WorldPoints[i].Color;
 	}
@@ -354,8 +365,18 @@ void FDynamicRibbonEmitterData::GetDynamicMeshElements(
 	}
 
 	// 2) 점 목록 → 카메라를 향한 좌우 정점
+	FVector FixedWidthAxis = FVector::ZeroVector;
+	if (Source.RenderAxis == ETrailsRenderAxisOption::Trails_WorldUp)
+	{
+		FixedWidthAxis = FVector(0.0f, 0.0f, 1.0f);
+	}
+	else if (Source.RenderAxis == ETrailsRenderAxisOption::Trails_SourceUp)
+	{
+		FixedWidthAxis = ComponentToWorld.TransformVectorNoScale(FVector(0.0f, 0.0f, 1.0f));
+	}
+
 	TArray<FParticleRibbonVertex> Vertices;
-	BuildRibbonVertices(WorldPoints, View, Vertices);
+	BuildRibbonVertices(WorldPoints, View, FixedWidthAxis, Source.TilingDistance, Vertices);
 
 	const uint32 PointCount = static_cast<uint32>(WorldPoints.Num());
 	const uint32 VertexCount = static_cast<uint32>(Vertices.Num());

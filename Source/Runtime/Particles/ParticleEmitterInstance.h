@@ -37,7 +37,7 @@ public:
 	/** 모든 루프를 끝냈고 살아있는 파티클도 없는가 */
 	bool HasCompleted() const;
 	/** RequiredModule->bKillOnDeactivate */
-	bool ShouldKillOnDeactivate() const;
+	virtual bool ShouldKillOnDeactivate() const;
 	virtual void SpawnParticles(int32 Count, float StartTime, float Increment, const FVector& InitialLocation, const FVector& InitialVelocity);
 	virtual void KillParticles();
 	virtual void KillParticlesForced(bool bFireEvents = false);

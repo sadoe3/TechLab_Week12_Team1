@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include "Math/EngineMath.h"
+#include "Math/Box.h"
 
 struct FStaticMeshData;
 
@@ -45,3 +46,5 @@ FVector2 WorldToScreen(const FVector& WorldPos, const FMatrix& ViewProj, int Scr
 float DistanceToSegment(const FVector2& P, const FVector2& A, const FVector2& B);
 
 bool RayIntersectsPlane(const FRay& Ray, const FVector& PlanePoint, const FVector& PlaneNormal, float& OutT);
+
+bool SweepSphereVsBox(const FRay& Ray, const FBox& Box, float Radius, float MaxT, float& OutT, FVector& OutNormal);

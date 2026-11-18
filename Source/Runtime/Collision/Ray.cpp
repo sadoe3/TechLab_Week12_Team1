@@ -226,3 +226,57 @@ bool RayIntersectsPlane(const FRay& Ray, const FVector& PlanePoint, const FVecto
 
     return OutT >= 0.0f;
 }
+
+bool SweepSphereVsBox(const FRay& Ray, const FBox& Box, float Radius, float MaxT, float& OutT, FVector& OutNormal)
+{
+    // 구의 중심이 이 확장된 박스에 들어오는 순간 = 구가 원래 박스 표면에 닿는 순간
+    const FVector Extent(Radius, Radius, Radius);
+    const FVector Min = Box.Min - Extent;
+    const FVector Max = Box.Max + Extent;
+
+    float Enter = 0.0f;               // 세 slab에 모두 들어와 있게 되는 가장 늦은 t
+    float Exit = MaxT;                // 어느 slab에서든 처음 나가는 t
+    FVector Normal = -Ray.Direction;  // 시작부터 안에 있으면 이 값이 그대로 나간다
+
+    for (int32 Axis = 0; Axis < 3; ++Axis)
+    {
+        const float Origin = Ray.Origin[Axis];
+        const float Direction = Ray.Direction[Axis];
+
+        // 이 축과 평행하게 움직이면 slab 안에 있는지만 본다
+        if (std::abs(Direction) <= SMALL_NUMBER)
+        {
+            if (Origin < Min[Axis] || Origin > Max[Axis])
+            {
+                return false;
+            }
+            continue;
+        }
+
+        // 이 축의 두 평면에 닿는 t
+        float Near = (Min[Axis] - Origin) / Direction;
+        float Far = (Max[Axis] - Origin) / Direction;
+        if (Near > Far)
+        {
+            std::swap(Near, Far);
+        }
+
+        // 가장 늦게 들어간 축의 면이 실제로 맞은 면이다
+        if (Near > Enter)
+        {
+            Enter = Near;
+            Normal = FVector::ZeroVector;
+            Normal[Axis] = Direction > 0.0f ? -1.0f : 1.0f;  // +방향으로 가면 Min 면(-법선)에 맞음
+        }
+
+        Exit = std::min(Exit, Far);
+        if (Enter > Exit)
+        {
+            return false;  // 세 slab 구간이 겹치지 않음 → 빗나감 (또는 MaxT보다 멂)
+        }
+    }
+
+    OutT = Enter;
+    OutNormal = Normal;
+    return true;
+}

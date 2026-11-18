@@ -5,6 +5,8 @@
 #include "Particles/ParticleModuleTypeDataRibbon.h"
 #include "Particles/ParticleModuleRequired.h"
 #include "Asset/AssetManager.h"
+#include "Components/ParticleSystemComponent.h"
+#include <algorithm>
 
 FParticleRibbonEmitterInstance::FParticleRibbonEmitterInstance(UParticleEmitter* InEmitterParent, UParticleSystemComponent* InComponent, UParticleModuleTypeDataRibbon* InRibbonTypeData)
 	: RibbonTypeData(InRibbonTypeData)
@@ -110,10 +112,16 @@ void FParticleRibbonEmitterInstance::KillParticlesForced(bool bFireEvents)
 	HeadSlot = INDEX_NONE;
 }
 
+bool FParticleRibbonEmitterInstance::ShouldKillOnDeactivate() const
+{
+	return FParticleEmitterInstance::ShouldKillOnDeactivate()
+		|| (RibbonTypeData && RibbonTypeData->bDeadTrailsOnDeactivate);
+}
+
 TUniquePtr<FDynamicEmitterDataBase> FParticleRibbonEmitterInstance::GetDynamicData(bool bSelected)
 {
-	// 띠는 점 2개부터 만들어진다
-	if (!bEnabled || ActiveParticles < 2 || HeadSlot == INDEX_NONE)
+	// 이미터 위치 점이 붙을 수 있어서 파티클 1개로도 띠가 될 수 있다. 최종 점 개수는 아래에서 검사한다
+	if (!bEnabled || ActiveParticles < 1 || HeadSlot == INDEX_NONE)
 	{
 		return nullptr;
 	}
@@ -134,10 +142,32 @@ TUniquePtr<FDynamicEmitterDataBase> FParticleRibbonEmitterInstance::GetDynamicDa
 	Data->Material = Material;
 	Data->Buffers = RenderBuffers;
 	Data->Source.bUseLocalSpace = IsLocalSpace();
+	Data->Source.TilingDistance = RibbonTypeData ? RibbonTypeData->TilingDistance : 0.0f;
+	Data->Source.RenderAxis = RibbonTypeData ? RibbonTypeData->RenderAxis : ETrailsRenderAxisOption::Trails_CameraUp;
+
+	int32 MaxPoints = ActiveParticles;
+	if (RibbonTypeData && RibbonTypeData->MaxParticleInTrailCount > 0)
+	{
+		MaxPoints = std::min(MaxPoints, RibbonTypeData->MaxParticleInTrailCount);
+	}
+
+	// 머리 점은 스폰 간격마다 한 칸씩 튀므로, 매 프레임 움직이는 이미터 위치를 맨 앞 점으로 붙여 끝을 고정한다.
+	// Deactivate 뒤에는 이미터를 따라가면 안 되니 스폰 중일 때만 붙인다.
+	const bool bJoinSource = RibbonTypeData && !RibbonTypeData->bClipSourceSegement
+		&& Component && !Component->bSuppressSpawning;
+	Data->Source.Points.Reserve(MaxPoints + 1);
+	if (bJoinSource)
+	{
+		const FBaseParticle* Head = GetParticleAtSlot(HeadSlot);
+		FDynamicRibbonEmitterReplayData::FRibbonPoint& Point = Data->Source.Points.AddDefaulted_GetRef();
+		Point.Location = IsLocalSpace() ? FVector::ZeroVector : Component->GetWorldLocation();
+		Point.Width = Head->Size.X;
+		Point.Color = Head->Color;
+	}
+	const int32 PointLimit = Data->Source.Points.Num() + MaxPoints;
 
 	// ParticleIndices 순서는 swap-and-pop으로 섞여 있으므로 머리부터 Next 링크를 따라간다
-	Data->Source.Points.Reserve(ActiveParticles);
-	for (int32 Slot = HeadSlot; Slot != INDEX_NONE && Data->Source.Points.Num() < ActiveParticles; Slot = GetRibbonPayload(Slot)->Next)
+	for (int32 Slot = HeadSlot; Slot != INDEX_NONE && Data->Source.Points.Num() < PointLimit; Slot = GetRibbonPayload(Slot)->Next)
 	{
 		const FBaseParticle* Particle = GetParticleAtSlot(Slot);
 		FDynamicRibbonEmitterReplayData::FRibbonPoint& Point = Data->Source.Points.AddDefaulted_GetRef();

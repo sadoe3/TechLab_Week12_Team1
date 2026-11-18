@@ -9,6 +9,7 @@
 #include "Particles/ParticleModuleSpawn.h"
 #include "Particles/ParticleModuleTypeDataMesh.h"
 #include "Particles/ParticleModuleTypeDataRibbon.h"
+#include "Particles/ParticleModuleTypeDataBeam2.h"
 #include "Particles/ParticleSystem.h"
 #include "UObject/UObjectGlobals.h"
 #include "UObject/UObjectHash.h"
@@ -68,6 +69,38 @@ namespace
 				return static_cast<EParticleSortMode>(Index);
 		}
 		return EParticleSortMode::PSORTMODE_None;
+	}
+
+	// RenderAxis도 Trails_ 뺀 이름으로 저장한다. 배열 순서 = enum 값
+	constexpr const char* RenderAxisNames[] = { "CameraUp", "SourceUp", "WorldUp" };
+
+	ETrailsRenderAxisOption RenderAxisFromString(const std::string& Name)
+	{
+		for (int32 i = 0; i < 3; ++i)
+		{
+			if (Name == RenderAxisNames[i])
+			{
+				return static_cast<ETrailsRenderAxisOption>(i);
+			}
+		}
+		return ETrailsRenderAxisOption::Trails_CameraUp;
+	}
+
+	// Beam enum도 접두사 뺀 이름으로 저장한다. 배열 순서 = enum 값
+	constexpr const char* BeamMethodNames[] = { "Distance", "Target" };
+	constexpr const char* BeamTaperMethodNames[] = { "None", "Full" };
+
+	template <typename EnumType, size_t N>
+	EnumType EnumFromName(const char* const (&Names)[N], const std::string& Name, EnumType Default)
+	{
+		for (size_t i = 0; i < N; ++i)
+		{
+			if (Name == Names[i])
+			{
+				return static_cast<EnumType>(i);
+			}
+		}
+		return Default;
 	}
 
 	// .particle은 nlohmann json으로 직접 쓰지만, 엔진 타입(리플렉션 프로퍼티, 머티리얼 참조)은
@@ -263,7 +296,24 @@ namespace
 				}
 				else if (TypeName == "Ribbon")
 				{
-					LOD->TypeDataModule = NewObject<UParticleModuleTypeDataRibbon>();
+					UParticleModuleTypeDataRibbon* RibbonType = NewObject<UParticleModuleTypeDataRibbon>();
+					RibbonType->MaxParticleInTrailCount = TypeJson.value("MaxParticleInTrailCount", 0);
+					RibbonType->TilingDistance = TypeJson.value("TilingDistance", 0.0f);
+					RibbonType->RenderAxis = RenderAxisFromString(TypeJson.value("RenderAxis", std::string("CameraUp")));
+					RibbonType->bClipSourceSegement = TypeJson.value("bClipSourceSegement", false);
+					RibbonType->bDeadTrailsOnDeactivate = TypeJson.value("bDeadTrailsOnDeactivate", false);
+					LOD->TypeDataModule = RibbonType;
+				}
+				else if (TypeName == "Beam2")
+				{
+					UParticleModuleTypeDataBeam2* BeamType = NewObject<UParticleModuleTypeDataBeam2>();
+					BeamType->Segments = TypeJson.value("Segments", 10);
+					BeamType->BeamMethod = EnumFromName(BeamMethodNames, TypeJson.value("BeamMethod", std::string("Target")), EBeam2Method::PEBM2_Target);
+					BeamType->Distance = TypeJson.value("Distance", 5.0f);
+					BeamType->TextureTileDistance = TypeJson.value("TextureTileDistance", 0.0f);
+					BeamType->TaperMethod = EnumFromName(BeamTaperMethodNames, TypeJson.value("TaperMethod", std::string("None")), EBeamTaperMethod::PEBTM_None);
+					BeamType->TaperFactor = TypeJson.value("TaperFactor", 1.0f);
+					LOD->TypeDataModule = BeamType;
 				}
 				else if (TypeName == "Sprite")
 				{
@@ -378,11 +428,27 @@ namespace
 					TypeJson["bOverrideMaterial"] = MeshType->bOverrideMaterial;
 					LODJson["TypeDataModule"] = TypeJson;
 				}
-				else if (Cast<UParticleModuleTypeDataRibbon>(LOD->TypeDataModule))
+				else if (UParticleModuleTypeDataRibbon* RibbonType = Cast<UParticleModuleTypeDataRibbon>(LOD->TypeDataModule))
 				{
-					// 지금은 설정값이 없어서 종류만 남긴다
 					json TypeJson = json::object();
 					TypeJson["Type"] = "Ribbon";
+					TypeJson["MaxParticleInTrailCount"] = RibbonType->MaxParticleInTrailCount;
+					TypeJson["TilingDistance"] = RibbonType->TilingDistance;
+					TypeJson["RenderAxis"] = RenderAxisNames[static_cast<int32>(RibbonType->RenderAxis)];
+					TypeJson["bClipSourceSegement"] = RibbonType->bClipSourceSegement;
+					TypeJson["bDeadTrailsOnDeactivate"] = RibbonType->bDeadTrailsOnDeactivate;
+					LODJson["TypeDataModule"] = TypeJson;
+				}
+				else if (const UParticleModuleTypeDataBeam2* BeamType = Cast<UParticleModuleTypeDataBeam2>(LOD->TypeDataModule))
+				{
+					json TypeJson = json::object();
+					TypeJson["Type"] = "Beam2";
+					TypeJson["Segments"] = BeamType->Segments;
+					TypeJson["BeamMethod"] = BeamMethodNames[static_cast<int32>(BeamType->BeamMethod)];
+					TypeJson["Distance"] = BeamType->Distance;
+					TypeJson["TextureTileDistance"] = BeamType->TextureTileDistance;
+					TypeJson["TaperMethod"] = BeamTaperMethodNames[static_cast<int32>(BeamType->TaperMethod)];
+					TypeJson["TaperFactor"] = BeamType->TaperFactor;
 					LODJson["TypeDataModule"] = TypeJson;
 				}
 			}
