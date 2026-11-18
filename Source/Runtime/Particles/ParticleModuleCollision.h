@@ -3,6 +3,8 @@
 #include "ParticleModule.h"
 #include "ParticleModuleCollision.generated.h"
 
+class UPrimitiveComponent;
+
 UENUM()
 enum class EParticleCollisionResponse : uint8
 {
@@ -53,4 +55,8 @@ public:
 
 	UPROPERTY(EditAnywhere)
 	float MinBounceSpeed = 0.5f;
+
+private:
+	TArray<UPrimitiveComponent*> Candidates;
+	TArray<FBox> CandidateBounds;
 };
