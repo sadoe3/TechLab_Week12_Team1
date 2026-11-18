@@ -182,6 +182,35 @@ void UWorld::Tick(float RealDeltaTime)
 	}
 }
 
+void UWorld::GatherBlockingComponents(const FBox& Box, TArray<UPrimitiveComponent*>& Out, AActor* IgnoreActor)
+{
+	Scene.UpdateAllTransforms();
+	for (TObjectIterator<UPrimitiveComponent> It; It; ++It)
+	{
+		UPrimitiveComponent* C = *It;
+		AActor* Owner = C->GetOwner();
+		if (!C->IsRegistered() || C->GetWorld() != this || !C->bBlockComponent || !Owner || Owner == IgnoreActor || !Owner->GetActorEnableCollision())
+		{
+			continue;
+		}
+
+		if (!Cast<UShapeComponent>(C) && !C->GetMeshData())
+		{
+			continue;
+		}
+
+		const FBox B = C->CalcBounds();
+		if (B.Max.X < Box.Min.X || B.Min.X > Box.Max.X ||
+			B.Max.Y < Box.Min.Y || B.Min.Y > Box.Max.Y ||
+			B.Max.Z < Box.Min.Z || B.Min.Z > Box.Max.Z)
+		{
+			continue;
+		}
+
+		Out.Add(C);
+	}
+}
+
 void UWorld::GameWorldTick(float DeltaTime)
 {
 	// 새로운 Actor들의 BeginPlay 실행
@@ -662,38 +691,17 @@ bool UWorld::SweepSingle(const FRay& WorldRay, float MaxDistance, float Radius, 
 				!Owner || Owner == IgnoreActor || !Owner->GetActorEnableCollision()) continue;
 			if (!Cast<UShapeComponent>(Component) && !Component->GetMeshData()) continue;
 
-			const FBox Bounds = Component->CalcBounds();
-			const FVector Min = Bounds.Min - Extent, Max = Bounds.Max + Extent;
-			float Enter = 0.0f, Exit = NearestT;
-			FVector Normal = -WorldRay.Direction;
-			bool bIntersects = true;
-			for (int32 Axis = 0; Axis < 3; ++Axis)
-			{
-				const float Origin = WorldRay.Origin[Axis], Direction = WorldRay.Direction[Axis];
-				if (std::abs(Direction) <= SMALL_NUMBER)
-				{
-					if (Origin < Min[Axis] || Origin > Max[Axis]) { bIntersects = false; break; }
-					continue;
-				}
-				float Near = (Min[Axis] - Origin) / Direction, Far = (Max[Axis] - Origin) / Direction;
-				if (Near > Far) std::swap(Near, Far);
-				if (Near > Enter)
-				{
-					Enter = Near;
-					Normal = FVector::ZeroVector;
-					Normal[Axis] = Direction > 0.0f ? -1.0f : 1.0f;
-				}
-				Exit = std::min(Exit, Far);
-				if (Enter > Exit) { bIntersects = false; break; }
-			}
-			if (!bIntersects) continue;
-			NearestT = Enter;
+			float T;
+			FVector Normal;
+			if (!SweepSphereVsBox(WorldRay, Component->CalcBounds(), Radius, NearestT, T, Normal)) continue;
+
+			NearestT = T;
 			OutHit.bBlockingHit = true;
-			OutHit.bStartPentrating = Enter == 0.0f;
+			OutHit.bStartPentrating = T == 0.0f;
 			OutHit.HitComponent = Component;
-			OutHit.Distance = Enter;
-			OutHit.Time = Enter / MaxDistance;
-			OutHit.Location = WorldRay.PointAt(Enter);
+			OutHit.Distance = T;
+			OutHit.Time = T / MaxDistance;
+			OutHit.Location = WorldRay.PointAt(T);
 			OutHit.ImpactPoint = OutHit.Location - Normal * Radius;
 			OutHit.Normal = OutHit.ImpactNormal = Normal;
 		}
