@@ -56,7 +56,7 @@ void UParticleSystemComponent::TickComponent(float DeltaTime)
 	}
 
 	// 이번 프레임 Spawn이 바뀐 LOD의 Spawn Rate를 쓰도록 인스턴스 Tick보다 먼저 정한다
-	if (Template->LODMethod == EParticleSystemLODMethod::Automatic)
+	if (bAutoLOD && Template->LODMethod == EParticleSystemLODMethod::Automatic)
 	{
 		LODTimer += DeltaTime;
 		if (LODTimer >= LODDistanceCheckTime)

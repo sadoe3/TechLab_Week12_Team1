@@ -130,6 +130,36 @@ void FParticleSystemEditor::RestartSimulation()
 	bRestartPending = false;
 }
 
+void FParticleSystemEditor::SetEditLODIndex(int32 InIndex)
+{
+	EditLODIndex = ParticleSystem ? std::clamp(InIndex, -1, ParticleSystem->GetNumLODs() - 1) : -1;
+	if (!PreviewComponent)
+	{
+		return;
+	}
+	// Auto가 아니면 고른 LOD로 고정해야 편집 중인 LOD의 모습을 거리와 상관없이 바로 볼 수 있다
+	PreviewComponent->bAutoLOD = EditLODIndex < 0;
+	PreviewComponent->SetLODLevel(EditLODIndex < 0 ? 0 : EditLODIndex);
+}
+
+void FParticleSystemEditor::AddLOD()
+{
+	if (!ParticleSystem)
+	{
+		return;
+	}
+
+	const TArray<float>& Distances = ParticleSystem->LODDistances;
+	const float LastDistance = Distances.IsEmpty() ? 0.0f : Distances[Distances.Num() - 1];
+	const int32 NewIndex = ParticleSystem->AddLODLevel(LastDistance + 1000.0f);
+	if (NewIndex < 0)
+	{
+		return;
+	}
+	NotifyStructureChanged();
+	SetEditLODIndex(NewIndex);
+}
+
 void FParticleSystemEditor::NotifyPropertyEdited()
 {
 	bDirty = true;
@@ -378,6 +408,13 @@ UParticleEmitter* FParticleSystemEditor::AddSpriteEmitter()
 	}
 
 	UParticleEmitter* Emitter = CreateDefaultSpriteEmitter();
+	// 모든 이미터의 LOD 개수가 시스템 LOD 개수와 같아야 LOD 인덱스 하나로 함께 바꿀 수 있다
+	for (int32 LODIndex = Emitter->GetNumLODLevels(); LODIndex < ParticleSystem->GetNumLODs(); ++LODIndex)
+	{
+		UParticleLODLevel* NewLOD = ParticleSystemFile::DuplicateLODLevel(*Emitter, 0);
+		NewLOD->Level = LODIndex;
+		Emitter->AddLODLevel(NewLOD);
+	}
 	ParticleSystem->AddEmitter(Emitter);
 	SelectedObject = Emitter;
 	NotifyStructureChanged();

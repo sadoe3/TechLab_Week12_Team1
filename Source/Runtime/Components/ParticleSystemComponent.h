@@ -64,6 +64,9 @@ public:
 	UPROPERTY(EditAnywhere)
 	float LODDistanceCheckTime = 0.25f;
 
+	// false면 거리로 고르지 않고 SetLODLevel로 정한 LOD를 유지한다 (에디터 프리뷰의 LOD 고정용)
+	bool bAutoLOD = true;
+
 protected:
 	bool HasAnyActiveParticles() const;
 	TUniquePtr<FParticleDynamicData> CreateDynamicData();
