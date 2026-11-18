@@ -154,7 +154,7 @@ void FDynamicSpriteEmitterData::GetDynamicMeshElements(
 		Instance.Position[0] = WorldPos.X;
 		Instance.Position[1] = WorldPos.Y;
 		Instance.Position[2] = WorldPos.Z;
-		Instance.SubImageIndex = 0.0f; // SubUV 애니메이션 전까지 아틀라스 0번 칸
+		Instance.SubImageIndex = Particle.SubImageIndex;
 		Instance.Size[0] = Particle.Size.X;
 		Instance.Size[1] = Particle.Size.Y;
 		Instance.Rotation = Particle.Rotation * (3.14159265358979f / 180.0f);

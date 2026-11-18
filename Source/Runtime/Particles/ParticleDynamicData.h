@@ -44,7 +44,7 @@ struct FDynamicEmitterReplayDataBase
 struct FParticleSpriteInstance
 {
 	float Position[3];      // 월드 위치
-	float SubImageIndex;    // SubUV 칸 번호 (SubUV 모듈 전까지 0)
+	float SubImageIndex;    // SubUV 칸 번호 (UParticleModuleSubUV가 없으면 0)
 	float Size[2];          // 가로, 세로
 	float Rotation;         // 화면 안 회전(Roll), 라디안
 	float Padding;
@@ -100,6 +100,8 @@ struct FDynamicSpriteEmitterReplayData : public FDynamicEmitterReplayDataBase
 		float RelativeTime = 0.0f;
 		/** 화면 안 회전(FBaseParticle::Rotation.Z = Roll), 도 */
 		float Rotation = 0.0f;
+		/** SubUV 아틀라스 칸 번호 (UParticleModuleSubUV Payload) */
+		float SubImageIndex = 0.0f;
 	};
 
 	TArray<FSpriteParticleSnapshot> Particles;
@@ -129,7 +131,7 @@ struct FDynamicSpriteEmitterData : public FDynamicEmitterDataBase
 	UStaticMesh* QuadMesh = nullptr;
 	UMaterial* Material = nullptr;
 
-	/** 텍스처 아틀라스 가로/세로 칸 수. 지금은 0번 칸만 쓴다 (SubUV 애니메이션은 SubUV 모듈에서). */
+	/** 텍스처 아틀라스 가로/세로 칸 수. 파티클마다 어느 칸을 그릴지는 UParticleModuleSubUV가 정한다. */
 	int32 SubImagesHorizontal = 1;
 	int32 SubImagesVertical = 1;
 

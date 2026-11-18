@@ -50,6 +50,7 @@ namespace
 		{ "UParticleModuleRotation",          "Initial Rotation", "Rotation" },
 		{ "UParticleModuleRotationRate",      "Initial Rotation Rate", "Rotation Rate" },
 		{ "UParticleModuleRotationRateMultiplyLife", "Rotation Rate By Life", "Rotation Rate" },
+		{ "UParticleModuleSubUV",             "Sub Image Index",  "SubUV" },
 		{ "UParticleModuleTypeDataMesh",      "Mesh Data",        "TypeData" },
 		{ "UParticleModuleTypeDataRibbon",    "Ribbon Data",      "TypeData" },
 	};

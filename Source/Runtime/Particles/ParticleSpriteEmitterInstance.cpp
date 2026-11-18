@@ -3,7 +3,10 @@
 #include "Asset/AssetManager.h"
 #include "Particles/ParticleDynamicData.h"
 #include "Particles/ParticleLODLevel.h"
+#include "Particles/ParticleEmitter.h"
 #include "Particles/ParticleModuleRequired.h"
+#include "Particles/ParticleModuleSubUV.h"
+#include "UObject/Casts.h"
 #include "Render/RenderPacket.h"
 
 FParticleSpriteEmitterInstance::FParticleSpriteEmitterInstance(UParticleEmitter* InEmitterParent, UParticleSystemComponent* InComponent)
@@ -96,6 +99,20 @@ TUniquePtr<FDynamicEmitterDataBase> FParticleSpriteEmitterInstance::GetDynamicDa
 		? static_cast<uint8>(CurrentLODLevel->RequiredModule->SortMode)
 		: 0;
 
+	// SubUV 모듈의 Payload 위치 (Unreal FParticleSpriteEmitterInstance::SubUVDataOffset). 없거나 꺼져 있으면 0 = 아틀라스 0번 칸.
+	int32 SubUVDataOffset = 0;
+	if (CurrentLODLevel && SpriteTemplate)
+	{
+		for (UParticleModule* Module : CurrentLODLevel->GetModules())
+		{
+			if (Module && Module->bEnabled && Cast<UParticleModuleSubUV>(Module))
+			{
+				SubUVDataOffset = SpriteTemplate->GetModuleOffset(Module);
+				break;
+			}
+		}
+	}
+
 	Data->Source.Particles.Reserve(ActiveParticles);
 	for (int32 i = 0; i < ActiveParticles; ++i)
 	{
@@ -110,6 +127,7 @@ TUniquePtr<FDynamicEmitterDataBase> FParticleSpriteEmitterInstance::GetDynamicDa
 		Snapshot.Color = Particle->Color;
 		Snapshot.RelativeTime = Particle->RelativeTime;
 		Snapshot.Rotation = Particle->Rotation.Z; // 스프라이트는 Roll만 쓴다
+		Snapshot.SubImageIndex = UParticleModuleSubUV::GetImageIndex(*Particle, SubUVDataOffset);
 	}
 
 	Data->Source.ActiveParticleCount = Data->Source.Particles.Num();
