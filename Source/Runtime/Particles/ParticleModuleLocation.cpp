@@ -9,6 +9,6 @@ UParticleModuleLocation::UParticleModuleLocation()
 
 void UParticleModuleLocation::Spawn(FParticleEmitterInstance* Owner, int32 Offset, float SpawnTime, FBaseParticle* ParticleBase)
 {
-	const FVector LocationOffset = RandomRange(Owner, StartLocationMin, StartLocationMax);
+	const FVector LocationOffset = GetDistributionValue(Owner, StartLocation);
 	ParticleBase->Location += EmitterToSimulationVector(Owner, LocationOffset);
 }

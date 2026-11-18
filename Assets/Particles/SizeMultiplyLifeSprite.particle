@@ -63,8 +63,12 @@
             {
               "Class": "UParticleModuleSizeMultiplyLife",
               "Properties": {
-                "MultiplierStart": { "X": 0.5, "Y": 0.5, "Z": 0.5 },
-                "MultiplierEnd": { "X": 3.0, "Y": 3.0, "Z": 3.0 },
+                "LifeMultiplier": {
+                  "Points": [
+                    { "InVal": 0.0, "OutVal": { "X": 0.5, "Y": 0.5, "Z": 0.5 }, "ArriveTangent": { "X": 0.0, "Y": 0.0, "Z": 0.0 }, "LeaveTangent": { "X": 0.0, "Y": 0.0, "Z": 0.0 }, "InterpMode": "Linear" },
+                    { "InVal": 1.0, "OutVal": { "X": 3.0, "Y": 3.0, "Z": 3.0 }, "ArriveTangent": { "X": 0.0, "Y": 0.0, "Z": 0.0 }, "LeaveTangent": { "X": 0.0, "Y": 0.0, "Z": 0.0 }, "InterpMode": "Linear" }
+                  ]
+                },
                 "bMultiplyX": true,
                 "bMultiplyY": true,
                 "bMultiplyZ": true
@@ -73,10 +77,18 @@
             {
               "Class": "UParticleModuleColorOverLife",
               "Properties": {
-                "ColorStart": { "X": 1.0, "Y": 0.8, "Z": 0.3 },
-                "ColorEnd": { "X": 1.0, "Y": 0.2, "Z": 0.1 },
-                "AlphaStart": 1.0,
-                "AlphaEnd": 0.0
+                "ColorOverLife": {
+                  "Points": [
+                    { "InVal": 0.0, "OutVal": { "X": 1.0, "Y": 0.8, "Z": 0.3 }, "ArriveTangent": { "X": 0.0, "Y": 0.0, "Z": 0.0 }, "LeaveTangent": { "X": 0.0, "Y": 0.0, "Z": 0.0 }, "InterpMode": "Linear" },
+                    { "InVal": 1.0, "OutVal": { "X": 1.0, "Y": 0.2, "Z": 0.1 }, "ArriveTangent": { "X": 0.0, "Y": 0.0, "Z": 0.0 }, "LeaveTangent": { "X": 0.0, "Y": 0.0, "Z": 0.0 }, "InterpMode": "Linear" }
+                  ]
+                },
+                "AlphaOverLife": {
+                  "Points": [
+                    { "InVal": 0.0, "OutVal": 1.0, "ArriveTangent": 0.0, "LeaveTangent": 0.0, "InterpMode": "Linear" },
+                    { "InVal": 1.0, "OutVal": 0.0, "ArriveTangent": 0.0, "LeaveTangent": 0.0, "InterpMode": "Linear" }
+                  ]
+                }
               }
             }
           ]

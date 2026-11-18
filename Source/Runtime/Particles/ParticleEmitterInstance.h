@@ -49,6 +49,14 @@ public:
 	/** 파티클 위치가 컴포넌트 로컬 공간인지 (RequiredModule->bUseLocalSpace). false면 월드 공간. */
 	bool IsLocalSpace() const;
 
+	/** How far the current loop is, 0..1 of EmitterDuration, after the loop's delay. X axis of EmitterTime curves (same unit as Burst Time). */
+	float GetEmitterTimeFraction() const
+	{
+		const float Duration = EmitterDuration > 0.0f ? EmitterDuration : 1.0f;
+		const float Fraction = (EmitterTime - CurrentDelay) / Duration;
+		return Fraction < 0.0f ? 0.0f : (Fraction > 1.0f ? 1.0f : Fraction);
+	}
+
 	/** 바운딩 박스 계산 시 파티클 중심에서 더할 반경. 타입별(Sprite/Mesh)로 실제 그려지는 크기를 반영한다. */
 	virtual float GetParticleExtent(const FBaseParticle& Particle) const;
 

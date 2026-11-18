@@ -3,6 +3,7 @@
 #include "Editor/AssetEditor/AssetEditorPanel.h"
 
 #include <functional>
+#include <map>
 
 class FParticleSystemEditor;
 
@@ -66,7 +67,39 @@ private:
 	void DrawBurstList(class UParticleModuleSpawn* Spawn);
 };
 
-// Distribution 커브 편집 (추후 구현)
+// View / selection / drag state of the Curve Editor graph. Lives across frames; reset when the selected module changes.
+struct FCurveGraphState
+{
+	enum class EDrag : uint8 { None, Key, ArriveTangent, LeaveTangent, Pan };
+
+	// Visible range in curve units (X = curve input, Y = curve output)
+	float ViewMinX = 0.0f;
+	float ViewMaxX = 1.0f;
+	float ViewMinY = 0.0f;
+	float ViewMaxY = 1.0f;
+	bool bFitRequested = true;
+
+	// Selected key: which curve property, which key, which component (0 for float, 0..2 = X/Y/Z for vector)
+	FString SelectedCurve;
+	int32 SelectedKey = -1;
+	int32 SelectedComponent = 0;
+
+	EDrag Drag = EDrag::None;
+
+	// Key the right-click menu acts on
+	FString MenuCurve;
+	int32 MenuKey = -1;
+
+	// Bit per component: 1 = hidden. Keyed by curve property name.
+	std::map<FString, uint8> HiddenMask;
+
+	const UObject* LastObject = nullptr;
+};
+
+// Curves of the selected module: a graph (keys and tangents can be dragged) plus a key table per curve.
+//  - Left drag key: move time/value   - Left drag tangent handle: set tangent (Auto keys become CurveUser)
+//  - Double-click empty space: add a key   - Right-click key: mode / delete   - Delete: remove selected key
+//  - Right or middle drag: pan   - Wheel: zoom (Shift = X only, Ctrl = Y only)   - F or "Fit": frame all curves
 class FParticleCurveEditorPanel : public FParticleSystemEditorPanel
 {
 public:
@@ -74,4 +107,7 @@ public:
 
 protected:
 	void DrawContent() override;
+
+private:
+	FCurveGraphState Graph;
 };

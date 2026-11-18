@@ -20,8 +20,5 @@ public:
 
 public:
 	UPROPERTY(EditAnywhere)
-	FVector StartSizeMin = FVector::OneVector;
-
-	UPROPERTY(EditAnywhere)
-	FVector StartSizeMax = FVector::OneVector;
+	FDistributionVector StartSize = FDistributionVector::MakeConstant(FVector::OneVector);
 };

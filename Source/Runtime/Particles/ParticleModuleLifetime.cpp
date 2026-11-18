@@ -11,7 +11,7 @@ void UParticleModuleLifetime::Spawn(FParticleEmitterInstance* Owner, int32 Offse
 {
 	FBaseParticle& Particle = *ParticleBase;
 
-	const float MaxLifetime = RandomRange(Owner, LifetimeMin, LifetimeMax);
+	const float MaxLifetime = GetDistributionValue(Owner, Lifetime);
 	Particle.OneOverMaxLifetime = MaxLifetime > 0.0f ? 1.0f / MaxLifetime : 0.0f;
 	// 프레임 중간에 태어난 만큼 수명도 이미 진행된 상태로 시작한다 (Unreal UParticleModuleLifetime::SpawnEx)
 	Particle.RelativeTime = SpawnTime * Particle.OneOverMaxLifetime;

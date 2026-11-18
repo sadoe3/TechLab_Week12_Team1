@@ -5,7 +5,7 @@
 
 /**
  * 수명(RelativeTime 0~1)에 따라 색/알파를 바꾸는 Spawn+Update 모듈 (Unreal UParticleModuleColorOverLife 대응)
- * Unreal의 ColorOverLife/AlphaOverLife 커브를 시작값→끝값 선형 보간으로 대신한다.
+ * Like Unreal, ColorOverLife / AlphaOverLife are curves whose X axis is RelativeTime (0~1).
  */
 UCLASS()
 class UParticleModuleColorOverLife : public UParticleModule
@@ -19,19 +19,18 @@ public:
 	virtual void Spawn(FParticleEmitterInstance* Owner, int32 Offset, float SpawnTime, FBaseParticle* ParticleBase) override;
 	virtual void Update(FParticleEmitterInstance* Owner, int32 Offset, float DeltaTime) override;
 
+	/** Every curve here is read with the particle's RelativeTime (see Apply) */
+	virtual EParticleCurveInput GetCurveInput(const FProperty& CurveProperty) const override { return EParticleCurveInput::RelativeTime; }
+
 private:
 	void Apply(FBaseParticle& Particle) const;
 
 public:
+	/** RGB over RelativeTime (0~1) */
 	UPROPERTY(EditAnywhere)
-	FVector ColorStart = FVector::OneVector;
+	FInterpCurveVector ColorOverLife = FInterpCurveVector::MakeLinear(FVector::OneVector, FVector::OneVector);
 
+	/** Alpha over RelativeTime (0~1) */
 	UPROPERTY(EditAnywhere)
-	FVector ColorEnd = FVector::OneVector;
-
-	UPROPERTY(EditAnywhere)
-	float AlphaStart = 1.0f;
-
-	UPROPERTY(EditAnywhere)
-	float AlphaEnd = 0.0f;
+	FInterpCurveFloat AlphaOverLife = FInterpCurveFloat::MakeLinear(1.0f, 0.0f);
 };
