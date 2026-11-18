@@ -18,6 +18,7 @@
 #include "Particles/ParticleModuleVelocity.h"
 #include "Particles/ParticleModuleColorOverLife.h"
 #include "Particles/ParticleModuleTypeDataRibbon.h"
+#include "Particles/ParticleModuleTypeDataBeam2.h"
 #include "Asset/AssetManager.h"
 #include "UObject/UObjectGlobals.h"
 #include "UObject/UObjectHash.h"
@@ -47,7 +48,9 @@ namespace
 		}
 
 		UMaterial*& Material = LOD->RequiredModule->Material;
-		const bool bRibbonEmitter = Cast<UParticleModuleTypeDataRibbon>(LOD->TypeDataModule) != nullptr;
+		// Beam도 Ribbon 정점 레이아웃(PSO)을 쓰므로 Ribbon 머티리얼이 필요하다
+		const bool bRibbonEmitter = Cast<UParticleModuleTypeDataRibbon>(LOD->TypeDataModule) != nullptr
+			|| Cast<UParticleModuleTypeDataBeam2>(LOD->TypeDataModule) != nullptr;
 		const bool bRibbonMaterial = Material && Material->PSOType == EPSOType::Particle_Ribbon;
 
 		if (bRibbonEmitter && !bRibbonMaterial)

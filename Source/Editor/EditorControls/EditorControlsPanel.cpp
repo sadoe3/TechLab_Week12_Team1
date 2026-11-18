@@ -53,6 +53,7 @@ void FEditorControlsPanel::AddParticle(int32 Index)
 	case 0: EmitterActor->SetupTestMeshParticleSystem(); break;
 	case 1: EmitterActor->SetupTestSpriteParticleSystem(); break;
 	case 2: EmitterActor->SetupTestRibbonParticleSystem(); break;
+	case 3: EmitterActor->SetupTestBeamParticleSystem(); break;
 	default: break;
 	}
 }

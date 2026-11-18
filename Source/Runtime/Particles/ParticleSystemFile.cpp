@@ -9,6 +9,7 @@
 #include "Particles/ParticleModuleSpawn.h"
 #include "Particles/ParticleModuleTypeDataMesh.h"
 #include "Particles/ParticleModuleTypeDataRibbon.h"
+#include "Particles/ParticleModuleTypeDataBeam2.h"
 #include "Particles/ParticleSystem.h"
 #include "UObject/UObjectGlobals.h"
 #include "UObject/UObjectHash.h"
@@ -286,6 +287,12 @@ namespace
 					RibbonType->bDeadTrailsOnDeactivate = TypeJson.value("bDeadTrailsOnDeactivate", false);
 					LOD->TypeDataModule = RibbonType;
 				}
+				else if (TypeName == "Beam2")
+				{
+					UParticleModuleTypeDataBeam2* BeamType = NewObject<UParticleModuleTypeDataBeam2>();
+					BeamType->Segments = TypeJson.value("Segments", 10);
+					LOD->TypeDataModule = BeamType;
+				}
 				else if (TypeName == "Sprite")
 				{
 					// 구버전 에셋 호환: Sprite는 TypeData 없이(nullptr) 표현하고, SubUV 값은 RequiredModule로 옮긴다
@@ -408,6 +415,13 @@ namespace
 					TypeJson["RenderAxis"] = RenderAxisNames[static_cast<int32>(RibbonType->RenderAxis)];
 					TypeJson["bClipSourceSegement"] = RibbonType->bClipSourceSegement;
 					TypeJson["bDeadTrailsOnDeactivate"] = RibbonType->bDeadTrailsOnDeactivate;
+					LODJson["TypeDataModule"] = TypeJson;
+				}
+				else if (const UParticleModuleTypeDataBeam2* BeamType = Cast<UParticleModuleTypeDataBeam2>(LOD->TypeDataModule))
+				{
+					json TypeJson = json::object();
+					TypeJson["Type"] = "Beam2";
+					TypeJson["Segments"] = BeamType->Segments;
 					LODJson["TypeDataModule"] = TypeJson;
 				}
 			}

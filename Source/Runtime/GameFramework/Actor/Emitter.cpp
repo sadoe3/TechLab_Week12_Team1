@@ -8,6 +8,9 @@
 #include "Particles/ParticleModuleSpawn.h"
 #include "Particles/ParticleModuleTypeDataMesh.h"
 #include "Particles/ParticleModuleTypeDataRibbon.h"
+#include "Particles/ParticleModuleTypeDataBeam2.h"
+#include "Particles/ParticleModuleBeamTarget.h"
+#include "Particles/ParticleModuleSize.h"
 #include "Particles/ParticleModuleLifetime.h"
 #include "Particles/ParticleModuleVelocity.h"
 #include "UObject/UObjectGlobals.h"
@@ -115,6 +118,64 @@ void AEmitter::SetupTestRibbonParticleSystem()
 	LOD0->SpawnModule = Spawn;
 	LOD0->TypeDataModule = RibbonTypeData;
 	LOD0->AddModule(Lifetime);
+
+	Emitter->AddLODLevel(LOD0);
+	TestSystem->AddEmitter(Emitter);
+
+	ParticleSystemComponent->SetTemplate(TestSystem);
+}
+
+void AEmitter::SetupTestBeamParticleSystem()
+{
+	if (!ParticleSystemComponent)
+	{
+		return;
+	}
+
+	UParticleSystem* TestSystem = NewObject<UParticleSystem>();
+	UParticleEmitter* Emitter = NewObject<UParticleEmitter>();
+	Emitter->SetEmitterName("TestBeamEmitter");
+
+	UParticleLODLevel* LOD0 = NewObject<UParticleLODLevel>();
+
+	UParticleModuleRequired* Required = NewObject<UParticleModuleRequired>();
+	Required->bUseLocalSpace = true;
+	Required->EmitterDuration = 1.0f;
+	// 무한 루프면 루프마다 Burst가 다시 터져 죽지 않는 빔 파티클이 쌓인다
+	Required->EmitterLoops = 1;
+	Required->Material = UAssetManager::GetAssetByPath<UMaterial>("RibbonMaterial");
+
+	// 빔 파티클 1개만 처음에 만든다
+	UParticleModuleSpawn* Spawn = NewObject<UParticleModuleSpawn>();
+	Spawn->Rate = 0.0f;
+	Spawn->bProcessSpawnRate = false;
+	FParticleBurst Burst;
+	Burst.Count = 1;
+	Burst.Time = 0.0f;
+	Spawn->AddBurst(Burst);
+
+	// 수명 0 = OneOverMaxLifetime 0 = 죽지 않음
+	UParticleModuleLifetime* Lifetime = NewObject<UParticleModuleLifetime>();
+	Lifetime->LifetimeMin = 0.0f;
+	Lifetime->LifetimeMax = 0.0f;
+
+	// Size.X가 빔 폭이 된다
+	UParticleModuleSize* Size = NewObject<UParticleModuleSize>();
+	Size->StartSizeMin = FVector(0.3f, 0.3f, 0.3f);
+	Size->StartSizeMax = FVector(0.3f, 0.3f, 0.3f);
+
+	UParticleModuleTypeDataBeam2* BeamTypeData = NewObject<UParticleModuleTypeDataBeam2>();
+	BeamTypeData->Segments = 10;
+
+	UParticleModuleBeamTarget* BeamTarget = NewObject<UParticleModuleBeamTarget>();
+	BeamTarget->TargetLocation = FVector(0.0f, 0.0f, 5.0f);
+
+	LOD0->RequiredModule = Required;
+	LOD0->SpawnModule = Spawn;
+	LOD0->TypeDataModule = BeamTypeData;
+	LOD0->AddModule(Lifetime);
+	LOD0->AddModule(Size);
+	LOD0->AddModule(BeamTarget);
 
 	Emitter->AddLODLevel(LOD0);
 	TestSystem->AddEmitter(Emitter);
