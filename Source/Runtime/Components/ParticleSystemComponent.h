@@ -41,6 +41,12 @@ public:
 
 	const TArray<FParticleEmitterInstance*>& GetEmitterInstances() const { return EmitterInstances; }
 
+	/** 카메라 거리로 쓸 LOD 인덱스를 고른다 (Unreal UParticleSystemComponent::DetermineLODLevel) */
+	int32 DetermineLODLevel() const;
+	/** 모든 이미터 인스턴스의 LOD를 바꾼다. 범위 밖이면 맞춰 자른다 */
+	void SetLODLevel(int32 InLODLevel);
+	int32 GetLODLevel() const { return LODLevel; }
+
 	/** [0, 1) 균등 난수. 모듈의 랜덤 분포가 사용한다 (Unreal UParticleSystemComponent::RandomStream 대응) */
 	float GetRandomFraction() { return RandomDistribution(RandomStream); }
 
@@ -53,6 +59,10 @@ public:
 
 	UPROPERTY(EditAnywhere)
 	bool bSuppressSpawning = false;
+
+	// 거리를 이 간격(초)마다만 잰다. LOD는 자주 바뀔 필요가 없다 (Unreal LODDistanceCheckTime)
+	UPROPERTY(EditAnywhere)
+	float LODDistanceCheckTime = 0.25f;
 
 protected:
 	bool HasAnyActiveParticles() const;
@@ -71,4 +81,7 @@ protected:
 	bool bWasDeactivated = false;
 
 	bool bEditorAutoActivated = false;
+
+	int32 LODLevel = 0;
+	float LODTimer = 0.0f;
 };

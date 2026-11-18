@@ -37,6 +37,18 @@ void FParticleEmitterInstance::InitParameters(UParticleEmitter* InTemplate, UPar
 	CurrentLODLevel = SpriteTemplate ? SpriteTemplate->GetLODLevel(0) : nullptr;
 }
 
+void FParticleEmitterInstance::SetCurrentLODIndex(int32 InLODIndex)
+{
+	UParticleLODLevel* NewLOD = SpriteTemplate ? SpriteTemplate->GetLODLevel(InLODIndex) : nullptr;
+	if (!NewLOD)
+	{
+		return;
+	}
+	// Step 3에서 Spawn 누적값, Burst 상태, 모듈 Payload 오프셋 처리를 여기에 더한다
+	CurrentLODLevelIndex = InLODIndex;
+	CurrentLODLevel = NewLOD;
+}
+
 void FParticleEmitterInstance::Init()
 {
 	ParticleSize = sizeof(FBaseParticle);
