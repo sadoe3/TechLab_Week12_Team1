@@ -438,7 +438,8 @@ void FParticleEmittersPanel::DrawAddModuleMenu(UParticleEmitter* Emitter)
 void FParticleEmittersPanel::DrawEmitterColumn(UParticleEmitter* Emitter, float Width, float Height)
 {
 	ImGui::PushID(Emitter);
-	ImGui::BeginChild("##EmitterColumn", ImVec2(Width, Height), ImGuiChildFlags_Borders);
+	// Long module names overflow the narrow column, so each column gets its own horizontal scrollbar.
+	ImGui::BeginChild("##EmitterColumn", ImVec2(Width, Height), ImGuiChildFlags_Borders, ImGuiWindowFlags_HorizontalScrollbar);
 
 	// 이미터 헤더: 켜기/끄기 + 이름
 	bool bEmitterEnabled = !Emitter->IsDisabled();
