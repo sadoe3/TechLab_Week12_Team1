@@ -8,6 +8,9 @@
 #include "Collision/HitResult.h"
 #include "Particles/ParticleCollisionDebug.h"
 #include "Components/PrimitiveComponent.h"
+#include "ParticleModuleTypeDataRibbon.h"
+#include "ParticleRibbonEmitterInstance.h"
+#include "ParticleLODLevel.h"
 
 namespace
 {
@@ -16,6 +19,25 @@ namespace
 	FParticleCollisionPayload& GetPayload(FBaseParticle* Particle, int32 Offset)
 	{
 		return *reinterpret_cast<FParticleCollisionPayload*>(reinterpret_cast<uint8*>(Particle) + Offset);
+	}
+
+	// 리본이면 리본 인스턴스를, 아니면 nullptr 을 return
+	FParticleRibbonEmitterInstance* AsRibbon(FParticleEmitterInstance* Owner)
+	{
+		UParticleLODLevel* LOD = Owner->GetCurrentLODLevel();
+		if (LOD && LOD->TypeDataModule && LOD->TypeDataModule->IsA<UParticleModuleTypeDataRibbon>())
+		{
+			return static_cast<FParticleRibbonEmitterInstance*>(Owner);
+		}
+		return nullptr;
+	}
+
+	void KillRibbonFrom(FParticleRibbonEmitterInstance* Ribbon, int32 Slot)
+	{
+		for (int32 S = Slot; S != INDEX_NONE; S = Ribbon->GetRibbonPayload(S)->Next)
+		{
+			Ribbon->GetParticleAtSlot(S)->RelativeTime = 1.1f;
+		}
 	}
 }
 
@@ -107,6 +129,9 @@ void UParticleModuleCollision::FinalUpdate(FParticleEmitterInstance* Owner, int3
 		return;
 	}
 
+	// 리본 Kill 체크 위해
+	FParticleRibbonEmitterInstance* Ribbon = AsRibbon(Owner);
+
 	// 실제 충돌 파티클 루프
 	for (int32 i = 0; i < Owner->ActiveParticles; ++i)
 	{
@@ -180,7 +205,14 @@ void UParticleModuleCollision::FinalUpdate(FParticleEmitterInstance* Owner, int3
 
 		if (ThisResponse == EParticleCollisionResponse::Kill)
 		{
-			Particle->RelativeTime = 1.1f;
+			if (Ribbon)
+			{
+				KillRibbonFrom(Ribbon, Owner->ParticleIndices[i]);
+			}
+			else
+			{
+				Particle->RelativeTime = 1.1f;
+			}
 			continue;
 		}
 
