@@ -78,6 +78,35 @@ void FParticleRibbonEmitterInstance::SpawnParticles(int32 Count, float StartTime
 
 void FParticleRibbonEmitterInstance::KillParticles()
 {
+	// 콜리전으로 죽은 파티클이 있다면 그 점부터 끝까지 함께죽임
+	if (RibbonTypeData && RibbonTypeData->bCutTrailOnCollision)
+	{
+		for (int32 i = 0; i < ActiveParticles; ++i)
+		{
+			const int32 Slot = ParticleIndices[i];
+			FBaseParticle* Particle = GetParticleAtSlot(Slot);
+			if (Particle->RelativeTime <= 1.f || !(Particle->Flags & STATE_Particle_KilledByCollision))
+			{
+				continue;
+			}
+
+			for (int32 S = GetRibbonPayload(Slot)->Next; S != INDEX_NONE; S = GetRibbonPayload(S)->Next)
+			{
+				FBaseParticle* Tail = GetParticleAtSlot(S);
+
+				// 중복 순회 방지
+				if (Tail->Flags & STATE_Particle_KilledByCollision)
+				{
+					break;
+				}
+
+				Tail->Flags |= STATE_Particle_KilledByCollision;
+				Tail->RelativeTime = 1.1f;
+			}
+		}
+
+	}
+
 	// 수명이 끝난 파티클의 Prev/Next 이웃을 서로 잇고, 머리가 죽으면 HeadSlot을 옮긴다
 	for (int32 i = 0; i < ActiveParticles; ++i)
 	{
